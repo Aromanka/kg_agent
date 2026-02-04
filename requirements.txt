@@ -1,0 +1,7 @@
+openai
+uvicorn
+fastapi
+neo4j
+pandas
+docx
+pymupdf4llm
