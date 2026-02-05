@@ -1,0 +1,116 @@
+"""
+Diet Agent Models
+Pydantic models for diet recommendation input/output.
+"""
+from typing import List, Dict, Any, Optional
+from pydantic import BaseModel, Field
+from enum import Enum
+
+
+class MealType(str, Enum):
+    """Types of meals in a day"""
+    BREAKFAST = "breakfast"
+    LUNCH = "lunch"
+    DINNER = "dinner"
+    SNACKS = "snacks"
+
+
+class FoodItem(BaseModel):
+    """A single food item in a meal"""
+    food: str = Field(..., description="Name of the food dish")
+    portion: str = Field(..., description="Portion size (e.g., '100g', '1碗', '2片')")
+    calories: int = Field(..., description="Estimated calories per serving")
+    protein: float = Field(..., description="Protein content in grams")
+    carbs: float = Field(..., description="Carbohydrate content in grams")
+    fat: float = Field(..., description="Fat content in grams")
+    fiber: Optional[float] = Field(None, description="Fiber content in grams")
+    reason: str = Field(..., description="Why this food is suitable for the user")
+
+
+class MealPlanItem(BaseModel):
+    """A complete meal with multiple food items"""
+    meal_type: MealType = Field(..., description="Type of meal")
+    items: List[FoodItem] = Field(..., description="Food items in this meal")
+    total_calories: int = Field(..., description="Total calories for this meal")
+    total_protein: float = Field(..., description="Total protein in grams")
+    total_carbs: float = Field(..., description="Total carbohydrates in grams")
+    total_fat: float = Field(..., description="Total fat in grams")
+
+
+class MacroNutrients(BaseModel):
+    """Daily macro nutrient summary"""
+    protein: float = Field(..., description="Total protein in grams")
+    carbs: float = Field(..., description="Total carbohydrates in grams")
+    fat: float = Field(..., description="Total fat in grams")
+    protein_ratio: float = Field(..., description="Protein calorie percentage (15-25% ideal)")
+    carbs_ratio: float = Field(..., description="Carbohydrate calorie percentage (45-65% ideal)")
+    fat_ratio: float = Field(..., description="Fat calorie percentage (20-35% ideal)")
+
+
+class DietRecommendation(BaseModel):
+    """Complete diet recommendation for one candidate"""
+    id: int = Field(..., description="Candidate ID")
+    meal_plan: Dict[str, List[FoodItem]] = Field(
+        ...,
+        description="Full day meal plan keyed by meal type"
+    )
+    total_calories: int = Field(..., description="Total daily calories")
+    calories_deviation: float = Field(
+        ...,
+        description="Deviation from target calories (%)"
+    )
+    macro_nutrients: MacroNutrients = Field(
+        ...,
+        description="Macro nutrient summary"
+    )
+    reasoning: str = Field(
+        ...,
+        description="Overall reasoning for this recommendation"
+    )
+    safety_notes: List[str] = Field(
+        default_factory=list,
+        description="Safety considerations"
+    )
+
+
+class DietCandidatesResponse(BaseModel):
+    """Response containing multiple diet candidates"""
+    candidates: List[DietRecommendation] = Field(
+        ...,
+        description="List of diet candidates"
+    )
+    target_calories: int = Field(..., description="Target daily calories")
+    user_conditions: List[str] = Field(
+        ...,
+        description="User's health conditions considered"
+    )
+    sampling_strategy: str = Field(
+        ...,
+        description="Strategy used for generation"
+    )
+    generation_notes: str = Field(
+        ...,
+        description="Additional notes about generation"
+    )
+
+
+class DietAgentInput(BaseModel):
+    """Input structure for diet agent"""
+    user_metadata: Dict[str, Any] = Field(
+        ...,
+        description="User physiological data"
+    )
+    environment: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Environmental context (weather, season)"
+    )
+    user_requirement: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="User goals and preferences"
+    )
+    num_candidates: int = Field(
+        default=3,
+        ge=1,
+        le=10,
+        description="Number of candidates to generate"
+    )

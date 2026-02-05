@@ -7,7 +7,7 @@ import datetime
 import pandas as pd
 from openai import OpenAI
 from tqdm import tqdm
-from .prompts.diet_kg import (
+from ..agents.diet.prompts import (
     DIET_KG_EXTRACT_SCHEMA_PROMPT as SCHEMA_PROMPT,
     DIET_VALID_RELS
 )

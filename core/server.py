@@ -8,7 +8,7 @@ from neo4j import GraphDatabase
 from openai import OpenAI
 import json
 import os
-from diet_generator import generate_diet_candidates
+from agents.diet.diet_generator import generate_diet_candidates
 
 # ================= 配置加载 =================
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
@@ -176,7 +176,7 @@ def diet_generate_endpoint(req: DietGenerateReq):
 def diet_init_db_endpoint():
     """初始化食物数据库到Neo4j"""
     try:
-        from diet_generator import init_food_database_in_kg
+        from agents.diet.diet_generator import init_food_database_in_kg
         init_food_database_in_kg()
         return {"status": "success", "message": "食物数据库已初始化"}
     except Exception as e:
