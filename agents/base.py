@@ -231,18 +231,335 @@ class DietAgentMixin:
 class ExerciseAgentMixin:
     """Mixin for exercise-related agent capabilities"""
 
+    # ================= Condition-Exercise Knowledge Base =================
+    # Fallback knowledge when KG doesn't have exercise data
+
+    _CONDITION_EXERCISE_MAP = {
+        "diabetes": {
+            "recommended": ["walking", "swimming", "cycling", "light_strength", "water_aerobics"],
+            "avoid": ["high_intensity_hiit", "extreme_endurance", "heavy_weightlifting"],
+            "notes": ["Avoid exercise during peak insulin activity", "Check blood sugar before/after"],
+            "safe_intensity": "low"
+        },
+        "hypertension": {
+            "recommended": ["walking", "swimming", "yoga", "light_cycling", "pilates"],
+            "avoid": ["heavy_weightlifting", "high_intensity_hiit", "valsalva_maneuver", "isometric"],
+            "notes": ["Monitor blood pressure", "Avoid isometric exercises", "Avoid holding breath"],
+            "safe_intensity": "moderate"
+        },
+        "heart_disease": {
+            "recommended": ["light_walking", "slow_cycling", "water_exercise", "light_yoga"],
+            "avoid": ["running", "hiit", "heavy_lifting", "competitive_sports", "sprinting"],
+            "notes": ["Medical clearance required", "Keep intensity low", "Stop if chest pain or dizziness"],
+            "safe_intensity": "low"
+        },
+        "obesity": {
+            "recommended": ["walking", "water_aerobics", "recumbent_bike", "elliptical", "swimming"],
+            "avoid": ["running", "jumping", "high_impact_activities", "jump_rope"],
+            "notes": ["Start slow, progress gradually", "Focus on low-impact options", "Use proper footwear"],
+            "safe_intensity": "low"
+        },
+        "arthritis": {
+            "recommended": ["swimming", "water_exercise", "cycling", "yoga", "pilates", "elliptical"],
+            "avoid": ["running", "high_impact_jumping", "heavy_lifting", "squat_deadlift"],
+            "notes": ["Range of motion exercises preferred", "Avoid high-impact", "Warm up joints before activity"],
+            "safe_intensity": "low"
+        },
+        "back_pain": {
+            "recommended": ["swimming", "walking", "yoga", "pilates", "light_cycling", "elliptical"],
+            "avoid": ["heavy_squat", "deadlift", "high_impact_jumping", "heavy_lifting"],
+            "notes": ["Core strengthening recommended", "Avoid hyperextension", "Maintain neutral spine"],
+            "safe_intensity": "moderate"
+        },
+        "asthma": {
+            "recommended": ["swimming", "walking", "cycling", "yoga", "light_strength"],
+            "avoid": ["running", "hiit", "cold_weather_outdoor", "high_intensity_cardio"],
+            "notes": ["Use inhaler before exercise if needed", "Avoid cold dry air", "Warm up gradually"],
+            "safe_intensity": "moderate"
+        },
+        "osteoporosis": {
+            "recommended": ["walking", "light_strength", "balance_exercises", "tai_chi", "swimming"],
+            "avoid": ["running", "jumping", "high_impact", "heavy_lifting", "bending_forward"],
+            "notes": ["Focus on weight-bearing exercise", "Improve balance to prevent falls"],
+            "safe_intensity": "low"
+        }
+    }
+
+    # ================= KG Query Methods =================
+
     def query_exercise_knowledge(
         self,
         conditions: List[str],
         fitness_level: str = "beginner"
     ) -> Dict[str, Any]:
         """Query knowledge graph for exercise recommendations"""
-        # Placeholder - knowledge graph needs exercise data
-        return {
+        results = {
             "recommended_exercises": [],
             "avoid_exercises": [],
-            "intensity_recommendations": []
+            "intensity_recommendations": [],
+            "condition_specific_notes": []
         }
+
+        # Try KG query first
+        try:
+            for condition in conditions:
+                kg_exercises = self._kg.query_exercise_for_condition(condition)
+                if kg_exercises:
+                    results["recommended_exercises"].extend([dict(r) for r in kg_exercises])
+        except Exception as e:
+            print(f"[WARN] KG query failed, using fallback: {e}")
+
+        # Fallback to hardcoded knowledge
+        for condition in conditions:
+            cond_key = condition.lower()
+            for key, data in self._CONDITION_EXERCISE_MAP.items():
+                if cond_key in key or key in cond_key:
+                    # Add recommended exercises
+                    for ex in data["recommended"]:
+                        results["recommended_exercises"].append({
+                            "exercise": ex,
+                            "condition": condition,
+                            "source": "knowledge_base"
+                        })
+                    # Add exercises to avoid
+                    for ex in data["avoid"]:
+                        results["avoid_exercises"].append({
+                            "exercise": ex,
+                            "condition": condition,
+                            "reason": f"Risky for {condition}",
+                            "severity": "high"
+                        })
+                    # Add intensity recommendation
+                    safe_intensity = self._get_safe_intensity(condition, fitness_level)
+                    results["intensity_recommendations"].append({
+                        "condition": condition,
+                        "fitness_level": fitness_level,
+                        "recommended_intensity": safe_intensity,
+                        "base_intensity": data.get("safe_intensity", "moderate")
+                    })
+                    # Add condition notes
+                    for note in data["notes"]:
+                        results["condition_specific_notes"].append({
+                            "condition": condition,
+                            "note": note
+                        })
+                    break
+
+        # Deduplicate
+        results["recommended_exercises"] = self._deduplicate_exercises(results["recommended_exercises"])
+        results["avoid_exercises"] = self._deduplicate_exercises(results["avoid_exercises"])
+
+        return results
+
+    def query_exercise_by_type(
+        self,
+        exercise_type: str,
+        conditions: List[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Query exercises by type with condition filtering.
+
+        Args:
+            exercise_type: Type of exercise (cardio, strength, flexibility, etc.)
+            conditions: User's medical conditions to filter
+
+        Returns:
+            List of exercise objects
+        """
+        # Expanded exercise library by type
+        exercise_library = {
+            "cardio": [
+                {"name": "Brisk Walking", "intensity_levels": ["low", "moderate"], "cal_per_min": {"low": 4, "moderate": 5}},
+                {"name": "Jogging", "intensity_levels": ["moderate", "high"], "cal_per_min": {"moderate": 8, "high": 10}},
+                {"name": "Running", "intensity_levels": ["moderate", "high", "very_high"], "cal_per_min": {"moderate": 10, "high": 12}},
+                {"name": "Cycling", "intensity_levels": ["low", "moderate", "high"], "cal_per_min": {"low": 5, "moderate": 7, "high": 9}},
+                {"name": "Swimming", "intensity_levels": ["low", "moderate", "high"], "cal_per_min": {"low": 6, "moderate": 8, "high": 10}},
+                {"name": "Rowing", "intensity_levels": ["moderate", "high"], "cal_per_min": {"moderate": 7, "high": 9}},
+                {"name": "Jump Rope", "intensity_levels": ["high", "very_high"], "cal_per_min": {"high": 12, "very_high": 15}},
+                {"name": "Elliptical", "intensity_levels": ["low", "moderate"], "cal_per_min": {"low": 5, "moderate": 7}},
+                {"name": "Stair Climbing", "intensity_levels": ["moderate", "high"], "cal_per_min": {"moderate": 7, "high": 9}},
+                {"name": "Dancing", "intensity_levels": ["low", "moderate", "high"], "cal_per_min": {"low": 4, "moderate": 6, "high": 8}}
+            ],
+            "strength": [
+                {"name": "Bodyweight Squats", "intensity_levels": ["low", "moderate"], "target_muscles": ["legs", "glutes"]},
+                {"name": "Push-ups", "intensity_levels": ["moderate", "high"], "target_muscles": ["chest", "arms", "core"]},
+                {"name": "Lunges", "intensity_levels": ["low", "moderate"], "target_muscles": ["legs", "glutes"]},
+                {"name": "Plank", "intensity_levels": ["moderate", "high"], "target_muscles": ["core", "shoulders"]},
+                {"name": "Dumbbell Rows", "intensity_levels": ["moderate", "high"], "target_muscles": ["back", "arms"]},
+                {"name": "Resistance Band Exercises", "intensity_levels": ["low", "moderate"], "target_muscles": ["full_body"]},
+                {"name": "Bodyweight Rows", "intensity_levels": ["moderate", "high"], "target_muscles": ["back", "biceps"]},
+                {"name": "Glute Bridge", "intensity_levels": ["low", "moderate"], "target_muscles": ["glutes", "hamstrings"]}
+            ],
+            "flexibility": [
+                {"name": "Static Stretching", "duration_unit": "seconds"},
+                {"name": "Yoga Sun Salutation", "flow": True},
+                {"name": "Dynamic Stretching", "warmup": True},
+                {"name": "Hamstring Stretch", "target": "hamstrings"},
+                {"name": "Hip Flexor Stretch", "target": "hip_flexors"},
+                {"name": "Shoulder Stretch", "target": "shoulders"},
+                {"name": "Cat-Cow Flow", "target": "spine"}
+            ],
+            "balance": [
+                {"name": "Single Leg Stand", "progression": "eyes_closed"},
+                {"name": "Heel-to-Toe Walk", "progression": "forward_backward"},
+                {"name": "Tandem Stance", "progression": "tandem_walk"},
+                {"name": "Tai Chi Movements", "flow": True},
+                {"name": "Balance Board", "difficulty": "progressive"}
+            ],
+            "hiit": [
+                {"name": "Sprint Intervals", "work_rest": "1:2", "max_duration": 30},
+                {"name": "Burpee Variations", "work_rest": "1:1", "max_duration": 20},
+                {"name": "Mountain Climbers", "work_rest": "1:1", "max_duration": 30},
+                {"name": "High Knees", "work_rest": "1:1", "max_duration": 30},
+                {"name": "Box Jumps", "work_rest": "1:2", "max_duration": 20}
+            ]
+        }
+
+        exercises = exercise_library.get(exercise_type.lower(), [])
+
+        # Filter by conditions if provided
+        if conditions:
+            exercises = [ex for ex in exercises if not self._check_exercise_conflict(ex.get("name", ""), conditions)]
+
+        return exercises
+
+    # ================= Progression Planning =================
+
+    def get_exercise_progression_plan(
+        self,
+        current_level: str,
+        goal: str,
+        weeks: int = 4
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate exercise progression plan based on current level and goal.
+
+        Args:
+            current_level: beginner, intermediate, advanced
+            goal: weight_loss, muscle_building, cardio_improvement, etc.
+            weeks: Duration of progression plan
+
+        Returns:
+            Weekly progression plan with exercise modifications
+        """
+        progression_templates = {
+            ("beginner", "weight_loss"): [
+                {"week": 1, "focus": "Establish baseline", "duration": 20, "intensity": "low", "sessions": 3},
+                {"week": 2, "focus": "Build consistency", "duration": 25, "intensity": "low", "sessions": 4},
+                {"week": 3, "focus": "Increase duration", "duration": 30, "intensity": "moderate", "sessions": 4},
+                {"week": 4, "focus": "Introduce intervals", "duration": 30, "intensity": "moderate", "sessions": 5}
+            ],
+            ("beginner", "muscle_building"): [
+                {"week": 1, "focus": "Learn proper form", "duration": 20, "intensity": "low", "sessions": 2},
+                {"week": 2, "focus": "Increase volume", "duration": 30, "intensity": "low", "sessions": 3},
+                {"week": 3, "focus": "Add sets", "duration": 35, "intensity": "moderate", "sessions": 3},
+                {"week": 4, "focus": "Progressive overload", "duration": 40, "intensity": "moderate", "sessions": 4}
+            ],
+            ("beginner", "cardio_improvement"): [
+                {"week": 1, "focus": "Low impact start", "duration": 20, "intensity": "low", "sessions": 3},
+                {"week": 2, "focus": "Extend time", "duration": 25, "intensity": "low", "sessions": 3},
+                {"week": 3, "focus": "Add intervals", "duration": 30, "intensity": "moderate", "sessions": 4},
+                {"week": 4, "focus": "Build endurance", "duration": 35, "intensity": "moderate", "sessions": 4}
+            ],
+            ("intermediate", "weight_loss"): [
+                {"week": 1, "focus": "Mixed modalities", "duration": 35, "intensity": "moderate", "sessions": 5},
+                {"week": 2, "focus": "HIIT introduction", "duration": 40, "intensity": "moderate_high", "sessions": 5},
+                {"week": 3, "focus": "Increase intensity", "duration": 40, "intensity": "high", "sessions": 5},
+                {"week": 4, "focus": "Peak week", "duration": 45, "intensity": "high", "sessions": 6}
+            ],
+            ("intermediate", "muscle_building"): [
+                {"week": 1, "focus": "Compound movements", "duration": 45, "intensity": "moderate", "sessions": 4},
+                {"week": 2, "focus": "Volume increase", "duration": 50, "intensity": "moderate", "sessions": 4},
+                {"week": 3, "focus": "Intensity focus", "duration": 50, "intensity": "high", "sessions": 5},
+                {"week": 4, "focus": "Deload week", "duration": 35, "intensity": "low", "sessions": 3}
+            ],
+            ("advanced", "general"): [
+                {"week": 1, "focus": "High volume", "duration": 60, "intensity": "high", "sessions": 6},
+                {"week": 2, "focus": "Peak intensity", "duration": 60, "intensity": "very_high", "sessions": 6},
+                {"week": 3, "focus": "Maintain", "duration": 55, "intensity": "high", "sessions": 5},
+                {"week": 4, "focus": "Deload", "duration": 45, "intensity": "moderate", "sessions": 4}
+            ]
+        }
+
+        key = (current_level.lower(), goal.lower())
+        base_plan = progression_templates.get(key, progression_templates.get((current_level.lower(), "general"), [
+            {"week": i, "focus": "Week " + str(i), "duration": 30, "intensity": "moderate", "sessions": 4} for i in range(1, weeks + 1)
+        ]))
+
+        return base_plan[:weeks]
+
+    # ================= Helper Methods =================
+
+    def _get_safe_intensity(
+        self,
+        condition: str,
+        fitness_level: str
+    ) -> str:
+        """Determine safe intensity based on condition and fitness level"""
+        condition_intensity_map = {
+            "diabetes": "low",
+            "hypertension": "moderate",
+            "heart_disease": "low",
+            "obesity": "low",
+            "arthritis": "low",
+            "back_pain": "moderate",
+            "asthma": "moderate",
+            "osteoporosis": "low"
+        }
+
+        base_intensity = condition_intensity_map.get(condition.lower(), "moderate")
+
+        # Adjust for fitness level
+        fitness_adjustments = {
+            "beginner": {"low": "low", "moderate": "low", "high": "moderate"},
+            "intermediate": {"low": "low", "moderate": "moderate", "high": "high"},
+            "advanced": {"low": "moderate", "moderate": "high", "high": "very_high"}
+        }
+
+        return fitness_adjustments.get(fitness_level, {}).get(base_intensity, "moderate")
+
+    def _check_exercise_conflict(
+        self,
+        exercise_name: str,
+        conditions: List[str]
+    ) -> bool:
+        """Check if an exercise conflicts with any medical condition"""
+        exercise_lower = exercise_name.lower()
+
+        # Build conflict map
+        conflicts = {
+            "diabetes": ["hiit", "high intensity", "extreme", "sprinting", "heavy lifting"],
+            "hypertension": ["heavy weightlifting", "isometric", "valsalva", "heavy lifting"],
+            "heart_disease": ["running", "hiit", "heavy", "sprinting", "competitive"],
+            "obesity": ["running", "jumping", "jump rope", "high impact"],
+            "arthritis": ["running", "jumping", "high impact", "heavy squat", "deadlift"],
+            "back_pain": ["heavy squat", "deadlift", "heavy lifting", "jumping"],
+            "asthma": ["running", "hiit", "cold weather", "high intensity"],
+            "osteoporosis": ["running", "jumping", "high impact", "heavy lifting"]
+        }
+
+        for condition in conditions:
+            condition_key = condition.lower()
+            for cond_key, conflict_exercises in conflicts.items():
+                if cond_key in condition_key or condition_key in cond_key:
+                    for conflict in conflict_exercises:
+                        if conflict in exercise_lower:
+                            return True
+
+        return False
+
+    def _deduplicate_exercises(self, exercises: List[Dict]) -> List[Dict]:
+        """Remove duplicate exercises from list"""
+        seen = set()
+        unique = []
+        for ex in exercises:
+            key = ex.get("exercise", ex.get("name", ""))
+            if key and key not in seen:
+                seen.add(key)
+                unique.append(ex)
+        return unique
+
+    # ================= Calorie Estimation =================
 
     def estimate_calories_burned(
         self,
@@ -252,16 +569,53 @@ class ExerciseAgentMixin:
         intensity: str = "moderate"
     ) -> int:
         """Estimate calories burned for an exercise (MET-based)"""
+        # Extended MET values database
         met_values = {
-            "walking": {"low": 2.5, "moderate": 3.5, "high": 5.0},
-            "running": {"low": 6.0, "moderate": 8.0, "high": 11.5},
-            "swimming": {"low": 5.0, "moderate": 7.0, "high": 9.0},
-            "cycling": {"low": 4.0, "moderate": 6.0, "high": 8.0},
-            "strength_training": {"low": 3.0, "moderate": 5.0, "high": 6.0},
-            "yoga": {"low": 2.0, "moderate": 3.0, "high": 4.0}
+            # Cardio
+            "walking": {"low": 2.5, "moderate": 3.5, "high": 5.0, "very_high": 6.0},
+            "jogging": {"low": 5.0, "moderate": 7.0, "high": 8.5, "very_high": 10.0},
+            "running": {"low": 7.0, "moderate": 9.8, "high": 11.5, "very_high": 14.0},
+            "cycling": {"low": 4.0, "moderate": 6.0, "high": 8.0, "very_high": 10.0},
+            "swimming": {"low": 5.0, "moderate": 7.0, "high": 9.0, "very_high": 11.0},
+            "rowing": {"low": 4.0, "moderate": 7.0, "high": 9.0, "very_high": 12.0},
+            "jump_rope": {"low": 8.0, "moderate": 10.0, "high": 12.0, "very_high": 15.0},
+            "elliptical": {"low": 4.0, "moderate": 5.5, "high": 7.0, "very_high": 8.5},
+            "stair_climbing": {"low": 4.0, "moderate": 7.0, "high": 9.0, "very_high": 11.0},
+            "dancing": {"low": 4.0, "moderate": 6.0, "high": 8.0, "very_high": 10.0},
+
+            # Strength
+            "strength_training": {"low": 3.0, "moderate": 5.0, "high": 6.0, "very_high": 8.0},
+            "weightlifting": {"low": 3.0, "moderate": 5.0, "high": 6.0, "very_high": 8.0},
+            "bodyweight_training": {"low": 3.0, "moderate": 4.5, "high": 6.0, "very_high": 7.5},
+            "resistance_band": {"low": 2.5, "moderate": 4.0, "high": 5.5, "very_high": 7.0},
+            "calisthenics": {"low": 3.5, "moderate": 5.0, "high": 6.5, "very_high": 8.0},
+
+            # Flexibility & Balance
+            "yoga": {"low": 2.0, "moderate": 3.0, "high": 4.0, "very_high": 5.0},
+            "pilates": {"low": 2.5, "moderate": 3.5, "high": 4.5, "very_high": 5.5},
+            "stretching": {"low": 1.5, "moderate": 2.5, "high": 3.5, "very_high": 4.0},
+            "tai_chi": {"low": 2.0, "moderate": 3.0, "high": 4.0, "very_high": 5.0},
+
+            # HIIT
+            "hiit": {"low": 8.0, "moderate": 10.0, "high": 12.0, "very_high": 15.0},
+            "sprinting": {"low": 10.0, "moderate": 12.0, "high": 15.0, "very_high": 20.0},
+            "burpees": {"low": 8.0, "moderate": 10.0, "high": 12.0, "very_high": 15.0},
+            "mountain_climbers": {"low": 6.0, "moderate": 8.0, "high": 10.0, "very_high": 12.0},
+
+            # Water exercises
+            "water_aerobics": {"low": 4.0, "moderate": 5.5, "high": 7.0, "very_high": 8.5},
+            "aquatic_exercise": {"low": 4.0, "moderate": 5.5, "high": 7.0, "very_high": 8.5},
+            "swimming_laps": {"low": 5.0, "moderate": 7.0, "high": 9.0, "very_high": 11.0}
         }
 
-        met = met_values.get(exercise_type, {}).get(intensity, 5.0)
+        # Get MET value (default to moderate if not found)
+        met = 5.0  # Default MET
+        for key, values in met_values.items():
+            if key in exercise_type.lower() or exercise_type.lower() in key:
+                met = values.get(intensity.lower(), values.get("moderate", 5.0))
+                break
+
+        # Calculate calories: MET * 3.5 * weight_kg / 200 = kcal/min
         calories_per_minute = (met * 3.5 * weight_kg) / 200
         return int(calories_per_minute * duration_minutes)
 

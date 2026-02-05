@@ -66,6 +66,7 @@ class LLMClient:
             ]
             output_text = "\n".join(output_lines)
             with open(self._log_path, "a", encoding="utf-8") as f:
+                print(f"output to log: {type(output_text)}")
                 f.write(output_text)
         except Exception as e:
             print(f"[WARN] Failed to write LLM log: {e}")
@@ -108,6 +109,7 @@ class LLMClient:
                 **kwargs
             )
             content = resp.choices[0].message.content
+            duration_ms = (datetime.now() - start_time).total_seconds() * 1000
 
             # Handle empty response
             if not content or not content.strip():

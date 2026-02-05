@@ -36,9 +36,19 @@ class ExerciseItem(BaseModel):
     """A single exercise in a plan"""
     name: str = Field(..., description="Name of the exercise")
     exercise_type: ExerciseType = Field(..., description="Type of exercise")
-    duration_minutes: int = Field(..., description="Duration in minutes")
+    duration_minutes: int = Field(
+        ...,
+        ge=1,
+        le=180,
+        description="Duration in minutes (1-180)"
+    )
     intensity: IntensityLevel = Field(..., description="Exercise intensity")
-    calories_burned: int = Field(..., description="Estimated calories burned")
+    calories_burned: int = Field(
+        ...,
+        ge=0,
+        le=1000,
+        description="Estimated calories burned (0-1000)"
+    )
     equipment: List[str] = Field(
         default_factory=list,
         description="Required equipment"
@@ -51,8 +61,8 @@ class ExerciseItem(BaseModel):
         default_factory=list,
         description="Exercise instructions"
     )
-    reason: str = Field(
-        ...,
+    reason: Optional[str] = Field(
+        None,
         description="Why this exercise is suitable for the user"
     )
     safety_notes: List[str] = Field(
@@ -65,30 +75,55 @@ class ExerciseSession(BaseModel):
     """A session of exercises (e.g., morning, afternoon)"""
     time_of_day: TimeOfDay = Field(..., description="When to perform")
     exercises: List[ExerciseItem] = Field(..., description="Exercises in this session")
-    total_duration_minutes: int = Field(..., description="Total duration")
-    total_calories_burned: int = Field(..., description="Total calories burned")
+    total_duration_minutes: int = Field(
+        ...,
+        ge=0,
+        le=300,
+        description="Total duration in minutes (0-300)"
+    )
+    total_calories_burned: int = Field(
+        ...,
+        ge=0,
+        le=2000,
+        description="Total calories burned (0-2000)"
+    )
     overall_intensity: IntensityLevel = Field(..., description="Session intensity")
 
 
 class ExercisePlan(BaseModel):
     """Complete exercise plan for one candidate"""
-    id: int = Field(..., description="Candidate ID")
+    id: int = Field(..., description="Candidate ID", ge=1)
     title: str = Field(..., description="Plan title")
     sessions: Dict[str, ExerciseSession] = Field(
         ...,
         description="Exercise sessions keyed by time of day"
     )
-    total_duration_minutes: int = Field(..., description="Total exercise duration")
-    total_calories_burned: int = Field(..., description="Total calories burned")
+    total_duration_minutes: int = Field(
+        ...,
+        ge=0,
+        le=480,
+        description="Total exercise duration in minutes (0-480)"
+    )
+    total_calories_burned: int = Field(
+        ...,
+        ge=0,
+        le=3000,
+        description="Total calories burned (0-3000)"
+    )
     weekly_frequency: int = Field(
         ...,
-        description="Recommended sessions per week"
+        ge=0,
+        le=7,
+        description="Recommended sessions per week (0-7)"
     )
     progression: str = Field(
         ...,
         description="How to progress over time"
     )
-    reasoning: str = Field(..., description="Overall reasoning for this plan")
+    reasoning: Optional[str] = Field(
+        None,
+        description="Overall reasoning for this plan"
+    )
     safety_notes: List[str] = Field(
         default_factory=list,
         description="Safety considerations"

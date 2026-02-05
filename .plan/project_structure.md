@@ -235,31 +235,5 @@ print(f"是否安全: {result['combined_assessment']['is_safe']}")
 
 ---
 
-## 下一步任务
-
-### P0 - Bug 修复 (高优先级)
-
-| # | Bug | 文件 | 状态 |
-|---|-----|------|------|
-| 1 | Neo4j Schema 不匹配 | `core/import_kg.py`, `core/neo4j/query.py` | ✅ 已修复 |
-| 2 | LLM JSON 解析失败 | `core/llm/client.py`, `agents/diet/generator.py` | ✅ 已修复 |
-
-**Bug #1: Neo4j Schema 不匹配** ✅ 已修复
-- 症状: "label does not exist" 警告
-- 修复:
-  1. `core/import_kg.py`: 添加 `infer_entity_label()` 根据关系类型推断标签
-  2. `core/neo4j/query.py`: 修改查询使用通用模式 `(d)-[:Relation]-(f)` 匹配任意标签
-- 注意: 需重新运行 `python -m core.import_kg` 清除旧数据并重新导入
-
-**Bug #2: LLM JSON 解析失败** ✅ 已修复
-- 症状: "Expecting value: line 1 column 1 (char 0)"
-- 修复:
-  1. `core/llm/client.py`: 添加 `response_format={'type': 'json_object'}`，处理空响应
-  2. `agents/diet/generator.py`: 添加 JSON 解析错误处理和调试日志
-- 可能原因: API key 无效、quota 超限、network 超时
-
----
-
 ### P1 - 服务与测试
 1. **更新 FastAPI** (`core/server.py`) - 接入新架构
-2. **编写测试** (`tests/`) - 单元测试 + 集成测试

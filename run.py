@@ -63,6 +63,7 @@ def cmd_diet(args):
     print(f"\nGenerated {len(candidates)} candidates:")
     for c in candidates:
         print(f"  - ID: {c.id}, Calories: {c.total_calories}, Deviation: {c.calories_deviation}%")
+        print(c)
 
     return candidates
 

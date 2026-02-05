@@ -190,13 +190,63 @@ class DietAgent(BaseAgent, DietAgentMixin):
 
 ## Task
 Generate a single diet plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each food item in meal_plan MUST have: "food", "portion", "calories", "protein", "carbs", "fat".
+
 Example format:
 {{
   "id": 1,
-  "meal_plan": {{"breakfast": [...], "lunch": [...], "dinner": [...], "snacks": [...]}},
+  "meal_plan": {{
+    "breakfast": [
+      {{
+        "food": "Oatmeal with Berries",
+        "portion": "1 bowl (200g)",
+        "calories": 300,
+        "protein": 10.5,
+        "carbs": 50.0,
+        "fat": 6.0
+      }}
+    ],
+    "lunch": [
+      {{
+        "food": "Grilled Chicken Breast",
+        "portion": "150g",
+        "calories": 250,
+        "protein": 45.0,
+        "carbs": 0.0,
+        "fat": 5.0
+      }}
+    ],
+    "dinner": [
+      {{
+        "food": "Steamed Fish with Vegetables",
+        "portion": "200g fish + 150g vegetables",
+        "calories": 350,
+        "protein": 40.0,
+        "carbs": 15.0,
+        "fat": 12.0
+      }}
+    ],
+    "snacks": [
+      {{
+        "food": "Mixed Nuts",
+        "portion": "30g",
+        "calories": 180,
+        "protein": 6.0,
+        "carbs": 8.0,
+        "fat": 16.0
+      }}
+    ]
+  }},
   "total_calories": 1800,
   "calories_deviation": -5.5,
-  "macro_nutrients": {{"protein": 90, "carbs": 200, "fat": 60, "protein_ratio": 0.20, "carbs_ratio": 0.45, "fat_ratio": 0.30}},
+  "macro_nutrients": {{
+    "protein": 90,
+    "carbs": 200,
+    "fat": 60,
+    "protein_ratio": 0.20,
+    "carbs_ratio": 0.45,
+    "fat_ratio": 0.30
+  }},
   "safety_notes": []
 }}"""
 

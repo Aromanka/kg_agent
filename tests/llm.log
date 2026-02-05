@@ -1456,3 +1456,920 @@ Emphasize high-protein foods for muscle maintenance.
   ]
 }
 - duration <50273.623> ms
+>>> model <deepseek-chat> generated at <2026-02-05T17:32:10.483043>:
+- query:
+role=system
+You are a professional nutritionist. Generate personalized meal plans based on user health data.
+
+## Daily Calorie Distribution
+- Breakfast: 25% of daily calories
+- Lunch: 35% of daily calories
+- Dinner: 30% of daily calories
+- Snacks: 10% of daily calories
+
+## Macro Nutrient Ratios (healthy adults)
+- Protein: 15-25% of calories
+- Carbs: 45-65% of calories
+- Fat: 20-35% of calories
+
+## Special Conditions
+- Diabetes: Low GI foods, control carbs
+- Hypertension: Low sodium (<2000mg/day)
+- Hyperlipidemia: Reduce saturated fat, increase fiber
+- Weight loss: 300-500 kcal deficit
+- Muscle gain: High protein (1.6-2.2g/kg)
+
+## Output Format
+Return valid JSON object directly. Do NOT wrap in extra keys like "diet_plan" or "candidates".
+The JSON must contain these fields:
+- id: integer
+- meal_plan: object with keys "breakfast", "lunch", "dinner", "snacks"
+- total_calories: integer
+- calories_deviation: float
+- macro_nutrients: object with "protein", "carbs", "fat", "protein_ratio", "carbs_ratio", "fat_ratio"
+- safety_notes: array of strings
+role=user
+## User Profile
+
+**Age**: 35
+**Gender**: male
+**Height**: 175cm
+**Weight**: 70kg
+**Fitness Level**: intermediate
+**Medical Conditions**: diabetes
+**Dietary Restrictions**: None
+
+## Goal
+**Primary Goal**: weight_loss
+**Target Calories**: 2084 kcal
+
+## Environment
+**Season**: summer
+
+## Calorie Distribution
+- Breakfast: 521 kcal (25%)
+- Lunch: 729 kcal (35%)
+- Dinner: 625 kcal (30%)
+- Snacks: 208 kcal (10%)
+
+
+## Knowledge Graph Context
+
+
+## Task
+Generate a single diet plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each food item in meal_plan MUST have: "food", "portion", "calories", "protein", "carbs", "fat".
+
+Example format:
+{
+  "id": 1,
+  "meal_plan": {
+    "breakfast": [
+      {
+        "food": "Oatmeal with Berries",
+        "portion": "1 bowl (200g)",
+        "calories": 300,
+        "protein": 10.5,
+        "carbs": 50.0,
+        "fat": 6.0
+      }
+    ],
+    "lunch": [
+      {
+        "food": "Grilled Chicken Breast",
+        "portion": "150g",
+        "calories": 250,
+        "protein": 45.0,
+        "carbs": 0.0,
+        "fat": 5.0
+      }
+    ],
+    "dinner": [
+      {
+        "food": "Steamed Fish with Vegetables",
+        "portion": "200g fish + 150g vegetables",
+        "calories": 350,
+        "protein": 40.0,
+        "carbs": 15.0,
+        "fat": 12.0
+      }
+    ],
+    "snacks": [
+      {
+        "food": "Mixed Nuts",
+        "portion": "30g",
+        "calories": 180,
+        "protein": 6.0,
+        "carbs": 8.0,
+        "fat": 16.0
+      }
+    ]
+  },
+  "total_calories": 1800,
+  "calories_deviation": -5.5,
+  "macro_nutrients": {
+    "protein": 90,
+    "carbs": 200,
+    "fat": 60,
+    "protein_ratio": 0.20,
+    "carbs_ratio": 0.45,
+    "fat_ratio": 0.30
+  },
+  "safety_notes": []
+}
+
+### Strategy: BALANCED
+Focus on balanced nutrition across all macros.
+- response:
+{
+  "id": 1,
+  "meal_plan": {
+    "breakfast": [
+      {
+        "food": "Scrambled Eggs with Spinach and Whole-Wheat Toast",
+        "portion": "2 large eggs, 1 cup spinach, 2 slices toast (70g)",
+        "calories": 320,
+        "protein": 22.0,
+        "carbs": 30.0,
+        "fat": 14.0
+      },
+      {
+        "food": "Greek Yogurt with Blueberries",
+        "portion": "150g plain non-fat yogurt, 1/2 cup blueberries (75g)",
+        "calories": 120,
+        "protein": 15.0,
+        "carbs": 18.0,
+        "fat": 0.5
+      },
+      {
+        "food": "Black Coffee",
+        "portion": "1 cup (240ml)",
+        "calories": 5,
+        "protein": 0.1,
+        "carbs": 0.0,
+        "fat": 0.0
+      }
+    ],
+    "lunch": [
+      {
+        "food": "Grilled Chicken and Quinoa Salad",
+        "portion": "120g chicken breast, 1 cup cooked quinoa (185g), 2 cups mixed greens, 1/2 cup cherry tomatoes, 1/4 cucumber, 1 tbsp olive oil & lemon dressing",
+        "calories": 545,
+        "protein": 45.0,
+        "carbs": 50.0,
+        "fat": 18.0
+      },
+      {
+        "food": "Apple",
+        "portion": "1 medium (180g)",
+        "calories": 95,
+        "protein": 0.5,
+        "carbs": 25.0,
+        "fat": 0.3
+      }
+    ],
+    "dinner": [
+      {
+        "food": "Baked Salmon with Roasted Vegetables and Sweet Potato",
+        "portion": "150g salmon fillet, 1.5 cups roasted broccoli & bell peppers (200g), 1/2 medium baked sweet potato (100g)",
+        "calories": 490,
+        "protein": 40.0,
+        "carbs": 35.0,
+        "fat": 22.0
+      },
+      {
+        "food": "Side Salad",
+        "portion": "1 cup arugula with 1 tsp balsamic vinegar",
+        "calories": 15,
+        "protein": 1.0,
+        "carbs": 3.0,
+        "fat": 0.0
+      }
+    ],
+    "snacks": [
+      {
+        "food": "Carrot and Celery Sticks with Hummus",
+        "portion": "1 cup veggies (150g), 2 tbsp hummus (30g)",
+        "calories": 110,
+        "protein": 4.0,
+        "carbs": 15.0,
+        "fat": 5.0
+      },
+      {
+        "food": "Handful of Almonds",
+        "portion": "15 almonds (20g)",
+        "calories": 115,
+        "protein": 4.0,
+        "carbs": 4.0,
+        "fat": 10.0
+      }
+    ]
+  },
+  "total_calories": 1815,
+  "calories_deviation": -12.9,
+  "macro_nutrients": {
+    "protein": 131.6,
+    "carbs": 180.0,
+    "fat": 69.8,
+    "protein_ratio": 0.29,
+    "carbs_ratio": 0.40,
+    "fat_ratio": 0.35
+  },
+  "safety_notes": ["Plan designed for weight loss with a moderate calorie deficit.", "Foods selected are high in fiber and have a low glycemic index to support blood sugar management for diabetes.", "Total sodium is estimated to be low, but always check labels if using pre-packaged items like hummus.", "Stay hydrated, especially in summer. Consider adding an electrolyte source if sweating heavily."]
+}
+- duration <28534.785> ms
+>>> model <deepseek-chat> generated at <2026-02-05T17:32:40.193162>:
+- query:
+role=system
+You are a professional nutritionist. Generate personalized meal plans based on user health data.
+
+## Daily Calorie Distribution
+- Breakfast: 25% of daily calories
+- Lunch: 35% of daily calories
+- Dinner: 30% of daily calories
+- Snacks: 10% of daily calories
+
+## Macro Nutrient Ratios (healthy adults)
+- Protein: 15-25% of calories
+- Carbs: 45-65% of calories
+- Fat: 20-35% of calories
+
+## Special Conditions
+- Diabetes: Low GI foods, control carbs
+- Hypertension: Low sodium (<2000mg/day)
+- Hyperlipidemia: Reduce saturated fat, increase fiber
+- Weight loss: 300-500 kcal deficit
+- Muscle gain: High protein (1.6-2.2g/kg)
+
+## Output Format
+Return valid JSON object directly. Do NOT wrap in extra keys like "diet_plan" or "candidates".
+The JSON must contain these fields:
+- id: integer
+- meal_plan: object with keys "breakfast", "lunch", "dinner", "snacks"
+- total_calories: integer
+- calories_deviation: float
+- macro_nutrients: object with "protein", "carbs", "fat", "protein_ratio", "carbs_ratio", "fat_ratio"
+- safety_notes: array of strings
+role=user
+## User Profile
+
+**Age**: 35
+**Gender**: male
+**Height**: 175cm
+**Weight**: 70kg
+**Fitness Level**: intermediate
+**Medical Conditions**: diabetes
+**Dietary Restrictions**: None
+
+## Goal
+**Primary Goal**: weight_loss
+**Target Calories**: 2084 kcal
+
+## Environment
+**Season**: summer
+
+## Calorie Distribution
+- Breakfast: 521 kcal (25%)
+- Lunch: 729 kcal (35%)
+- Dinner: 625 kcal (30%)
+- Snacks: 208 kcal (10%)
+
+
+## Knowledge Graph Context
+
+
+## Task
+Generate a single diet plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each food item in meal_plan MUST have: "food", "portion", "calories", "protein", "carbs", "fat".
+
+Example format:
+{
+  "id": 1,
+  "meal_plan": {
+    "breakfast": [
+      {
+        "food": "Oatmeal with Berries",
+        "portion": "1 bowl (200g)",
+        "calories": 300,
+        "protein": 10.5,
+        "carbs": 50.0,
+        "fat": 6.0
+      }
+    ],
+    "lunch": [
+      {
+        "food": "Grilled Chicken Breast",
+        "portion": "150g",
+        "calories": 250,
+        "protein": 45.0,
+        "carbs": 0.0,
+        "fat": 5.0
+      }
+    ],
+    "dinner": [
+      {
+        "food": "Steamed Fish with Vegetables",
+        "portion": "200g fish + 150g vegetables",
+        "calories": 350,
+        "protein": 40.0,
+        "carbs": 15.0,
+        "fat": 12.0
+      }
+    ],
+    "snacks": [
+      {
+        "food": "Mixed Nuts",
+        "portion": "30g",
+        "calories": 180,
+        "protein": 6.0,
+        "carbs": 8.0,
+        "fat": 16.0
+      }
+    ]
+  },
+  "total_calories": 1800,
+  "calories_deviation": -5.5,
+  "macro_nutrients": {
+    "protein": 90,
+    "carbs": 200,
+    "fat": 60,
+    "protein_ratio": 0.20,
+    "carbs_ratio": 0.45,
+    "fat_ratio": 0.30
+  },
+  "safety_notes": []
+}
+
+### Strategy: PROTEIN_FOCUS
+Emphasize high-protein foods for muscle maintenance.
+- response:
+{
+  "id": 1,
+  "meal_plan": {
+    "breakfast": [
+      {
+        "food": "Scrambled Eggs with Spinach and Whole-Wheat Toast",
+        "portion": "2 large eggs, 1 cup spinach, 1 slice (40g) whole-wheat bread",
+        "calories": 280,
+        "protein": 20.0,
+        "carbs": 18.0,
+        "fat": 14.0
+      },
+      {
+        "food": "Greek Yogurt with Cinnamon",
+        "portion": "100g plain, non-fat Greek yogurt",
+        "calories": 60,
+        "protein": 10.0,
+        "carbs": 3.5,
+        "fat": 0.0
+      },
+      {
+        "food": "Half a Grapefruit",
+        "portion": "120g",
+        "calories": 52,
+        "protein": 1.0,
+        "carbs": 13.0,
+        "fat": 0.2
+      }
+    ],
+    "lunch": [
+      {
+        "food": "Grilled Chicken and Quinoa Salad",
+        "portion": "120g chicken breast, 100g cooked quinoa, 150g mixed greens, 100g cherry tomatoes, 50g cucumber, 30g avocado",
+        "calories": 485,
+        "protein": 45.0,
+        "carbs": 40.0,
+        "fat": 16.0
+      },
+      {
+        "food": "Lemon-Tahini Dressing",
+        "portion": "1 tbsp (15g)",
+        "calories": 90,
+        "protein": 2.5,
+        "carbs": 3.0,
+        "fat": 8.0
+      },
+      {
+        "food": "Sparkling Water with Lemon",
+        "portion": "500ml",
+        "calories": 0,
+        "protein": 0.0,
+        "carbs": 0.0,
+        "fat": 0.0
+      }
+    ],
+    "dinner": [
+      {
+        "food": "Baked Salmon with Roasted Vegetables",
+        "portion": "150g salmon fillet, 200g mix of zucchini, bell peppers, and asparagus",
+        "calories": 415,
+        "protein": 35.0,
+        "carbs": 15.0,
+        "fat": 23.0
+      },
+      {
+        "food": "Small Sweet Potato",
+        "portion": "100g, baked",
+        "calories": 90,
+        "protein": 2.0,
+        "carbs": 21.0,
+        "fat": 0.2
+      }
+    ],
+    "snacks": [
+      {
+        "food": "Cottage Cheese with Chia Seeds",
+        "portion": "100g low-fat cottage cheese, 1 tsp (5g) chia seeds",
+        "calories": 120,
+        "protein": 14.0,
+        "carbs": 5.0,
+        "fat": 5.0
+      },
+      {
+        "food": "Handful of Almonds",
+        "portion": "10 almonds (12g)",
+        "calories": 70,
+        "protein": 2.5,
+        "carbs": 2.5,
+        "fat": 6.0
+      }
+    ]
+  },
+  "total_calories": 1662,
+  "calories_deviation": -20.2,
+  "macro_nutrients": {
+    "protein": 132.0,
+    "carbs": 120.0,
+    "fat": 72.4,
+    "protein_ratio": 0.318,
+    "carbs_ratio": 0.289,
+    "fat_ratio": 0.392
+  },
+  "safety_notes": ["Plan designed with a significant calorie deficit for weight loss. Monitor energy levels and adjust if fatigue occurs.", "Diabetes management: Focus on low-glycemic index foods (quinoa, sweet potato, whole grains) and balanced meals with protein, fat, and fiber to manage blood sugar. Portion sizes for carbohydrates are controlled.", "High protein ratio supports muscle maintenance during weight loss. Ensure adequate hydration, especially in summer."]
+}
+- duration <29710.119> ms
+>>> model <deepseek-chat> generated at <2026-02-05T17:33:57.019253>:
+- query:
+role=system
+You are a professional nutritionist. Generate personalized meal plans based on user health data.
+
+## Daily Calorie Distribution
+- Breakfast: 25% of daily calories
+- Lunch: 35% of daily calories
+- Dinner: 30% of daily calories
+- Snacks: 10% of daily calories
+
+## Macro Nutrient Ratios (healthy adults)
+- Protein: 15-25% of calories
+- Carbs: 45-65% of calories
+- Fat: 20-35% of calories
+
+## Special Conditions
+- Diabetes: Low GI foods, control carbs
+- Hypertension: Low sodium (<2000mg/day)
+- Hyperlipidemia: Reduce saturated fat, increase fiber
+- Weight loss: 300-500 kcal deficit
+- Muscle gain: High protein (1.6-2.2g/kg)
+
+## Output Format
+Return valid JSON object directly. Do NOT wrap in extra keys like "diet_plan" or "candidates".
+The JSON must contain these fields:
+- id: integer
+- meal_plan: object with keys "breakfast", "lunch", "dinner", "snacks"
+- total_calories: integer
+- calories_deviation: float
+- macro_nutrients: object with "protein", "carbs", "fat", "protein_ratio", "carbs_ratio", "fat_ratio"
+- safety_notes: array of strings
+role=user
+## User Profile
+
+**Age**: 35
+**Gender**: male
+**Height**: 175cm
+**Weight**: 70kg
+**Fitness Level**: intermediate
+**Medical Conditions**: diabetes
+**Dietary Restrictions**: None
+
+## Goal
+**Primary Goal**: weight_loss
+**Target Calories**: 2084 kcal
+
+## Environment
+**Season**: summer
+
+## Calorie Distribution
+- Breakfast: 521 kcal (25%)
+- Lunch: 729 kcal (35%)
+- Dinner: 625 kcal (30%)
+- Snacks: 208 kcal (10%)
+
+
+## Knowledge Graph Context
+
+
+## Task
+Generate a single diet plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each food item in meal_plan MUST have: "food", "portion", "calories", "protein", "carbs", "fat".
+
+Example format:
+{
+  "id": 1,
+  "meal_plan": {
+    "breakfast": [
+      {
+        "food": "Oatmeal with Berries",
+        "portion": "1 bowl (200g)",
+        "calories": 300,
+        "protein": 10.5,
+        "carbs": 50.0,
+        "fat": 6.0
+      }
+    ],
+    "lunch": [
+      {
+        "food": "Grilled Chicken Breast",
+        "portion": "150g",
+        "calories": 250,
+        "protein": 45.0,
+        "carbs": 0.0,
+        "fat": 5.0
+      }
+    ],
+    "dinner": [
+      {
+        "food": "Steamed Fish with Vegetables",
+        "portion": "200g fish + 150g vegetables",
+        "calories": 350,
+        "protein": 40.0,
+        "carbs": 15.0,
+        "fat": 12.0
+      }
+    ],
+    "snacks": [
+      {
+        "food": "Mixed Nuts",
+        "portion": "30g",
+        "calories": 180,
+        "protein": 6.0,
+        "carbs": 8.0,
+        "fat": 16.0
+      }
+    ]
+  },
+  "total_calories": 1800,
+  "calories_deviation": -5.5,
+  "macro_nutrients": {
+    "protein": 90,
+    "carbs": 200,
+    "fat": 60,
+    "protein_ratio": 0.20,
+    "carbs_ratio": 0.45,
+    "fat_ratio": 0.30
+  },
+  "safety_notes": []
+}
+
+### Strategy: BALANCED
+Focus on balanced nutrition across all macros.
+- response:
+{
+  "id": 1,
+  "meal_plan": {
+    "breakfast": [
+      {
+        "food": "Scrambled Eggs with Spinach and Whole-Wheat Toast",
+        "portion": "2 large eggs, 1 cup spinach, 2 slices (80g)",
+        "calories": 320,
+        "protein": 22.0,
+        "carbs": 25.0,
+        "fat": 15.0
+      },
+      {
+        "food": "Greek Yogurt with Cinnamon",
+        "portion": "100g plain, non-fat",
+        "calories": 60,
+        "protein": 10.0,
+        "carbs": 4.0,
+        "fat": 0.0
+      },
+      {
+        "food": "Black Coffee",
+        "portion": "1 cup",
+        "calories": 5,
+        "protein": 0.0,
+        "carbs": 0.0,
+        "fat": 0.0
+      }
+    ],
+    "lunch": [
+      {
+        "food": "Grilled Chicken and Quinoa Salad",
+        "portion": "120g chicken breast, 1 cup cooked quinoa (185g), 2 cups mixed greens, 100g cherry tomatoes, 50g cucumber, 1 tbsp olive oil & lemon dressing",
+        "calories": 545,
+        "protein": 45.0,
+        "carbs": 45.0,
+        "fat": 20.0
+      },
+      {
+        "food": "Apple",
+        "portion": "1 medium (180g)",
+        "calories": 95,
+        "protein": 0.5,
+        "carbs": 25.0,
+        "fat": 0.3
+      }
+    ],
+    "dinner": [
+      {
+        "food": "Baked Salmon with Roasted Vegetables",
+        "portion": "150g salmon fillet, 200g mixed vegetables (broccoli, bell peppers, zucchini)",
+        "calories": 425,
+        "protein": 35.0,
+        "carbs": 20.0,
+        "fat": 22.0
+      },
+      {
+        "food": "Small Sweet Potato",
+        "portion": "100g, baked",
+        "calories": 90,
+        "protein": 2.0,
+        "carbs": 21.0,
+        "fat": 0.2
+      }
+    ],
+    "snacks": [
+      {
+        "food": "Handful of Almonds",
+        "portion": "20g",
+        "calories": 115,
+        "protein": 4.0,
+        "carbs": 4.0,
+        "fat": 10.0
+      },
+      {
+        "food": "Carrot Sticks",
+        "portion": "100g",
+        "calories": 41,
+        "protein": 0.9,
+        "carbs": 10.0,
+        "fat": 0.2
+      }
+    ]
+  },
+  "total_calories": 2096,
+  "calories_deviation": 0.6,
+  "macro_nutrients": {
+    "protein": 119.4,
+    "carbs": 154.0,
+    "fat": 67.7,
+    "protein_ratio": 0.23,
+    "carbs_ratio": 0.29,
+    "fat_ratio": 0.29
+  },
+  "safety_notes": ["Plan designed for weight loss with a mild calorie deficit.", "Food choices emphasize low glycemic index (GI) carbohydrates (quinoa, sweet potato, vegetables) and lean protein to support blood sugar management for diabetes.", "Total sodium is estimated to be low; encourage using herbs/spices instead of added salt.", "Ensure adequate hydration, especially in summer."]
+}
+- duration <26566.752999999997> ms
+>>> model <deepseek-chat> generated at <2026-02-05T17:34:29.519790>:
+- query:
+role=system
+You are a professional nutritionist. Generate personalized meal plans based on user health data.
+
+## Daily Calorie Distribution
+- Breakfast: 25% of daily calories
+- Lunch: 35% of daily calories
+- Dinner: 30% of daily calories
+- Snacks: 10% of daily calories
+
+## Macro Nutrient Ratios (healthy adults)
+- Protein: 15-25% of calories
+- Carbs: 45-65% of calories
+- Fat: 20-35% of calories
+
+## Special Conditions
+- Diabetes: Low GI foods, control carbs
+- Hypertension: Low sodium (<2000mg/day)
+- Hyperlipidemia: Reduce saturated fat, increase fiber
+- Weight loss: 300-500 kcal deficit
+- Muscle gain: High protein (1.6-2.2g/kg)
+
+## Output Format
+Return valid JSON object directly. Do NOT wrap in extra keys like "diet_plan" or "candidates".
+The JSON must contain these fields:
+- id: integer
+- meal_plan: object with keys "breakfast", "lunch", "dinner", "snacks"
+- total_calories: integer
+- calories_deviation: float
+- macro_nutrients: object with "protein", "carbs", "fat", "protein_ratio", "carbs_ratio", "fat_ratio"
+- safety_notes: array of strings
+role=user
+## User Profile
+
+**Age**: 35
+**Gender**: male
+**Height**: 175cm
+**Weight**: 70kg
+**Fitness Level**: intermediate
+**Medical Conditions**: diabetes
+**Dietary Restrictions**: None
+
+## Goal
+**Primary Goal**: weight_loss
+**Target Calories**: 2084 kcal
+
+## Environment
+**Season**: summer
+
+## Calorie Distribution
+- Breakfast: 521 kcal (25%)
+- Lunch: 729 kcal (35%)
+- Dinner: 625 kcal (30%)
+- Snacks: 208 kcal (10%)
+
+
+## Knowledge Graph Context
+
+
+## Task
+Generate a single diet plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each food item in meal_plan MUST have: "food", "portion", "calories", "protein", "carbs", "fat".
+
+Example format:
+{
+  "id": 1,
+  "meal_plan": {
+    "breakfast": [
+      {
+        "food": "Oatmeal with Berries",
+        "portion": "1 bowl (200g)",
+        "calories": 300,
+        "protein": 10.5,
+        "carbs": 50.0,
+        "fat": 6.0
+      }
+    ],
+    "lunch": [
+      {
+        "food": "Grilled Chicken Breast",
+        "portion": "150g",
+        "calories": 250,
+        "protein": 45.0,
+        "carbs": 0.0,
+        "fat": 5.0
+      }
+    ],
+    "dinner": [
+      {
+        "food": "Steamed Fish with Vegetables",
+        "portion": "200g fish + 150g vegetables",
+        "calories": 350,
+        "protein": 40.0,
+        "carbs": 15.0,
+        "fat": 12.0
+      }
+    ],
+    "snacks": [
+      {
+        "food": "Mixed Nuts",
+        "portion": "30g",
+        "calories": 180,
+        "protein": 6.0,
+        "carbs": 8.0,
+        "fat": 16.0
+      }
+    ]
+  },
+  "total_calories": 1800,
+  "calories_deviation": -5.5,
+  "macro_nutrients": {
+    "protein": 90,
+    "carbs": 200,
+    "fat": 60,
+    "protein_ratio": 0.20,
+    "carbs_ratio": 0.45,
+    "fat_ratio": 0.30
+  },
+  "safety_notes": []
+}
+
+### Strategy: PROTEIN_FOCUS
+Emphasize high-protein foods for muscle maintenance.
+- response:
+{
+  "id": 1,
+  "meal_plan": {
+    "breakfast": [
+      {
+        "food": "Scrambled Eggs with Spinach and Avocado",
+        "portion": "2 large eggs, 1 cup spinach, 1/4 medium avocado",
+        "calories": 320,
+        "protein": 18.0,
+        "carbs": 8.0,
+        "fat": 25.0
+      },
+      {
+        "food": "Greek Yogurt with Chia Seeds",
+        "portion": "100g plain non-fat Greek yogurt, 1 tsp chia seeds",
+        "calories": 80,
+        "protein": 10.0,
+        "carbs": 6.0,
+        "fat": 3.0
+      },
+      {
+        "food": "Whole Wheat Toast",
+        "portion": "1 slice (28g)",
+        "calories": 70,
+        "protein": 3.0,
+        "carbs": 12.0,
+        "fat": 1.0
+      }
+    ],
+    "lunch": [
+      {
+        "food": "Grilled Chicken and Quinoa Salad",
+        "portion": "120g chicken breast, 1/2 cup cooked quinoa, 2 cups mixed greens, 100g cherry tomatoes, 50g cucumber, 1 tbsp olive oil & lemon dressing",
+        "calories": 480,
+        "protein": 42.0,
+        "carbs": 35.0,
+        "fat": 18.0
+      },
+      {
+        "food": "Steamed Broccoli",
+        "portion": "1 cup (90g)",
+        "calories": 30,
+        "protein": 2.5,
+        "carbs": 6.0,
+        "fat": 0.5
+      },
+      {
+        "food": "Apple",
+        "portion": "1 medium (180g)",
+        "calories": 95,
+        "protein": 0.5,
+        "carbs": 25.0,
+        "fat": 0.3
+      }
+    ],
+    "dinner": [
+      {
+        "food": "Baked Salmon with Asparagus",
+        "portion": "150g salmon fillet, 1 cup asparagus (200g)",
+        "calories": 350,
+        "protein": 35.0,
+        "carbs": 8.0,
+        "fat": 20.0
+      },
+      {
+        "food": "Brown Rice",
+        "portion": "1/2 cup cooked (100g)",
+        "calories": 110,
+        "protein": 2.5,
+        "carbs": 23.0,
+        "fat": 1.0
+      },
+      {
+        "food": "Side Salad with Vinaigrette",
+        "portion": "1 cup mixed lettuce, 50g bell peppers, 1 tsp olive oil vinaigrette",
+        "calories": 70,
+        "protein": 1.0,
+        "carbs": 5.0,
+        "fat": 5.0
+      }
+    ],
+    "snacks": [
+      {
+        "food": "Cottage Cheese with Flaxseed",
+        "portion": "100g low-fat cottage cheese, 1 tsp ground flaxseed",
+        "calories": 110,
+        "protein": 14.0,
+        "carbs": 5.0,
+        "fat": 4.0
+      },
+      {
+        "food": "Handful of Almonds",
+        "portion": "10 almonds (12g)",
+        "calories": 70,
+        "protein": 2.5,
+        "carbs": 2.5,
+        "fat": 6.0
+      }
+    ]
+  },
+  "total_calories": 2075,
+  "calories_deviation": -0.4,
+  "macro_nutrients": {
+    "protein": 131.0,
+    "carbs": 135.5,
+    "fat": 83.8,
+    "protein_ratio": 0.25,
+    "carbs_ratio": 0.26,
+    "fat_ratio": 0.36
+  },
+  "safety_notes": [
+    "Plan designed for diabetes: focuses on low-glycemic index foods (quinoa, brown rice, non-starchy vegetables) and balanced macronutrients to help manage blood sugar.",
+    "Total carbohydrates are controlled and distributed throughout the day. Consider monitoring blood glucose response to specific meals.",
+    "Sodium content is not explicitly calculated but uses fresh ingredients; advise against adding extra salt, especially if hypertension is a concern.",
+    "Calorie deficit is moderate (~9 kcal from target) for sustainable weight loss. Ensure adequate hydration, especially in summer."
+  ]
+}
+- duration <32499.536999999997> ms
