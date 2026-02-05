@@ -2,25 +2,14 @@
 Neo4j Database Driver
 封装 Neo4j 数据库连接和常用操作
 """
-import json
-import os
 from typing import List, Dict, Any, Optional
 from neo4j import GraphDatabase
-
-# 配置路径
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
+from config_loader import NEO4J_URI, NEO4J_AUTH, get_config
 
 
-def load_config() -> dict:
-    """加载配置文件"""
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def get_driver():  # -> Driver:
+def get_driver():
     """获取 Neo4j 驱动实例"""
-    config = load_config()
-    neo4j_config = config["neo4j"]
+    neo4j_config = get_config()["neo4j"]
     return GraphDatabase.driver(
         neo4j_config["uri"],
         auth=(neo4j_config["username"], neo4j_config["password"])

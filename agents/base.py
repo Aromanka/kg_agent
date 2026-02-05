@@ -3,31 +3,16 @@ Agent Base Class
 All specialized agents inherit from this base class.
 Provides common interface, LLM client, and knowledge graph integration.
 """
-import json
-import os
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, TypeVar, Type
 from pydantic import BaseModel
 
 from core.llm import LLMClient, get_llm
 from core.neo4j import Neo4jClient, KnowledgeGraphQuery, get_neo4j, get_kg_query
+from config_loader import get_config
 
 
 # ================= Configuration =================
-
-CONFIG_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)),
-    "config.json"
-)
-
-
-def load_config() -> dict:
-    """Load configuration from config.json"""
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-# ================= Base Models =================
 
 class UserMetadata(BaseModel):
     """Common user metadata for all agents"""
@@ -81,7 +66,7 @@ class BaseAgent(ABC):
         self._llm = llm_client or get_llm()
         self._neo4j = neo4j_client or get_neo4j()
         self._kg = kg_query or get_kg_query()
-        self._config = load_config()
+        self._config = get_config()
 
     @property
     def llm(self) -> LLMClient:

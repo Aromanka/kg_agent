@@ -6,21 +6,75 @@ import os
 import json
 import glob
 from neo4j import GraphDatabase
+from config_loader import NEO4J_URI, NEO4J_AUTH
 
 # ================= 配置加载 =================
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
-with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-    config = json.load(f)
-
-NEO4J_URI = config["neo4j"]["uri"]
-NEO4J_AUTH = (config["neo4j"]["username"], config["neo4j"]["password"])
 
 # 数据来源目录 (build_kg_deepseek.py 的输出目录)
 OUTPUT_HISTORY_DIR = "output_history"
 INPUT_DIR = "data"  # 也支持直接导入原始文件
 
+# ================= 实体标签映射 =================
+
+# 根据关系类型确定实体标签
+# 格式: {relation_type: (head_label, tail_label)}
+RELATION_LABEL_MAP = {
+    # Disease 相关: tail 是 Disease
+    "Diet_Disease": ("Food", "Disease"),
+    "Food_Disease": ("Food", "Disease"),
+    "Nutrient_Disease": ("Nutrient", "Disease"),
+    "Restriction_Disease": ("Restriction", "Disease"),
+    "Contraindication_Food": ("Food", "Disease"),
+    "Interaction_Food": ("Food", "Disease"),
+
+    # Diet 相关: tail 是 Diet
+    "Food_Diet": ("Food", "Diet"),
+
+    # Food 属性: tail 是 Food
+    "Amount_Food": ("Amount", "Food"),
+    "Frequency_Food": ("Frequency", "Food"),
+    "Method_Food": ("Method", "Food"),
+
+    # Food 益处/风险: tail 是 Benefit/Risk
+    "Benefit_Food": ("Food", "Benefit"),
+    "Risk_Food": ("Food", "Risk"),
+}
+
+
+def infer_entity_label(name: str, position: str, relation: str) -> str:
+    """
+    根据实体名称和位置推断标签
+
+    Args:
+        name: 实体名称
+        position: 'head' 或 'tail'
+        relation: 关系类型
+    """
+    name_lower = name.lower()
+
+    # 优先使用关系映射表
+    if relation in RELATION_LABEL_MAP:
+        labels = RELATION_LABEL_MAP[relation]
+        return labels[0] if position == "head" else labels[1]
+
+    # 根据常见疾病名称推断
+    diseases = ["diabetes", "hypertension", "heart disease", "obesity", "cancer",
+                 "asthma", "arthritis", "anemia", "gout", "kidney disease"]
+    if any(d in name_lower for d in diseases):
+        return "Disease"
+
+    # 根据营养素名称推断
+    nutrients = ["protein", "carbohydrate", "fat", "fiber", "vitamin",
+                  "mineral", "calcium", "iron", "zinc", "sodium", "potassium"]
+    if any(n in name_lower for n in nutrients):
+        return "Nutrient"
+
+    # 默认使用通用标签
+    return "Entity"
+
+
 # ================= 核心逻辑 =================
-driver = GraphDatabase.driver(NEO4J_URI, auth=NEO4J_AUTH)
+driver = GraphDatabase.driver(NEO4J_URI(), auth=NEO4J_AUTH())
 
 
 def create_indexes(session):
@@ -69,11 +123,15 @@ def import_json_triplets(session, json_path):
             continue
 
         try:
+            # 推断实体标签
+            head_label = infer_entity_label(head, "head", relation)
+            tail_label = infer_entity_label(tail, "tail", relation)
+
             # 创建实体和关系
-            session.run("""
-                MERGE (h:Entity {name: $head})
-                MERGE (t:Entity {name: $tail})
-                MERGE (h)-[r:RELATION {type: $relation, source: $source}]->(t)
+            session.run(f"""
+                MERGE (h:{head_label} {{name: $head}})
+                MERGE (t:{tail_label} {{name: $tail}})
+                MERGE (h)-[r:RELATION {{type: $relation, source: $source}}]->(t)
             """, head=head, tail=tail, relation=relation, source=source)
             count += 1
         except Exception as e:
@@ -105,10 +163,14 @@ def import_csv_triplets(session, csv_path):
             continue
 
         try:
-            session.run("""
-                MERGE (h:Entity {name: $head})
-                MERGE (t:Entity {name: $tail})
-                MERGE (h)-[r:RELATION {type: $relation, source: $source}]->(t)
+            # 推断实体标签
+            head_label = infer_entity_label(head, "head", relation)
+            tail_label = infer_entity_label(tail, "tail", relation)
+
+            session.run(f"""
+                MERGE (h:{head_label} {{name: $head}})
+                MERGE (t:{tail_label} {{name: $tail}})
+                MERGE (h)-[r:RELATION {{type: $relation, source: $source}}]->(t)
             """, head=head, tail=tail, relation=relation, source=source)
             count += 1
         except Exception as e:
@@ -157,10 +219,20 @@ def show_stats(session):
     """显示数据库统计信息"""
     print("\n📊 数据库统计:")
 
-    # 实体数量
-    result = session.run("MATCH (n:Entity) RETURN count(n) as count")
+    # 实体数量 (所有标签)
+    result = session.run("MATCH (n) RETURN count(n) as count")
     entity_count = result.single()["count"]
     print(f"  实体数量: {entity_count}")
+
+    # 实体标签分布
+    print("  实体标签分布:")
+    result = session.run("""
+        MATCH (n)
+        RETURN labels(n) as labels, count(n) as count
+        ORDER BY count DESC
+    """)
+    for record in result:
+        print(f"    {record['labels']}: {record['count']}")
 
     # 关系数量
     result = session.run("MATCH ()-[r]->() RETURN count(r) as count")

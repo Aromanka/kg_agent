@@ -23,6 +23,8 @@ kg_agents/
 ├── core/                            # 核心服务层 ✅
 │   ├── __init__.py
 │   ├── server.py                    # FastAPI服务
+│   ├── build_kg.py                  # 知识图谱构建 (LLM提取)
+│   ├── import_kg.py                 # 知识图谱导入Neo4j
 │   ├── neo4j/
 │   │   ├── __init__.py
 │   │   ├── driver.py                # Neo4j驱动 ✅
@@ -34,11 +36,6 @@ kg_agents/
 ├── pipeline/                         # 管道编排 ✅
 │   ├── __init__.py
 │   └── health_pipeline.py           # HealthPlanPipeline ✅
-│
-├── scripts/                         # 基础设施脚本
-│   ├── __init__.py
-│   ├── build_kg.py
-│   └── import_kg.py
 │
 ├── data/
 ├── tests/
@@ -85,6 +82,58 @@ kg_agents/
 
 ---
 
+## 知识图谱构建流程
+
+### 1. 准备源文档
+将文档放入 `data/` 目录，支持格式：
+- PDF (.pdf)
+- Word (.docx)
+- Excel (.xlsx)
+- 文本 (.txt)
+
+### 2. 运行知识提取
+```bash
+python core/build_kg.py
+```
+
+流程：
+1. 读取 `data/` 下所有文件
+2. 文本清洗（移除引用、页码）
+3. 按 Markdown 标题切分 chunks
+4. 调用 DeepSeek LLM 提取知识三元组
+5. 保存到 `output_history/Run_YYYYMMDD_HHMMSS/kg_triplets.json`
+
+### 3. 导入 Neo4j
+```bash
+python core/import_kg.py
+```
+
+选项：
+- 1: 从 output_history 导入（推荐）
+- 2: 从指定目录导入
+- 3: 显示数据库统计
+
+### 提取的关系类型 (12种)
+| 关系类型 | 说明 |
+|---------|------|
+| Diet_Disease | 饮食与疾病关系 |
+| Food_Diet | 食物与饮食方案 |
+| Food_Disease | 食物与疾病关系 |
+| Amount_Food | 食物用量 |
+| Frequency_Food | 食用频率 |
+| Method_Food | 烹饪方式 |
+| Nutrient_Disease | 营养素与疾病 |
+| Restriction_Disease | 饮食禁忌 |
+| Benefit_Food | 食物益处 |
+| Risk_Food | 食物风险 |
+| Contraindication_Food | 禁忌症 |
+| Interaction_Food | 食物相互作用 |
+
+### 当前问题
+⚠️ **Schema 不匹配**: `import_kg.py` 创建通用 `Entity` 节点，但 diet generator 查询期望 `Disease`, `Food`, `Nutrient` 等特定标签。
+
+---
+
 ## CLI 测试命令
 
 ### 前置要求
@@ -96,65 +145,44 @@ pip install -r requirements.txt
 net start Neo4j
 
 # 配置 API Key (config.json)
+
+# extract data and import database
+python -m core.build_kg
+python -m core.import_kg
 ```
 
-### 测试命令
+### 统一入口 (推荐)
 
-#### 1. 测试饮食生成器
 ```bash
-python -m agents.diet.generator
+# 运行完整集成测试
+python run.py all
+
+# 生成饮食方案
+python run.py diet --goal weight_loss
+
+# 生成运动方案
+python run.py exercise --goal weight_loss
+
+# 运行安全评估
+python run.py safeguard
+
+# 运行完整管道
+python run.py pipeline
+
+# 带参数示例
+python run.py diet --conditions diabetes,hypertension --goal weight_loss -N 3
+python run.py pipeline --conditions diabetes --no-filter
 ```
 
-#### 2. 测试运动生成器
-```bash
-python -m agents.exercise.generator
-```
+### 独立模块测试 (Python脚本)
 
-#### 3. 测试安全评估器
-```bash
-python -m agents.safeguard.assessor
-```
-
-#### 4. 测试完整 Pipeline
-```bash
-python -m pipeline.health_pipeline
-```
-
-#### 5. 集成测试 (Python脚本)
 ```python
-# test_integration.py
+# test_diet.py
 from pipeline import generate_health_plans
-
-test_input = {
-    "user_metadata": {
-        "age": 35,
-        "gender": "male",
-        "height_cm": 175,
-        "weight_kg": 70,
-        "medical_conditions": ["diabetes"],
-        "dietary_restrictions": ["low_sodium"],
-        "fitness_level": "intermediate"
-    },
-    "environment": {
-        "weather": {"condition": "clear", "temperature_c": 25},
-        "time_context": {"season": "summer"}
-    },
-    "user_requirement": {
-        "goal": "weight_loss",
-        "intensity": "moderate"
-    },
-    "num_candidates": 2,
-    "filter_safe": True,
-    "min_score": 60
-}
-
-result = generate_health_plans(**test_input)
-print(f"Diet candidates: {len(result['diet_candidates'])}")
-print(f"Exercise candidates: {len(result['exercise_candidates'])}")
-print(f"Overall score: {result['combined_assessment']['overall_score']}")
+result = generate_health_plans(...)
 ```
 
-运行: `python test_integration.py`
+运行: `python test_diet.py`
 
 ---
 
@@ -208,6 +236,29 @@ print(f"是否安全: {result['combined_assessment']['is_safe']}")
 ---
 
 ## 下一步任务
+
+### P0 - Bug 修复 (高优先级)
+
+| # | Bug | 文件 | 状态 |
+|---|-----|------|------|
+| 1 | Neo4j Schema 不匹配 | `core/import_kg.py`, `agents/diet/generator.py` | ✅ 已修复 |
+| 2 | LLM JSON 解析失败 | `agents/diet/generator.py`, `core/llm/client.py` | 待修复 |
+
+**Bug #1: Neo4j Schema 不匹配** ✅ 已修复
+- 症状: "label does not exist" 警告，生成 0 candidates
+- 根因: import_kg.py 创建 `Entity` 标签，generator 查询 `Disease/Food/Nutrient`
+- 修复: 添加 `infer_entity_label()` 函数，根据关系类型自动推断实体标签
+  - Diet_Disease, Food_Disease: tail 标签为 Disease
+  - Nutrient_Disease: head 标签为 Nutrient, tail 为 Disease
+  - Benefit_Food, Risk_Food: tail 标签为 Benefit/Risk
+  - 默认使用 Entity 标签
+- 修复文件: `core/import_kg.py`
+
+**Bug #2: LLM JSON 解析失败**
+- 症状: "Expecting value: line 1 column 1 (char 0)"
+- 根因: LLM 返回空响应或无效 JSON
+- 方案: 添加调试日志，检查 API key/quota，验证 response_format
+---
 
 ### P1 - 服务与测试
 1. **更新 FastAPI** (`core/server.py`) - 接入新架构

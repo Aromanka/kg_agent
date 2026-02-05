@@ -1,6 +1,0 @@
-运行时间: 2026-02-04 17:56:34
-耗时: 91.23 秒
-提取三元组数量: 103
-
-处理的文件列表:
-- A_quick_guide_to_govt_healthy_eating_update.pdf

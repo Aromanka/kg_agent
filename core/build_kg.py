@@ -7,7 +7,9 @@ import datetime
 import pandas as pd
 from openai import OpenAI
 from tqdm import tqdm
-from ..agents.diet.prompts import (
+from config_loader import get_config
+
+from agents.diet.prompts import (
     DIET_KG_EXTRACT_SCHEMA_PROMPT as SCHEMA_PROMPT,
     DIET_VALID_RELS
 )
@@ -17,10 +19,7 @@ import pymupdf4llm
 from docx import Document
 
 # ================= 配置加载 =================
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
-with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-    config = json.load(f)
-
+config = get_config()
 DEEPSEEK_API_KEY = config["deepseek"]["api_key"]
 DEEPSEEK_BASE_URL = config["deepseek"]["base_url"]
 MODEL_NAME = config["deepseek"]["model"]

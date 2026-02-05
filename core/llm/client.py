@@ -2,24 +2,14 @@
 LLM Client Wrapper
 封装 OpenAI/DeepSeek 客户端，提供统一的调用接口
 """
-import json
-import os
 from typing import List, Dict, Any, Optional
 from openai import OpenAI
-
-# 配置路径
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
-
-
-def load_config() -> dict:
-    """加载配置文件"""
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+from config_loader import get_config
 
 
 def get_llm_client() -> OpenAI:
     """获取 DeepSeek LLM 客户端"""
-    config = load_config()
+    config = get_config()
     return OpenAI(
         api_key=config["deepseek"]["api_key"],
         base_url=config["deepseek"]["base_url"]
@@ -28,7 +18,7 @@ def get_llm_client() -> OpenAI:
 
 def get_model_name() -> str:
     """获取模型名称"""
-    config = load_config()
+    config = get_config()
     return config.get("deepseek", {}).get("model", "deepseek-chat")
 
 

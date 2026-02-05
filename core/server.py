@@ -6,23 +6,13 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from neo4j import GraphDatabase
 from openai import OpenAI
-import json
-import os
+from config_loader import NEO4J_URI, NEO4J_AUTH, DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL
+
 from agents.diet.diet_generator import generate_diet_candidates
 
-# ================= 配置加载 =================
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
-with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-    config = json.load(f)
-
-NEO4J_URI = config["neo4j"]["uri"]
-NEO4J_AUTH = (config["neo4j"]["username"], config["neo4j"]["password"])
-DEEPSEEK_API_KEY = config["deepseek"]["api_key"]
-DEEPSEEK_BASE_URL = config["deepseek"]["base_url"]
-
 # ================= 核心逻辑 =================
-driver = GraphDatabase.driver(NEO4J_URI, auth=NEO4J_AUTH)
-client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
+driver = GraphDatabase.driver(NEO4J_URI(), auth=NEO4J_AUTH())
+client = OpenAI(api_key=DEEPSEEK_API_KEY(), base_url=DEEPSEEK_BASE_URL())
 
 def extract_keywords(question):
     """提取关键词"""
