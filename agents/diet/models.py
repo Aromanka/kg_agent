@@ -24,7 +24,6 @@ class FoodItem(BaseModel):
     carbs: float = Field(..., description="Carbohydrate content in grams")
     fat: float = Field(..., description="Fat content in grams")
     fiber: Optional[float] = Field(None, description="Fiber content in grams")
-    reason: str = Field(..., description="Why this food is suitable for the user")
 
 
 class MealPlanItem(BaseModel):
@@ -62,10 +61,6 @@ class DietRecommendation(BaseModel):
     macro_nutrients: MacroNutrients = Field(
         ...,
         description="Macro nutrient summary"
-    )
-    reasoning: str = Field(
-        ...,
-        description="Overall reasoning for this recommendation"
     )
     safety_notes: List[str] = Field(
         default_factory=list,

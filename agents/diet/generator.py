@@ -12,6 +12,7 @@ from agents.diet.models import (
     FoodItem, MealPlanItem, MacroNutrients,
     DietRecommendation, DietCandidatesResponse, DietAgentInput
 )
+from core.llm.utils import parse_json_response
 
 
 # ================= System Prompt =================
@@ -37,9 +38,14 @@ DIET_GENERATION_SYSTEM_PROMPT = """You are a professional nutritionist. Generate
 - Muscle gain: High protein (1.6-2.2g/kg)
 
 ## Output Format
-Return valid JSON matching the schema. Each food item must include:
-- name, portion, calories, protein, carbs, fat
-- reason for selection
+Return valid JSON object directly. Do NOT wrap in extra keys like "diet_plan" or "candidates".
+The JSON must contain these fields:
+- id: integer
+- meal_plan: object with keys "breakfast", "lunch", "dinner", "snacks"
+- total_calories: integer
+- calories_deviation: float
+- macro_nutrients: object with "protein", "carbs", "fat", "protein_ratio", "carbs_ratio", "fat_ratio"
+- safety_notes: array of strings
 """
 
 
@@ -183,13 +189,16 @@ class DietAgent(BaseAgent, DietAgentMixin):
 {kg_context}
 
 ## Task
-Generate diet plan candidates. Return JSON array with:
-- id, meal_plan (breakfast/lunch/dinner/snacks)
-- total_calories, calories_deviation
-- macro_nutrients (protein/carbs/fat with ratios)
-- reasoning, safety_notes
-
-Each meal should have 3-5 food items with nutrition info."""
+Generate a single diet plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Example format:
+{{
+  "id": 1,
+  "meal_plan": {{"breakfast": [...], "lunch": [...], "dinner": [...], "snacks": [...]}},
+  "total_calories": 1800,
+  "calories_deviation": -5.5,
+  "macro_nutrients": {{"protein": 90, "carbs": 200, "fat": 60, "protein_ratio": 0.20, "carbs_ratio": 0.45, "fat_ratio": 0.30}},
+  "safety_notes": []
+}}"""
 
         return prompt
 
@@ -215,11 +224,16 @@ Each meal should have 3-5 food items with nutrition info."""
                 temperature=0.7
             )
 
-            # Parse JSON
-            if isinstance(response, str):
-                data = json.loads(response)
-            else:
-                data = response
+            # Handle empty response
+            if not response or response == {}:
+                print(f"[WARN] LLM returned empty response for candidate {candidate_id}")
+                return None
+
+            try:
+                data = parse_json_response(response)
+            except json.JSONDecodeError:
+                print(f"[WARN] Invalid JSON from LLM: {response[:100]}...")
+                return None
 
             # Handle list response
             if isinstance(data, list):
@@ -296,3 +310,4 @@ if __name__ == "__main__":
     print(f"Generated {len(candidates)} diet candidates")
     for c in candidates:
         print(f"- ID: {c.id}, Calories: {c.total_calories}, Deviation: {c.calories_deviation}%")
+

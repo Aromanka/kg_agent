@@ -8,5 +8,6 @@
         "api_key": "sk-e7769d96ed994b92b2ab8454fdc8b7eb",
         "base_url": "https://api.deepseek.com",
         "model": "deepseek-chat"
-    }
+    },
+    "llm_log_path": "tests/llm.log"
 }

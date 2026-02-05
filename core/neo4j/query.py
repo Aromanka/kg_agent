@@ -16,9 +16,12 @@ class KnowledgeGraphQuery:
 
     def query_foods_by_disease(self, disease: str) -> List[Dict[str, Any]]:
         """查询某疾病的推荐饮食"""
+        # Try specific labels first, fallback to Entity
         query = """
-        MATCH (d:Disease {name: $disease})<-[:Diet_Disease]-(f:Food)
+        MATCH (d)-[:Diet_Disease]-(f)
+        WHERE toLower(d.name) = toLower($disease)
         RETURN f.name as food, f.category as category
+        LIMIT 20
         """
         return self.client.query(query, {"disease": disease})
 
@@ -34,43 +37,50 @@ class KnowledgeGraphQuery:
     def query_dietary_restrictions(self, disease: str) -> List[Dict[str, Any]]:
         """查询某疾病的饮食禁忌"""
         query = """
-        MATCH (d:Disease {name: $disease})-[r:Restriction_Disease]->(rstr:Restriction)
+        MATCH (d)-[r:Restriction_Disease]->(rstr)
+        WHERE toLower(d.name) = toLower($disease)
         RETURN rstr.name as restriction, r.description as description
+        LIMIT 20
         """
         return self.client.query(query, {"disease": disease})
 
     def query_nutrient_advice(self, disease: str) -> List[Dict[str, Any]]:
         """查询某疾病的营养建议"""
         query = """
-        MATCH (n:Nutrient)-[r:Nutrient_Disease]->(d:Disease {name: $disease})
+        MATCH (n)-[r:Nutrient_Disease]->(d)
+        WHERE toLower(d.name) = toLower($disease)
         RETURN n.name as nutrient, r.advice as advice, r.amount as amount
+        LIMIT 20
         """
         return self.client.query(query, {"disease": disease})
 
     def query_food_benefits(self, food: str) -> List[Dict[str, Any]]:
         """查询食物的益处"""
         query = """
-        MATCH (f:Food)-[r:Benefit_Food]->(b:Benefit)
+        MATCH (f)-[r:Benefit_Food]->(b)
         WHERE toLower(f.name) CONTAINS toLower($food)
         RETURN b.name as benefit, r.description as description
+        LIMIT 10
         """
         return self.client.query(query, {"food": food})
 
     def query_food_risks(self, food: str) -> List[Dict[str, Any]]:
         """查询食物的风险"""
         query = """
-        MATCH (f:Food)-[r:Risk_Food]->(rsk:Risk)
+        MATCH (f)-[r:Risk_Food]->(rsk)
         WHERE toLower(f.name) CONTAINS toLower($food)
         RETURN rsk.name as risk, r.description as description
+        LIMIT 10
         """
         return self.client.query(query, {"food": food})
 
     def query_food_conflicts(self, food: str) -> List[Dict[str, Any]]:
         """查询食物的冲突/禁忌"""
         query = """
-        MATCH (f:Food)-[r:Food_Disease]->(d:Disease)
+        MATCH (f)-[r:Food_Disease]->(d)
         WHERE toLower(f.name) CONTAINS toLower($food)
         RETURN d.name as disease, r.description as description
+        LIMIT 10
         """
         return self.client.query(query, {"food": food})
 
