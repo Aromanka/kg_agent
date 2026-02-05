@@ -174,6 +174,9 @@ python run.py pipeline
 # 带参数示例
 python run.py diet --conditions diabetes,hypertension --goal weight_loss -N 3
 python run.py pipeline --conditions diabetes --no-filter
+
+# 启动服务器
+python -m core.server 
 ```
 
 ### 独立模块测试 (Python脚本)

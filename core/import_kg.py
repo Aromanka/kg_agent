@@ -123,6 +123,9 @@ def import_json_triplets(session, json_path):
             continue
 
         try:
+            # 使用实际关系类型名称（需要用反引号包裹）
+            rel_type = relation.replace(' ', '_').replace('-', '_')
+
             # 推断实体标签
             head_label = infer_entity_label(head, "head", relation)
             tail_label = infer_entity_label(tail, "tail", relation)
@@ -131,7 +134,7 @@ def import_json_triplets(session, json_path):
             session.run(f"""
                 MERGE (h:{head_label} {{name: $head}})
                 MERGE (t:{tail_label} {{name: $tail}})
-                MERGE (h)-[r:RELATION {{type: $relation, source: $source}}]->(t)
+                MERGE (h)-[r:`{rel_type}` {{source: $source}}]->(t)
             """, head=head, tail=tail, relation=relation, source=source)
             count += 1
         except Exception as e:
@@ -163,6 +166,9 @@ def import_csv_triplets(session, csv_path):
             continue
 
         try:
+            # 使用实际关系类型名称（需要用反引号包裹）
+            rel_type = relation.replace(' ', '_').replace('-', '_')
+
             # 推断实体标签
             head_label = infer_entity_label(head, "head", relation)
             tail_label = infer_entity_label(tail, "tail", relation)
@@ -170,7 +176,7 @@ def import_csv_triplets(session, csv_path):
             session.run(f"""
                 MERGE (h:{head_label} {{name: $head}})
                 MERGE (t:{tail_label} {{name: $tail}})
-                MERGE (h)-[r:RELATION {{type: $relation, source: $source}}]->(t)
+                MERGE (h)-[r:`{rel_type}` {{source: $source}}]->(t)
             """, head=head, tail=tail, relation=relation, source=source)
             count += 1
         except Exception as e:

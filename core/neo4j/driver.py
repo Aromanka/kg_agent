@@ -101,7 +101,7 @@ class Neo4jClient:
         CALL db.index.fulltext.queryNodes("search_index", $word) YIELD node, score
         WHERE score > $threshold
         MATCH (node)-[r]-(m)
-        RETURN node.name as head, r.type as rel_type, m.name as tail, r.amount as amount, r.unit as unit
+        RETURN node.name as head, type(r) as rel_type, m.name as tail, r.amount as amount, r.unit as unit
         """
         results = self.query(query, {"word": keyword, "threshold": score_threshold}, database)
         return [dict(record) for record in results]
@@ -137,12 +137,12 @@ class Neo4jClient:
             rel_filter = "|".join(rel_types)
             query = f"""
             MATCH (n {{name: $name}})-[r:`{rel_filter}`]-(m)
-            RETURN m.name as neighbor, r.type as rel_type, r
+            RETURN m.name as neighbor, type(r) as rel_type, r
             """
         else:
             query = """
             MATCH (n {name: $name})-[r]-(m)
-            RETURN m.name as neighbor, r.type as rel_type, r
+            RETURN m.name as neighbor, type(r) as rel_type, r
             """
         results = self.query(query, {"name": node_name}, database)
         return [dict(record) for record in results]
