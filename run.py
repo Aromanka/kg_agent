@@ -100,6 +100,7 @@ def cmd_exercise(args):
     print(f"\nGenerated {len(candidates)} candidates:")
     for c in candidates:
         print(f"  - ID: {c.id}, Calories: {c.total_calories_burned}, Duration: {c.total_duration_minutes}min")
+        print(c)
 
     return candidates
 

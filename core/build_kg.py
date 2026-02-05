@@ -10,8 +10,10 @@ from tqdm import tqdm
 from config_loader import get_config
 
 from agents.diet.prompts import (
-    DIET_KG_EXTRACT_SCHEMA_PROMPT as SCHEMA_PROMPT,
-    DIET_VALID_RELS
+    DIET_KG_EXTRACT_SCHEMA_PROMPT as DIET_SCHEMA_PROMPT,
+    DIET_VALID_RELS,
+    EXER_KG_EXTRACT_SCHEMA_PROMPT as EXER_SCHEMA_PROMPT,
+    EXER_VALID_RELS
 )
 
 # 处理 PDF 和 Word 的库
@@ -25,15 +27,29 @@ DEEPSEEK_BASE_URL = config["deepseek"]["base_url"]
 MODEL_NAME = config["deepseek"]["model"]
 
 # ================= 核心配置区域 =================
-# 1. 待处理文献路径
-INPUT_DIR = "data"
 
-# 2. 结果保存的基础目录 (所有历史记录都会存在这个文件夹下)
+# 知识图谱类型配置
+KG_CONFIGS = {
+    "diet": {
+        "input_dir": "data/diet",
+        "schema_prompt": DIET_SCHEMA_PROMPT,
+        "valid_rels": DIET_VALID_RELS,
+        "name": "饮食"
+    },
+    "exercise": {
+        "input_dir": "data/exer",
+        "schema_prompt": EXER_SCHEMA_PROMPT,
+        "valid_rels": EXER_VALID_RELS,
+        "name": "运动"
+    }
+}
+
+# 结果保存的基础目录 (所有历史记录都会存在这个文件夹下)
 OUTPUT_BASE_DIR = "output_history"
 
-# 4. 文本切分设置
-CHUNK_SIZE = 1000  
-OVERLAP = 200      
+# 文本切分设置
+CHUNK_SIZE = 1000
+OVERLAP = 200
 
 # ===============================================
 def read_excel(file_path):
@@ -45,13 +61,13 @@ def read_excel(file_path):
     try:
         # 读取所有工作表 (sheet_name=None 返回字典)
         dfs = pd.read_excel(file_path, sheet_name=None, engine='openpyxl')
-        
+
         for sheet_name, df in dfs.items():
             if df.empty: continue
-            
+
             # 1. 清洗表头 (转为字符串，去空格)
             headers = [str(col).strip().replace("\n", "") for col in df.columns]
-            
+
             # 2. 遍历每一行
             # fillna('') 防止空值报错
             for _, row in df.fillna('').iterrows():
@@ -61,18 +77,19 @@ def read_excel(file_path):
                     val_str = str(cell_value).strip().replace("\n", " ")
                     if val_str and val_str.lower() != 'nan':
                         row_parts.append(f"{header}是{val_str}")
-                
+
                 # 3. 组合成句子
                 if row_parts:
                     # 例: "在表格Sheet1中，药物是二甲双胍，剂量是500mg。"
                     sentence = f"在数据表{sheet_name}中，" + "，".join(row_parts) + "。"
                     text_content.append(sentence)
-                    
+
         return "\n".join(text_content)
 
     except Exception as e:
         print(f"⚠️ Excel 读取失败 {file_path}: {e}")
         return ""
+
 def read_docx(file_path):
     """ 提取 Word，含表格转自然语言逻辑 """
     try:
@@ -166,14 +183,19 @@ def split_text(text, chunk_size=CHUNK_SIZE, overlap=OVERLAP):
         start += (chunk_size - overlap)
     return chunks
 
-def extract_triplets_with_deepseek(client, text_chunk):
+def extract_triplets_with_deepseek(client, text_chunk, schema_prompt):
     """
     Extract triplets using DeepSeek with JSON Object response format.
     Prioritizes "triplets" key from the response.
+
+    Args:
+        client: DeepSeek client
+        text_chunk: Text to extract from
+        schema_prompt: Schema prompt to use (DIET or EXER)
     """
     if len(text_chunk.strip()) < 10: return []
 
-    prompt = f"{SCHEMA_PROMPT}\n\n## 待处理文本\n{text_chunk}"
+    prompt = f"{schema_prompt}\n\n## 待处理文本\n{text_chunk}"
 
     try:
         response = client.chat.completions.create(
@@ -216,45 +238,58 @@ def extract_triplets_with_deepseek(client, text_chunk):
         time.sleep(2)
         return []
 
-def main():
-    # 1. 检查输入文件夹
-    if not os.path.exists(INPUT_DIR):
-        os.makedirs(INPUT_DIR)
-        print(f"请创建 {INPUT_DIR} 并放入文件")
-        return
+def build_knowledge_graph(kg_type: str, config: dict) -> dict:
+    """
+    Build knowledge graph for a specific type (diet or exercise).
 
-    # 2. 生成本次运行的输出文件夹 (格式: Output_History/Run_20231223_143005)
+    Args:
+        kg_type: Type of knowledge graph ('diet' or 'exercise')
+        config: Configuration dict with schema_prompt, valid_rels, name, input_dir
+
+    Returns:
+        Dict with stats about the build
+    """
+    schema_prompt = config["schema_prompt"]
+    valid_rels = config["valid_rels"]
+    kg_name = config["name"]
+    input_dir = config["input_dir"]
+
+    # 检查输入文件夹
+    if not os.path.exists(input_dir):
+        os.makedirs(input_dir)
+        print(f"[{kg_name} KG] 请创建 {input_dir} 并放入文件")
+        return {"status": "skipped", "reason": "input_dir_not_found", "triplets": 0}
+
+    # 生成本次运行的输出文件夹
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    current_output_dir = os.path.join(OUTPUT_BASE_DIR, f"Run_{timestamp}")
+    current_output_dir = os.path.join(OUTPUT_BASE_DIR, f"{kg_type.capitalize()}_{timestamp}")
 
     # 创建文件夹
     os.makedirs(current_output_dir, exist_ok=True)
-    print(f"📂 本次结果将保存在: {current_output_dir}")
+    print(f"📂 [{kg_name} KG] 本次结果将保存在: {current_output_dir}")
 
-    # 3. 初始化客户端
+    # 初始化客户端
     client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
 
-    # 4. 扫描文件
-    files = glob.glob(os.path.join(INPUT_DIR, "*.pdf")) + \
-        glob.glob(os.path.join(INPUT_DIR, "*.docx")) + \
-        glob.glob(os.path.join(INPUT_DIR, "*.txt")) + \
-        glob.glob(os.path.join(INPUT_DIR, "*.xlsx"))
+    # 扫描文件
+    files = glob.glob(os.path.join(input_dir, "*.pdf")) + \
+        glob.glob(os.path.join(input_dir, "*.docx")) + \
+        glob.glob(os.path.join(input_dir, "*.txt")) + \
+        glob.glob(os.path.join(input_dir, "*.xlsx"))
 
-    if not files: 
-        print(f"⚠️ '{INPUT_DIR}' 文件夹为空，没有找到文件。")
-        return
+    if not files:
+        print(f"⚠️ [{kg_name} KG] '{input_dir}' 文件夹为空，没有找到文件。")
+        return {"status": "skipped", "reason": "no_files", "triplets": 0}
 
-    print(f"🔍 发现 {len(files)} 个文件，准备开始提取...")
+    print(f"🔍 [{kg_name} KG] 发现 {len(files)} 个文件，准备开始提取...")
 
     all_triplets = []
     seen_hashes = set()
-    processed_files_log = [] # 记录处理了哪些文件
+    processed_files_log = []
     start_time = time.time()
 
-    valid_rels = DIET_VALID_RELS
-
-    # 5. 循环处理
-    for file_path in tqdm(files, desc="总进度"):
+    # 循环处理
+    for file_path in tqdm(files, desc=f"{kg_name} KG 进度"):
         file_name = os.path.basename(file_path)
         processed_files_log.append(file_name)
 
@@ -271,7 +306,7 @@ def main():
         chunks = split_text_by_headers(cleaned_content)
 
         for chunk in tqdm(chunks, desc=f"解析 {file_name[:10]}", leave=False):
-            triplets = extract_triplets_with_deepseek(client, chunk)
+            triplets = extract_triplets_with_deepseek(client, chunk, schema_prompt)
 
             for t in triplets:
                 if "head" in t and "relation" in t and "tail" in t:
@@ -284,16 +319,15 @@ def main():
 
                 time.sleep(0.1)
 
-    # 6. 保存结果到新创建的文件夹
+    # 保存结果
     duration = time.time() - start_time
 
-    # 定义新路径
-    output_json_path = os.path.join(current_output_dir, "kg_triplets.json")
-    output_csv_path = os.path.join(current_output_dir, "kg_triplets.csv")
+    output_json_path = os.path.join(current_output_dir, f"{kg_type}_triplets.json")
+    output_csv_path = os.path.join(current_output_dir, f"{kg_type}_triplets.csv")
     log_path = os.path.join(current_output_dir, "process_log.txt")
 
     print("-" * 40)
-    print(f"✅ 提取完成！耗时: {duration:.2f}秒")
+    print(f"✅ [{kg_name} KG] 提取完成！耗时: {duration:.2f}秒")
     print(f"🕸️  共获得 {len(all_triplets)} 个唯一三元组。")
 
     # 保存 JSON
@@ -308,16 +342,99 @@ def main():
         df = df[existing]
         df.to_csv(output_csv_path, index=False, encoding='utf_8_sig')
 
-    # 保存日志 (方便你以后知道这个文件夹里是哪些数据跑出来的)
+    # 保存日志
     with open(log_path, 'w', encoding='utf-8') as f:
         f.write(f"运行时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"知识图谱类型: {kg_name}\n")
         f.write(f"耗时: {duration:.2f} 秒\n")
         f.write(f"提取三元组数量: {len(all_triplets)}\n")
+        f.write(f"输入目录: {input_dir}\n")
         f.write("\n处理的文件列表:\n")
         for fname in processed_files_log:
             f.write(f"- {fname}\n")
 
-    print(f"💾 结果已保存至文件夹: {current_output_dir}")
+    print(f"💾 [{kg_name} KG] 结果已保存至: {current_output_dir}")
+
+    return {
+        "status": "success",
+        "kg_type": kg_type,
+        "kg_name": kg_name,
+        "triplets": len(all_triplets),
+        "duration": duration,
+        "output_dir": current_output_dir
+    }
+
+
+def main():
+    """Build both diet and exercise knowledge graphs by default."""
+    # 检查命令行参数
+    kg_types_to_build = None
+    for arg in sys.argv[1:]:
+        if arg.startswith("--kg="):
+            kg_types_to_build = [arg.replace("--kg=", "").lower()]
+            break
+        elif arg in ["-h", "--help"]:
+            print("""
+用法: python -m core.build_kg [选项]
+
+选项:
+  --kg=diet      只构建饮食知识图谱
+  --kg=exercise  只构建运动知识图谱
+  --kg=all       构建饮食和运动知识图谱（默认行为）
+  -h, --help     显示此帮助信息
+
+默认行为:
+  如果没有指定选项，则同时构建饮食和运动知识图谱。
+            """)
+            return
+
+    # 如果没有指定，默认构建两种 KG
+    if kg_types_to_build is None or kg_types_to_build[0] == "all":
+        kg_types_to_build = ["diet", "exercise"]
+
+    print("=" * 50)
+    print(f"🚀 开始构建知识图谱...")
+    print(f"📋 类型: {', '.join(kg_types_to_build)}")
+    print("=" * 50)
+
+    total_stats = {
+        "total_triplets": 0,
+        "total_duration": 0,
+        "results": []
+    }
+
+    for kg_type in kg_types_to_build:
+        if kg_type in KG_CONFIGS:
+            print()
+            stats = build_knowledge_graph(kg_type, KG_CONFIGS[kg_type])
+            total_stats["results"].append(stats)
+            total_stats["total_triplets"] += stats.get("triplets", 0)
+            total_stats["total_duration"] += stats.get("duration", 0)
+        else:
+            print(f"⚠️ 未知知识图谱类型: {kg_type}")
+
+    # 汇总
+    print()
+    print("=" * 50)
+    print("📊 知识图谱构建汇总")
+    print("=" * 50)
+    print(f"总三元组数量: {total_stats['total_triplets']}")
+    print(f"总耗时: {total_stats['total_duration']:.2f}秒")
+    print()
+
+    # 显示每个 KG 的状态
+    for stats in total_stats["results"]:
+        status = "✅" if stats.get("status") == "success" else "⚠️"
+        print(f"  {status} {stats.get('kg_name', 'Unknown')} KG: {stats.get('triplets', 0)} 三元组")
+
+    print()
+    print("📌 文件位置:")
+    for stats in total_stats["results"]:
+        if stats.get("output_dir"):
+            print(f"  - {stats.get('kg_name', '')}: {stats['output_dir']}")
+
+
+import sys
 
 if __name__ == "__main__":
     main()

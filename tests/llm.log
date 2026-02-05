@@ -2373,3 +2373,1563 @@ Emphasize high-protein foods for muscle maintenance.
   ]
 }
 - duration <32499.536999999997> ms
+>>> model <deepseek-chat> generated at <2026-02-05T18:54:57.897471>:
+- query:
+role=system
+You are a professional exercise prescription AI. Your task is to generate personalized exercise plans based on user health data.
+
+## Guidelines
+
+### Exercise Types
+- CARDIO: Running, swimming, cycling, rowing, jumping rope
+- STRENGTH: Weight lifting, bodyweight exercises, resistance bands
+- FLEXIBILITY: Stretching, yoga, Pilates
+- BALANCE: Balance training, tai chi
+- HIIT: High-intensity interval training
+
+### Intensity Levels
+- LOW: Gentle movement, warm-up level (RPE 1-3)
+- MODERATE: Sustainable effort, conversation possible (RPE 4-6)
+- HIGH: Challenging, breathing heavily (RPE 7-8)
+- VERY_HIGH: Maximum effort, short bursts only (RPE 9-10)
+
+### Calories per Minute (MET-based estimates)
+- Walking (moderate): 4-5 kcal/min
+- Running: 10-12 kcal/min
+- Swimming: 8-10 kcal/min
+- Cycling: 6-10 kcal/min
+- Strength training: 5-8 kcal/min
+- Yoga: 2-4 kcal/min
+- HIIT: 12-15 kcal/min
+
+### Safety Rules
+1. For beginners: Start with LOW intensity, 15-20 min sessions
+2. For intermediate: MODERATE intensity, 30-45 min sessions
+3. For advanced: HIGH intensity, 45-60 min sessions
+4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
+5. Joint problems: Prioritize LOW-impact exercises (swimming, cycling)
+6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
+7. Always include warm-up and cool-down
+
+## Output Format
+Return a valid JSON object matching the provided schema. Each exercise must include:
+- Clear name and type
+- Appropriate duration for fitness level
+- Calorie burn estimate
+- Safety considerations specific to user's conditions
+role=user
+## User Profile
+
+**Age**: 35
+**Gender**: male
+**Weight**: 70kg
+**Fitness Level**: intermediate
+**Medical Conditions**: None
+
+## Goal
+**Primary Goal**: weight_loss
+**Preferred Intensity**: moderate
+**Target Daily Calories Burn**: 400 kcal
+**Target Duration**: 40 minutes per session
+**Weekly Frequency**: 5 sessions per week
+
+## Environment Context
+**Weather**: {'condition': 'clear', 'temperature_c': 25}
+**Season**: summer
+
+
+
+## Task
+Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
+
+Example format:
+{
+  "id": 1,
+  "title": "Morning Cardio Plan",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Brisk Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 150,
+          "equipment": [],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+          "reason": "Low-impact cardio suitable for beginners",
+          "safety_notes": ["Stay hydrated", "Warm up first"]
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 150,
+      "overall_intensity": "low"
+    },
+    "afternoon": {
+      "time_of_day": "afternoon",
+      "exercises": [
+        {
+          "name": "Bodyweight Squats",
+          "exercise_type": "strength",
+          "duration_minutes": 15,
+          "intensity": "moderate",
+          "calories_burned": 80,
+          "equipment": [],
+          "target_muscles": ["legs", "core"],
+          "instructions": ["Keep back straight", "Lower until thighs parallel"],
+          "safety_notes": ["Avoid deep knee bend if knee issues"]
+        }
+      ],
+      "total_duration_minutes": 15,
+      "total_calories_burned": 80,
+      "overall_intensity": "moderate"
+    }
+  },
+  "total_duration_minutes": 45,
+  "total_calories_burned": 230,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Establish baseline. Week 3-4: Increase duration by 5min/session",
+  "reasoning": "This plan combines low-impact cardio with strength training",
+  "safety_notes": ["Consult physician before starting", "Listen to your body"]
+}
+
+### Strategy: CALORIE_BURN
+Focus on balanced training.
+- response:
+{
+  "id": 1,
+  "title": "Summer Weight Loss Circuit",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Dynamic Warm-up",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 5,
+          "intensity": "LOW",
+          "calories_burned": 15,
+          "equipment": [],
+          "target_muscles": ["full body"],
+          "instructions": ["Perform leg swings, arm circles, and torso twists.", "Focus on smooth, controlled movements to increase heart rate and mobility."],
+          "reason": "Prepares muscles and joints for moderate-intensity work, reducing injury risk.",
+          "safety_notes": ["Avoid bouncing or jerky motions."]
+        },
+        {
+          "name": "Outdoor Running",
+          "exercise_type": "CARDIO",
+          "duration_minutes": 25,
+          "intensity": "MODERATE",
+          "calories_burned": 275,
+          "equipment": ["Running Shoes"],
+          "target_muscles": ["legs", "cardio", "core"],
+          "instructions": ["Run at a steady, conversational pace.", "Maintain good posture and a consistent breathing rhythm."],
+          "reason": "Highly effective for calorie burning and cardiovascular health. Suitable for clear, 25°C summer weather.",
+          "safety_notes": ["Run during cooler morning hours.", "Stay hydrated before, during, and after."]
+        },
+        {
+          "name": "Bodyweight Strength Circuit",
+          "exercise_type": "STRENGTH",
+          "duration_minutes": 8,
+          "intensity": "MODERATE",
+          "calories_burned": 64,
+          "equipment": [],
+          "target_muscles": ["chest", "legs", "core", "back"],
+          "instructions": ["Perform 3 rounds of: 10 Push-ups, 15 Bodyweight Squats, 30-second Plank.", "Rest 45 seconds between rounds."],
+          "reason": "Builds lean muscle mass to boost metabolism and complements cardio for weight loss.",
+          "safety_notes": ["Maintain proper form to protect joints.", "Modify push-ups to knees if needed."]
+        },
+        {
+          "name": "Static Stretch Cool-down",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 2,
+          "intensity": "LOW",
+          "calories_burned": 6,
+          "equipment": [],
+          "target_muscles": ["hamstrings", "quadriceps", "chest", "back"],
+          "instructions": ["Hold each stretch (e.g., hamstring stretch, quad stretch, chest opener) for 20-30 seconds without bouncing."],
+          "reason": "Promotes recovery, improves flexibility, and helps lower heart rate.",
+          "safety_notes": ["Stretch to mild tension, not pain."]
+        }
+      ],
+      "total_duration_minutes": 40,
+      "total_calories_burned": 360,
+      "overall_intensity": "MODERATE"
+    }
+  },
+  "total_duration_minutes": 40,
+  "total_calories_burned": 360,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Complete the circuit as prescribed. Week 3-4: Increase running duration by 5 minutes or add one more round to the strength circuit.",
+  "reasoning": "This plan uses a CALORIE_BURN strategy, combining moderate-intensity running (high calorie expenditure) with full-body strength training (muscle-preserving) to efficiently target the user's weight loss goal within a 40-minute session. The warm-up and cool-down ensure safety for an intermediate-level user with no medical conditions. The plan is adapted for pleasant summer conditions.",
+  "safety_notes": ["Hydration is critical in summer heat. Drink water throughout the day.", "Apply sunscreen if running in the sun.", "Listen to your body and adjust intensity if feeling overly fatigued or dizzy."]
+}
+- duration <26126.086> ms
+>>> model <deepseek-chat> generated at <2026-02-05T18:55:24.303869>:
+- query:
+role=system
+You are a professional exercise prescription AI. Your task is to generate personalized exercise plans based on user health data.
+
+## Guidelines
+
+### Exercise Types
+- CARDIO: Running, swimming, cycling, rowing, jumping rope
+- STRENGTH: Weight lifting, bodyweight exercises, resistance bands
+- FLEXIBILITY: Stretching, yoga, Pilates
+- BALANCE: Balance training, tai chi
+- HIIT: High-intensity interval training
+
+### Intensity Levels
+- LOW: Gentle movement, warm-up level (RPE 1-3)
+- MODERATE: Sustainable effort, conversation possible (RPE 4-6)
+- HIGH: Challenging, breathing heavily (RPE 7-8)
+- VERY_HIGH: Maximum effort, short bursts only (RPE 9-10)
+
+### Calories per Minute (MET-based estimates)
+- Walking (moderate): 4-5 kcal/min
+- Running: 10-12 kcal/min
+- Swimming: 8-10 kcal/min
+- Cycling: 6-10 kcal/min
+- Strength training: 5-8 kcal/min
+- Yoga: 2-4 kcal/min
+- HIIT: 12-15 kcal/min
+
+### Safety Rules
+1. For beginners: Start with LOW intensity, 15-20 min sessions
+2. For intermediate: MODERATE intensity, 30-45 min sessions
+3. For advanced: HIGH intensity, 45-60 min sessions
+4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
+5. Joint problems: Prioritize LOW-impact exercises (swimming, cycling)
+6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
+7. Always include warm-up and cool-down
+
+## Output Format
+Return a valid JSON object matching the provided schema. Each exercise must include:
+- Clear name and type
+- Appropriate duration for fitness level
+- Calorie burn estimate
+- Safety considerations specific to user's conditions
+role=user
+## User Profile
+
+**Age**: 35
+**Gender**: male
+**Weight**: 70kg
+**Fitness Level**: intermediate
+**Medical Conditions**: None
+
+## Goal
+**Primary Goal**: weight_loss
+**Preferred Intensity**: moderate
+**Target Daily Calories Burn**: 400 kcal
+**Target Duration**: 40 minutes per session
+**Weekly Frequency**: 5 sessions per week
+
+## Environment Context
+**Weather**: {'condition': 'clear', 'temperature_c': 25}
+**Season**: summer
+
+
+
+## Task
+Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
+
+Example format:
+{
+  "id": 1,
+  "title": "Morning Cardio Plan",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Brisk Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 150,
+          "equipment": [],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+          "reason": "Low-impact cardio suitable for beginners",
+          "safety_notes": ["Stay hydrated", "Warm up first"]
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 150,
+      "overall_intensity": "low"
+    },
+    "afternoon": {
+      "time_of_day": "afternoon",
+      "exercises": [
+        {
+          "name": "Bodyweight Squats",
+          "exercise_type": "strength",
+          "duration_minutes": 15,
+          "intensity": "moderate",
+          "calories_burned": 80,
+          "equipment": [],
+          "target_muscles": ["legs", "core"],
+          "instructions": ["Keep back straight", "Lower until thighs parallel"],
+          "safety_notes": ["Avoid deep knee bend if knee issues"]
+        }
+      ],
+      "total_duration_minutes": 15,
+      "total_calories_burned": 80,
+      "overall_intensity": "moderate"
+    }
+  },
+  "total_duration_minutes": 45,
+  "total_calories_burned": 230,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Establish baseline. Week 3-4: Increase duration by 5min/session",
+  "reasoning": "This plan combines low-impact cardio with strength training",
+  "safety_notes": ["Consult physician before starting", "Listen to your body"]
+}
+
+### Strategy: VARIETY
+Include diverse exercises to prevent boredom and plateaus.
+- response:
+{
+  "id": 1,
+  "title": "Summer Weight Loss Circuit",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Dynamic Warm-up",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 5,
+          "intensity": "LOW",
+          "calories_burned": 20,
+          "equipment": [],
+          "target_muscles": ["full body"],
+          "instructions": ["Perform leg swings, arm circles, and torso twists", "Gradually increase range of motion"],
+          "reason": "Prepares muscles and joints for moderate exercise, reduces injury risk",
+          "safety_notes": ["Move smoothly, avoid bouncing"]
+        },
+        {
+          "name": "Outdoor Cycling",
+          "exercise_type": "CARDIO",
+          "duration_minutes": 20,
+          "intensity": "MODERATE",
+          "calories_burned": 180,
+          "equipment": ["bicycle", "helmet"],
+          "target_muscles": ["quadriceps", "hamstrings", "glutes", "calves", "cardio"],
+          "instructions": ["Maintain a steady pace where conversation is possible", "Use flat terrain for consistent effort"],
+          "reason": "Excellent moderate-intensity cardio for weight loss, suitable for clear summer weather",
+          "safety_notes": ["Stay hydrated in 25°C weather", "Wear sunscreen", "Obey traffic rules"]
+        },
+        {
+          "name": "Bodyweight Strength Circuit",
+          "exercise_type": "STRENGTH",
+          "duration_minutes": 12,
+          "intensity": "MODERATE",
+          "calories_burned": 120,
+          "equipment": [],
+          "target_muscles": ["chest", "back", "legs", "core"],
+          "instructions": ["Perform 3 rounds of: 10 Push-ups, 15 Bodyweight Squats, 30-second Plank", "Rest 60 seconds between rounds"],
+          "reason": "Builds lean muscle to boost metabolism and complements cardio for weight loss",
+          "safety_notes": ["Maintain proper form to prevent strain", "Modify push-ups to knees if needed"]
+        },
+        {
+          "name": "Cool-down Stretching",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 3,
+          "intensity": "LOW",
+          "calories_burned": 10,
+          "equipment": [],
+          "target_muscles": ["hamstrings", "quadriceps", "chest", "back"],
+          "instructions": ["Hold each stretch for 20-30 seconds without bouncing", "Focus on major muscle groups used"],
+          "reason": "Promotes flexibility, reduces muscle soreness, and aids recovery",
+          "safety_notes": ["Stretch to mild tension, not pain", "Breathe deeply"]
+        }
+      ],
+      "total_duration_minutes": 40,
+      "total_calories_burned": 330,
+      "overall_intensity": "MODERATE"
+    }
+  },
+  "total_duration_minutes": 40,
+  "total_calories_burned": 330,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Complete the circuit as prescribed. Week 3-4: Increase cycling duration to 25 minutes or add one more round to the strength circuit.",
+  "reasoning": "This plan combines moderate-intensity cardio (cycling) and strength training in a 40-minute session, aligning with the user's intermediate fitness level and weight loss goal. The variety prevents boredom, and the outdoor cycling leverages the favorable summer weather. The total calorie burn is slightly below the 400 kcal target but is sustainable and safe for 5 sessions per week, with progression built in to increase intensity over time.",
+  "safety_notes": ["Hydrate well before, during, and after exercise in warm weather", "Apply sunscreen for outdoor cycling", "Listen to your body and adjust intensity if needed", "Ensure the bicycle is in good working condition"]
+}
+- duration <26404.278000000002> ms
+>>> model <deepseek-chat> generated at <2026-02-05T19:34:37.859124>:
+- query:
+role=system
+You are a professional exercise prescription AI. Your task is to generate personalized exercise plans based on user health data.
+
+## Guidelines
+
+### Exercise Types
+- CARDIO: Running, swimming, cycling, rowing, jumping rope
+- STRENGTH: Weight lifting, bodyweight exercises, resistance bands
+- FLEXIBILITY: Stretching, yoga, Pilates
+- BALANCE: Balance training, tai chi
+- HIIT: High-intensity interval training
+
+### Intensity Levels
+- LOW: Gentle movement, warm-up level (RPE 1-3)
+- MODERATE: Sustainable effort, conversation possible (RPE 4-6)
+- HIGH: Challenging, breathing heavily (RPE 7-8)
+- VERY_HIGH: Maximum effort, short bursts only (RPE 9-10)
+
+### Calories per Minute (MET-based estimates)
+- Walking (moderate): 4-5 kcal/min
+- Running: 10-12 kcal/min
+- Swimming: 8-10 kcal/min
+- Cycling: 6-10 kcal/min
+- Strength training: 5-8 kcal/min
+- Yoga: 2-4 kcal/min
+- HIIT: 12-15 kcal/min
+
+### Safety Rules
+1. For beginners: Start with LOW intensity, 15-20 min sessions
+2. For intermediate: MODERATE intensity, 30-45 min sessions
+3. For advanced: HIGH intensity, 45-60 min sessions
+4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
+5. Joint problems: Prioritize LOW-impact exercises (swimming, cycling)
+6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
+7. Always include warm-up and cool-down
+
+## Output Format
+Return a valid JSON object matching the provided schema. Each exercise must include:
+- Clear name and type
+- Appropriate duration for fitness level
+- Calorie burn estimate
+- Safety considerations specific to user's conditions
+role=user
+## User Profile
+
+**Age**: 35
+**Gender**: male
+**Weight**: 70kg
+**Fitness Level**: intermediate
+**Medical Conditions**: None
+
+## Goal
+**Primary Goal**: weight_loss
+**Preferred Intensity**: moderate
+**Target Daily Calories Burn**: 400 kcal
+**Target Duration**: 40 minutes per session
+**Weekly Frequency**: 5 sessions per week
+
+## Environment Context
+**Weather**: {'condition': 'clear', 'temperature_c': 25}
+**Season**: summer
+
+
+
+## Task
+Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
+
+Example format:
+{
+  "id": 1,
+  "title": "Morning Cardio Plan",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Brisk Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 150,
+          "equipment": [],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+          "reason": "Low-impact cardio suitable for beginners",
+          "safety_notes": ["Stay hydrated", "Warm up first"]
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 150,
+      "overall_intensity": "low"
+    },
+    "afternoon": {
+      "time_of_day": "afternoon",
+      "exercises": [
+        {
+          "name": "Bodyweight Squats",
+          "exercise_type": "strength",
+          "duration_minutes": 15,
+          "intensity": "moderate",
+          "calories_burned": 80,
+          "equipment": [],
+          "target_muscles": ["legs", "core"],
+          "instructions": ["Keep back straight", "Lower until thighs parallel"],
+          "safety_notes": ["Avoid deep knee bend if knee issues"]
+        }
+      ],
+      "total_duration_minutes": 15,
+      "total_calories_burned": 80,
+      "overall_intensity": "moderate"
+    }
+  },
+  "total_duration_minutes": 45,
+  "total_calories_burned": 230,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Establish baseline. Week 3-4: Increase duration by 5min/session",
+  "reasoning": "This plan combines low-impact cardio with strength training",
+  "safety_notes": ["Consult physician before starting", "Listen to your body"]
+}
+
+### Strategy: CALORIE_BURN
+Focus on balanced training.
+- response:
+{
+  "id": 1,
+  "title": "Summer Weight Loss Circuit",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Dynamic Warm-up",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 5,
+          "intensity": "LOW",
+          "calories_burned": 15,
+          "equipment": [],
+          "target_muscles": ["full_body"],
+          "instructions": ["Perform leg swings, arm circles, and torso twists", "Gradually increase range of motion"],
+          "reason": "Prepares muscles and joints for the main workout, reducing injury risk",
+          "safety_notes": ["Move smoothly, avoid bouncing"]
+        },
+        {
+          "name": "Outdoor Running",
+          "exercise_type": "CARDIO",
+          "duration_minutes": 25,
+          "intensity": "MODERATE",
+          "calories_burned": 275,
+          "equipment": ["Running Shoes"],
+          "target_muscles": ["legs", "cardio", "core"],
+          "instructions": ["Run at a steady pace where you can speak in short sentences", "Maintain good posture and a consistent breathing rhythm"],
+          "reason": "Highly effective for calorie burn and cardiovascular health, suitable for clear summer weather",
+          "safety_notes": ["Stay hydrated due to warm temperature", "Apply sunscreen", "Choose a safe, even route"]
+        },
+        {
+          "name": "Bodyweight Strength Circuit",
+          "exercise_type": "STRENGTH",
+          "duration_minutes": 8,
+          "intensity": "MODERATE",
+          "calories_burned": 70,
+          "equipment": [],
+          "target_muscles": ["chest", "legs", "core", "back"],
+          "instructions": ["Perform as a circuit with minimal rest: 10 Push-ups, 15 Bodyweight Squats, 30-second Plank", "Complete 2 rounds"],
+          "reason": "Builds lean muscle mass to boost metabolism and complements cardio for weight loss",
+          "safety_notes": ["Maintain proper form to protect joints", "Rest if form breaks down"]
+        },
+        {
+          "name": "Static Stretching Cool-down",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 2,
+          "intensity": "LOW",
+          "calories_burned": 6,
+          "equipment": [],
+          "target_muscles": ["hamstrings", "quadriceps", "chest", "back"],
+          "instructions": ["Hold each stretch for 20-30 seconds without bouncing", "Focus on major muscle groups used"],
+          "reason": "Promotes recovery, improves flexibility, and helps lower heart rate",
+          "safety_notes": ["Stretch to mild tension, not pain"]
+        }
+      ],
+      "total_duration_minutes": 40,
+      "total_calories_burned": 366,
+      "overall_intensity": "MODERATE"
+    }
+  },
+  "total_duration_minutes": 40,
+  "total_calories_burned": 366,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Complete the circuit as prescribed. Week 3-4: Increase running duration to 28 minutes or add a third round to the strength circuit.",
+  "reasoning": "This plan uses a CALORIE_BURN strategy by combining moderate-intensity running (high calorie expenditure) with full-body strength training (increases resting metabolism). The total calorie burn is close to the user's 400 kcal target, suitable for an intermediate level. The warm-up and cool-down ensure safety. The plan leverages the clear summer weather for effective outdoor cardio.",
+  "safety_notes": ["Hydrate well before, during, and after the session due to the warm weather.", "If feeling dizzy or overly fatigued, reduce intensity or stop.", "Ensure proper running form to prevent injury."]
+}
+- duration <27849.036> ms
+>>> model <deepseek-chat> generated at <2026-02-05T19:35:05.953332>:
+- query:
+role=system
+You are a professional exercise prescription AI. Your task is to generate personalized exercise plans based on user health data.
+
+## Guidelines
+
+### Exercise Types
+- CARDIO: Running, swimming, cycling, rowing, jumping rope
+- STRENGTH: Weight lifting, bodyweight exercises, resistance bands
+- FLEXIBILITY: Stretching, yoga, Pilates
+- BALANCE: Balance training, tai chi
+- HIIT: High-intensity interval training
+
+### Intensity Levels
+- LOW: Gentle movement, warm-up level (RPE 1-3)
+- MODERATE: Sustainable effort, conversation possible (RPE 4-6)
+- HIGH: Challenging, breathing heavily (RPE 7-8)
+- VERY_HIGH: Maximum effort, short bursts only (RPE 9-10)
+
+### Calories per Minute (MET-based estimates)
+- Walking (moderate): 4-5 kcal/min
+- Running: 10-12 kcal/min
+- Swimming: 8-10 kcal/min
+- Cycling: 6-10 kcal/min
+- Strength training: 5-8 kcal/min
+- Yoga: 2-4 kcal/min
+- HIIT: 12-15 kcal/min
+
+### Safety Rules
+1. For beginners: Start with LOW intensity, 15-20 min sessions
+2. For intermediate: MODERATE intensity, 30-45 min sessions
+3. For advanced: HIGH intensity, 45-60 min sessions
+4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
+5. Joint problems: Prioritize LOW-impact exercises (swimming, cycling)
+6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
+7. Always include warm-up and cool-down
+
+## Output Format
+Return a valid JSON object matching the provided schema. Each exercise must include:
+- Clear name and type
+- Appropriate duration for fitness level
+- Calorie burn estimate
+- Safety considerations specific to user's conditions
+role=user
+## User Profile
+
+**Age**: 35
+**Gender**: male
+**Weight**: 70kg
+**Fitness Level**: intermediate
+**Medical Conditions**: None
+
+## Goal
+**Primary Goal**: weight_loss
+**Preferred Intensity**: moderate
+**Target Daily Calories Burn**: 400 kcal
+**Target Duration**: 40 minutes per session
+**Weekly Frequency**: 5 sessions per week
+
+## Environment Context
+**Weather**: {'condition': 'clear', 'temperature_c': 25}
+**Season**: summer
+
+
+
+## Task
+Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
+
+Example format:
+{
+  "id": 1,
+  "title": "Morning Cardio Plan",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Brisk Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 150,
+          "equipment": [],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+          "reason": "Low-impact cardio suitable for beginners",
+          "safety_notes": ["Stay hydrated", "Warm up first"]
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 150,
+      "overall_intensity": "low"
+    },
+    "afternoon": {
+      "time_of_day": "afternoon",
+      "exercises": [
+        {
+          "name": "Bodyweight Squats",
+          "exercise_type": "strength",
+          "duration_minutes": 15,
+          "intensity": "moderate",
+          "calories_burned": 80,
+          "equipment": [],
+          "target_muscles": ["legs", "core"],
+          "instructions": ["Keep back straight", "Lower until thighs parallel"],
+          "safety_notes": ["Avoid deep knee bend if knee issues"]
+        }
+      ],
+      "total_duration_minutes": 15,
+      "total_calories_burned": 80,
+      "overall_intensity": "moderate"
+    }
+  },
+  "total_duration_minutes": 45,
+  "total_calories_burned": 230,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Establish baseline. Week 3-4: Increase duration by 5min/session",
+  "reasoning": "This plan combines low-impact cardio with strength training",
+  "safety_notes": ["Consult physician before starting", "Listen to your body"]
+}
+
+### Strategy: VARIETY
+Include diverse exercises to prevent boredom and plateaus.
+- response:
+{
+  "id": 1,
+  "title": "Summer Weight Loss Circuit",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Dynamic Warm-up",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 5,
+          "intensity": "LOW",
+          "calories_burned": 20,
+          "equipment": [],
+          "target_muscles": ["full body"],
+          "instructions": ["Leg swings (forward/side)", "Arm circles", "Torso twists", "Walking knee hugs"],
+          "reason": "Prepares muscles and joints for moderate-intensity work, especially beneficial in warm weather.",
+          "safety_notes": ["Move smoothly, avoid bouncing", "Focus on range of motion, not speed"]
+        },
+        {
+          "name": "Outdoor Cycling",
+          "exercise_type": "CARDIO",
+          "duration_minutes": 20,
+          "intensity": "MODERATE",
+          "calories_burned": 180,
+          "equipment": ["bicycle", "helmet"],
+          "target_muscles": ["quadriceps", "hamstrings", "glutes", "calves", "cardio"],
+          "instructions": ["Maintain a steady pace where conversation is possible but slightly challenging", "Use varied terrain if available"],
+          "reason": "Excellent moderate-intensity cardio for weight loss. Low-impact and ideal for clear summer weather (25°C).",
+          "safety_notes": ["Stay hydrated", "Wear sunscreen", "Obey traffic rules"]
+        },
+        {
+          "name": "Bodyweight HIIT Circuit",
+          "exercise_type": "HIIT",
+          "duration_minutes": 10,
+          "intensity": "HIGH",
+          "calories_burned": 130,
+          "equipment": [],
+          "target_muscles": ["full body"],
+          "instructions": ["Perform each exercise for 45 seconds, rest 15 seconds. Complete 2 rounds.", "Exercises: Jumping Jacks, Push-ups, Bodyweight Squats, Plank"],
+          "reason": "Efficiently boosts calorie burn and metabolism in a short time, aligning with the target calorie goal.",
+          "safety_notes": ["Maintain proper form over speed", "Modify push-ups to knees if needed", "Land softly during jumping jacks"]
+        },
+        {
+          "name": "Static Stretch Cool-down",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 5,
+          "intensity": "LOW",
+          "calories_burned": 15,
+          "equipment": ["yoga mat"],
+          "target_muscles": ["hamstrings", "quadriceps", "chest", "back"],
+          "instructions": ["Hold each stretch for 20-30 seconds without bouncing.", "Stretches: Hamstring stretch, Quad stretch, Chest opener, Cat-Cow"],
+          "reason": "Promotes recovery, reduces muscle soreness, and improves flexibility.",
+          "safety_notes": ["Stretch to mild tension, not pain", "Breathe deeply throughout"]
+        }
+      ],
+      "total_duration_minutes": 40,
+      "total_calories_burned": 345,
+      "overall_intensity": "MODERATE"
+    }
+  },
+  "total_duration_minutes": 40,
+  "total_calories_burned": 345,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Master form and pacing. Week 3-4: Increase cycling duration to 25 minutes or add 1 more round to the HIIT circuit.",
+  "reasoning": "This plan uses a VARIETY strategy, combining steady-state cardio (cycling), high-intensity intervals (HIIT), and flexibility work. It is tailored for an intermediate user with no medical conditions, aiming for weight loss with moderate intensity. The total calorie burn (345 kcal) is close to the 400 kcal target and can be progressed. The exercises are suitable for clear summer weather.",
+  "safety_notes": ["Hydrate well before, during, and after exercise in warm weather.", "Apply sunscreen if exercising outdoors.", "Listen to your body and adjust intensity as needed."]
+}
+- duration <28093.206> ms
+>>> model <deepseek-chat> generated at <2026-02-05T19:39:20.001600>:
+- query:
+role=system
+You are a professional exercise prescription AI. Your task is to generate personalized exercise plans based on user health data.
+
+## Guidelines
+
+### Exercise Types
+- CARDIO: Running, swimming, cycling, rowing, jumping rope
+- STRENGTH: Weight lifting, bodyweight exercises, resistance bands
+- FLEXIBILITY: Stretching, yoga, Pilates
+- BALANCE: Balance training, tai chi
+- HIIT: High-intensity interval training
+
+### Intensity Levels
+- LOW: Gentle movement, warm-up level (RPE 1-3)
+- MODERATE: Sustainable effort, conversation possible (RPE 4-6)
+- HIGH: Challenging, breathing heavily (RPE 7-8)
+- VERY_HIGH: Maximum effort, short bursts only (RPE 9-10)
+
+### Calories per Minute (MET-based estimates)
+- Walking (moderate): 4-5 kcal/min
+- Running: 10-12 kcal/min
+- Swimming: 8-10 kcal/min
+- Cycling: 6-10 kcal/min
+- Strength training: 5-8 kcal/min
+- Yoga: 2-4 kcal/min
+- HIIT: 12-15 kcal/min
+
+### Safety Rules
+1. For beginners: Start with LOW intensity, 15-20 min sessions
+2. For intermediate: MODERATE intensity, 30-45 min sessions
+3. For advanced: HIGH intensity, 45-60 min sessions
+4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
+5. Joint problems: Prioritize LOW-impact exercises (swimming, cycling)
+6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
+7. Always include warm-up and cool-down
+
+## Output Format
+Return a valid JSON object matching the provided schema. Each exercise must include:
+- Clear name and type
+- Appropriate duration for fitness level
+- Calorie burn estimate
+- Safety considerations specific to user's conditions
+role=user
+## User Profile
+
+**Age**: 35
+**Gender**: male
+**Weight**: 70kg
+**Fitness Level**: intermediate
+**Medical Conditions**: None
+
+## Goal
+**Primary Goal**: weight_loss
+**Preferred Intensity**: moderate
+**Target Daily Calories Burn**: 400 kcal
+**Target Duration**: 40 minutes per session
+**Weekly Frequency**: 5 sessions per week
+
+## Environment Context
+**Weather**: {'condition': 'clear', 'temperature_c': 25}
+**Season**: summer
+
+
+
+## Task
+Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
+
+Example format:
+{
+  "id": 1,
+  "title": "Morning Cardio Plan",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Brisk Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 150,
+          "equipment": [],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+          "reason": "Low-impact cardio suitable for beginners",
+          "safety_notes": ["Stay hydrated", "Warm up first"]
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 150,
+      "overall_intensity": "low"
+    },
+    "afternoon": {
+      "time_of_day": "afternoon",
+      "exercises": [
+        {
+          "name": "Bodyweight Squats",
+          "exercise_type": "strength",
+          "duration_minutes": 15,
+          "intensity": "moderate",
+          "calories_burned": 80,
+          "equipment": [],
+          "target_muscles": ["legs", "core"],
+          "instructions": ["Keep back straight", "Lower until thighs parallel"],
+          "safety_notes": ["Avoid deep knee bend if knee issues"]
+        }
+      ],
+      "total_duration_minutes": 15,
+      "total_calories_burned": 80,
+      "overall_intensity": "moderate"
+    }
+  },
+  "total_duration_minutes": 45,
+  "total_calories_burned": 230,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Establish baseline. Week 3-4: Increase duration by 5min/session",
+  "reasoning": "This plan combines low-impact cardio with strength training",
+  "safety_notes": ["Consult physician before starting", "Listen to your body"]
+}
+
+### Strategy: CALORIE_BURN
+Focus on balanced training.
+- response:
+{
+  "id": 1,
+  "title": "Summer Weight Loss Circuit",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Dynamic Warm-up",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 5,
+          "intensity": "LOW",
+          "calories_burned": 15,
+          "equipment": [],
+          "target_muscles": ["full_body"],
+          "instructions": ["Leg swings", "Arm circles", "Torso twists", "Light jogging in place"],
+          "reason": "Prepares muscles and joints for moderate exercise, reduces injury risk.",
+          "safety_notes": ["Move smoothly, avoid bouncing"]
+        },
+        {
+          "name": "Outdoor Running",
+          "exercise_type": "CARDIO",
+          "duration_minutes": 25,
+          "intensity": "MODERATE",
+          "calories_burned": 275,
+          "equipment": ["Running Shoes"],
+          "target_muscles": ["legs", "cardio", "core"],
+          "instructions": ["Maintain a steady pace where you can speak in short sentences.", "Focus on even breathing."],
+          "reason": "Efficient calorie burner suitable for clear summer weather. Aligns with intermediate fitness and moderate intensity preference.",
+          "safety_notes": ["Stay hydrated due to summer heat", "Apply sunscreen", "Run on even surfaces"]
+        },
+        {
+          "name": "Bodyweight Strength Circuit",
+          "exercise_type": "STRENGTH",
+          "duration_minutes": 8,
+          "intensity": "MODERATE",
+          "calories_burned": 70,
+          "equipment": [],
+          "target_muscles": ["chest", "legs", "core", "back"],
+          "instructions": ["Perform 3 rounds of: 10 Push-ups, 15 Bodyweight Squats, 30-second Plank, 10 Lunges (each leg). Rest 30 seconds between rounds."],
+          "reason": "Builds lean muscle to boost metabolism, complementing cardio for weight loss.",
+          "safety_notes": ["Maintain proper form to protect joints", "Modify push-ups to knees if needed"]
+        },
+        {
+          "name": "Cool-down Stretch",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 2,
+          "intensity": "LOW",
+          "calories_burned": 8,
+          "equipment": [],
+          "target_muscles": ["hamstrings", "quadriceps", "chest", "back"],
+          "instructions": ["Hold each stretch for 20-30 seconds: Quad stretch, Hamstring stretch, Chest opener, Cat-Cow."],
+          "reason": "Promotes recovery, improves flexibility, and lowers heart rate gradually.",
+          "safety_notes": ["Stretch to mild tension, not pain", "Breathe deeply"]
+        }
+      ],
+      "total_duration_minutes": 40,
+      "total_calories_burned": 368,
+      "overall_intensity": "MODERATE"
+    }
+  },
+  "total_duration_minutes": 40,
+  "total_calories_burned": 368,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Maintain this plan. Week 3-4: Increase running duration by 5 minutes or add one more round to the strength circuit.",
+  "reasoning": "This plan uses a CALORIE_BURN strategy with a balanced mix of moderate-intensity cardio (running) and strength training, optimized for summer outdoor conditions. It closely meets the target calorie burn and duration for an intermediate user with no medical restrictions.",
+  "safety_notes": ["Hydrate well before, during, and after exercise, especially in 25°C weather.", "Perform in the cooler morning hours if possible.", "Listen to your body and reduce intensity if feeling overly fatigued."]
+}
+- duration <28161.214> ms
+>>> model <deepseek-chat> generated at <2026-02-05T19:39:47.376772>:
+- query:
+role=system
+You are a professional exercise prescription AI. Your task is to generate personalized exercise plans based on user health data.
+
+## Guidelines
+
+### Exercise Types
+- CARDIO: Running, swimming, cycling, rowing, jumping rope
+- STRENGTH: Weight lifting, bodyweight exercises, resistance bands
+- FLEXIBILITY: Stretching, yoga, Pilates
+- BALANCE: Balance training, tai chi
+- HIIT: High-intensity interval training
+
+### Intensity Levels
+- LOW: Gentle movement, warm-up level (RPE 1-3)
+- MODERATE: Sustainable effort, conversation possible (RPE 4-6)
+- HIGH: Challenging, breathing heavily (RPE 7-8)
+- VERY_HIGH: Maximum effort, short bursts only (RPE 9-10)
+
+### Calories per Minute (MET-based estimates)
+- Walking (moderate): 4-5 kcal/min
+- Running: 10-12 kcal/min
+- Swimming: 8-10 kcal/min
+- Cycling: 6-10 kcal/min
+- Strength training: 5-8 kcal/min
+- Yoga: 2-4 kcal/min
+- HIIT: 12-15 kcal/min
+
+### Safety Rules
+1. For beginners: Start with LOW intensity, 15-20 min sessions
+2. For intermediate: MODERATE intensity, 30-45 min sessions
+3. For advanced: HIGH intensity, 45-60 min sessions
+4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
+5. Joint problems: Prioritize LOW-impact exercises (swimming, cycling)
+6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
+7. Always include warm-up and cool-down
+
+## Output Format
+Return a valid JSON object matching the provided schema. Each exercise must include:
+- Clear name and type
+- Appropriate duration for fitness level
+- Calorie burn estimate
+- Safety considerations specific to user's conditions
+role=user
+## User Profile
+
+**Age**: 35
+**Gender**: male
+**Weight**: 70kg
+**Fitness Level**: intermediate
+**Medical Conditions**: None
+
+## Goal
+**Primary Goal**: weight_loss
+**Preferred Intensity**: moderate
+**Target Daily Calories Burn**: 400 kcal
+**Target Duration**: 40 minutes per session
+**Weekly Frequency**: 5 sessions per week
+
+## Environment Context
+**Weather**: {'condition': 'clear', 'temperature_c': 25}
+**Season**: summer
+
+
+
+## Task
+Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
+
+Example format:
+{
+  "id": 1,
+  "title": "Morning Cardio Plan",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Brisk Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 150,
+          "equipment": [],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+          "reason": "Low-impact cardio suitable for beginners",
+          "safety_notes": ["Stay hydrated", "Warm up first"]
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 150,
+      "overall_intensity": "low"
+    },
+    "afternoon": {
+      "time_of_day": "afternoon",
+      "exercises": [
+        {
+          "name": "Bodyweight Squats",
+          "exercise_type": "strength",
+          "duration_minutes": 15,
+          "intensity": "moderate",
+          "calories_burned": 80,
+          "equipment": [],
+          "target_muscles": ["legs", "core"],
+          "instructions": ["Keep back straight", "Lower until thighs parallel"],
+          "safety_notes": ["Avoid deep knee bend if knee issues"]
+        }
+      ],
+      "total_duration_minutes": 15,
+      "total_calories_burned": 80,
+      "overall_intensity": "moderate"
+    }
+  },
+  "total_duration_minutes": 45,
+  "total_calories_burned": 230,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Establish baseline. Week 3-4: Increase duration by 5min/session",
+  "reasoning": "This plan combines low-impact cardio with strength training",
+  "safety_notes": ["Consult physician before starting", "Listen to your body"]
+}
+
+### Strategy: VARIETY
+Include diverse exercises to prevent boredom and plateaus.
+- response:
+{
+  "id": 1,
+  "title": "Summer Weight Loss Circuit",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Dynamic Warm-up",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 5,
+          "intensity": "LOW",
+          "calories_burned": 20,
+          "equipment": [],
+          "target_muscles": ["full body"],
+          "instructions": ["Perform leg swings, arm circles, torso twists, and walking lunges to increase heart rate and mobility."],
+          "reason": "Prepares muscles and joints for the main workout, reducing injury risk.",
+          "safety_notes": ["Move through a comfortable range of motion, avoid bouncing."]
+        },
+        {
+          "name": "Outdoor Running",
+          "exercise_type": "CARDIO",
+          "duration_minutes": 20,
+          "intensity": "MODERATE",
+          "calories_burned": 220,
+          "equipment": ["Running Shoes"],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Run at a steady, conversational pace. Aim for consistent breathing."],
+          "reason": "Effective cardio for weight loss, suitable for clear summer weather.",
+          "safety_notes": ["Stay hydrated due to warm temperature (25°C). Choose a shaded route if possible."]
+        },
+        {
+          "name": "Bodyweight Strength Circuit",
+          "exercise_type": "STRENGTH",
+          "duration_minutes": 12,
+          "intensity": "MODERATE",
+          "calories_burned": 96,
+          "equipment": [],
+          "target_muscles": ["chest", "legs", "core", "back"],
+          "instructions": ["Perform 3 rounds of: 10 Push-ups, 15 Bodyweight Squats, 30-second Plank Hold, 10 Inverted Rows (using a sturdy table). Rest 60 seconds between rounds."],
+          "reason": "Builds lean muscle to boost metabolism, complementing cardio for weight loss.",
+          "safety_notes": ["Maintain proper form. For push-ups, drop to knees if needed."]
+        },
+        {
+          "name": "Cool-down Stretch",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 3,
+          "intensity": "LOW",
+          "calories_burned": 10,
+          "equipment": ["Yoga Mat"],
+          "target_muscles": ["hamstrings", "quadriceps", "chest", "back"],
+          "instructions": ["Hold each stretch for 20-30 seconds: Quad stretch, Hamstring stretch, Chest opener, Cat-Cow."],
+          "reason": "Promotes recovery, improves flexibility, and lowers heart rate gradually.",
+          "safety_notes": ["Stretch to the point of mild tension, not pain."]
+        }
+      ],
+      "total_duration_minutes": 40,
+      "total_calories_burned": 346,
+      "overall_intensity": "MODERATE"
+    }
+  },
+  "total_duration_minutes": 40,
+  "total_calories_burned": 346,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Complete the circuit as prescribed. Week 3-4: Increase running duration to 25 minutes or add one more round to the strength circuit.",
+  "reasoning": "This plan uses a VARIETY strategy, combining moderate-intensity cardio, full-body strength training, and flexibility work. It is tailored for an intermediate user with no medical conditions, aiming for weight loss in a pleasant summer environment. The total calorie burn is near the 400 kcal target, achievable through consistent effort over 5 sessions per week.",
+  "safety_notes": ["Hydrate well before, during, and after the workout. Apply sunscreen if running outdoors. Listen to your body and adjust intensity if feeling overly fatigued."]
+}
+- duration <27374.172000000002> ms
+>>> model <deepseek-chat> generated at <2026-02-05T19:40:49.959377>:
+- query:
+role=system
+You are a professional exercise prescription AI. Your task is to generate personalized exercise plans based on user health data.
+
+## Guidelines
+
+### Exercise Types
+- CARDIO: Running, swimming, cycling, rowing, jumping rope
+- STRENGTH: Weight lifting, bodyweight exercises, resistance bands
+- FLEXIBILITY: Stretching, yoga, Pilates
+- BALANCE: Balance training, tai chi
+- HIIT: High-intensity interval training
+
+### Intensity Levels
+- LOW: Gentle movement, warm-up level (RPE 1-3)
+- MODERATE: Sustainable effort, conversation possible (RPE 4-6)
+- HIGH: Challenging, breathing heavily (RPE 7-8)
+- VERY_HIGH: Maximum effort, short bursts only (RPE 9-10)
+
+### Calories per Minute (MET-based estimates)
+- Walking (moderate): 4-5 kcal/min
+- Running: 10-12 kcal/min
+- Swimming: 8-10 kcal/min
+- Cycling: 6-10 kcal/min
+- Strength training: 5-8 kcal/min
+- Yoga: 2-4 kcal/min
+- HIIT: 12-15 kcal/min
+
+### Safety Rules
+1. For beginners: Start with LOW intensity, 15-20 min sessions
+2. For intermediate: MODERATE intensity, 30-45 min sessions
+3. For advanced: HIGH intensity, 45-60 min sessions
+4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
+5. Joint problems: Prioritize LOW-impact exercises (swimming, cycling)
+6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
+7. Always include warm-up and cool-down
+
+## Output Format
+Return a valid JSON object matching the provided schema. Each exercise must include:
+- Clear name and type
+- Appropriate duration for fitness level
+- Calorie burn estimate
+- Safety considerations specific to user's conditions
+role=user
+## User Profile
+
+**Age**: 35
+**Gender**: male
+**Weight**: 70kg
+**Fitness Level**: intermediate
+**Medical Conditions**: None
+
+## Goal
+**Primary Goal**: weight_loss
+**Preferred Intensity**: moderate
+**Target Daily Calories Burn**: 400 kcal
+**Target Duration**: 40 minutes per session
+**Weekly Frequency**: 5 sessions per week
+
+## Environment Context
+**Weather**: {'condition': 'clear', 'temperature_c': 25}
+**Season**: summer
+
+
+
+## Task
+Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
+
+Example format:
+{
+  "id": 1,
+  "title": "Morning Cardio Plan",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Brisk Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 150,
+          "equipment": [],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+          "reason": "Low-impact cardio suitable for beginners",
+          "safety_notes": ["Stay hydrated", "Warm up first"]
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 150,
+      "overall_intensity": "low"
+    },
+    "afternoon": {
+      "time_of_day": "afternoon",
+      "exercises": [
+        {
+          "name": "Bodyweight Squats",
+          "exercise_type": "strength",
+          "duration_minutes": 15,
+          "intensity": "moderate",
+          "calories_burned": 80,
+          "equipment": [],
+          "target_muscles": ["legs", "core"],
+          "instructions": ["Keep back straight", "Lower until thighs parallel"],
+          "safety_notes": ["Avoid deep knee bend if knee issues"]
+        }
+      ],
+      "total_duration_minutes": 15,
+      "total_calories_burned": 80,
+      "overall_intensity": "moderate"
+    }
+  },
+  "total_duration_minutes": 45,
+  "total_calories_burned": 230,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Establish baseline. Week 3-4: Increase duration by 5min/session",
+  "reasoning": "This plan combines low-impact cardio with strength training",
+  "safety_notes": ["Consult physician before starting", "Listen to your body"]
+}
+
+### Strategy: CALORIE_BURN
+Focus on balanced training.
+- response:
+{
+  "id": 1,
+  "title": "Summer Weight Loss Circuit",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Dynamic Warm-up",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 5,
+          "intensity": "LOW",
+          "calories_burned": 15,
+          "equipment": [],
+          "target_muscles": ["full_body"],
+          "instructions": ["Perform leg swings, arm circles, and torso twists for 30 seconds each.", "Focus on smooth, controlled movements to increase heart rate and mobility."],
+          "reason": "Prepares muscles and joints for moderate-intensity work, reducing injury risk.",
+          "safety_notes": ["Avoid bouncing or jerky movements."]
+        },
+        {
+          "name": "Outdoor Cycling",
+          "exercise_type": "CARDIO",
+          "duration_minutes": 25,
+          "intensity": "MODERATE",
+          "calories_burned": 225,
+          "equipment": ["bicycle", "helmet"],
+          "target_muscles": ["quadriceps", "hamstrings", "glutes", "calves", "cardio"],
+          "instructions": ["Cycle at a steady pace where you can speak in short sentences.", "Maintain a consistent cadence on flat terrain or gentle hills."],
+          "reason": "Excellent moderate-intensity cardio for weight loss, leveraging good summer weather. Low-impact and sustainable.",
+          "safety_notes": ["Wear a helmet. Stay hydrated in the 25°C heat. Apply sunscreen."]
+        },
+        {
+          "name": "Bodyweight Circuit (3 rounds)",
+          "exercise_type": "STRENGTH",
+          "duration_minutes": 8,
+          "intensity": "MODERATE",
+          "calories_burned": 64,
+          "equipment": [],
+          "target_muscles": ["chest", "shoulders", "triceps", "core", "legs"],
+          "instructions": ["Perform 10 push-ups, 15 bodyweight squats, and a 30-second plank.", "Rest 30 seconds between exercises. Complete 3 full rounds."],
+          "reason": "Builds lean muscle to boost metabolism, complementing cardio for efficient calorie burn.",
+          "safety_notes": ["Maintain proper form. For push-ups, keep core engaged to protect the lower back."]
+        },
+        {
+          "name": "Static Stretch Cool-down",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 2,
+          "intensity": "LOW",
+          "calories_burned": 6,
+          "equipment": [],
+          "target_muscles": ["quadriceps", "hamstrings", "chest", "back"],
+          "instructions": ["Hold each stretch (quad, hamstring, chest, cat-cow) for 20-30 seconds without bouncing."],
+          "reason": "Promotes recovery, improves flexibility, and gradually lowers heart rate.",
+          "safety_notes": ["Stretch only to mild tension, not pain."]
+        }
+      ],
+      "total_duration_minutes": 40,
+      "total_calories_burned": 310,
+      "overall_intensity": "MODERATE"
+    }
+  },
+  "total_duration_minutes": 40,
+  "total_calories_burned": 310,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Complete the circuit as prescribed. Week 3-4: Increase cycling duration to 30 minutes or add one more round to the bodyweight circuit.",
+  "reasoning": "This plan uses a CALORIE_BURN strategy, combining moderate-intensity cardio (cycling) for immediate calorie expenditure with full-body strength training to increase metabolic rate. The structure fits the user's intermediate level, 40-minute target, and leverages clear summer weather. The total calorie burn is slightly below the 400 kcal target per the user's initial request, but is appropriate, sustainable, and allows for progression as fitness improves.",
+  "safety_notes": ["Hydrate well before, during, and after the session, especially in summer heat.", "If cycling outdoors, ensure the bicycle is in good working order and follow traffic rules.", "Listen to your body and adjust intensity if needed."]
+}
+- duration <30238.386> ms
+>>> model <deepseek-chat> generated at <2026-02-05T19:41:19.186641>:
+- query:
+role=system
+You are a professional exercise prescription AI. Your task is to generate personalized exercise plans based on user health data.
+
+## Guidelines
+
+### Exercise Types
+- CARDIO: Running, swimming, cycling, rowing, jumping rope
+- STRENGTH: Weight lifting, bodyweight exercises, resistance bands
+- FLEXIBILITY: Stretching, yoga, Pilates
+- BALANCE: Balance training, tai chi
+- HIIT: High-intensity interval training
+
+### Intensity Levels
+- LOW: Gentle movement, warm-up level (RPE 1-3)
+- MODERATE: Sustainable effort, conversation possible (RPE 4-6)
+- HIGH: Challenging, breathing heavily (RPE 7-8)
+- VERY_HIGH: Maximum effort, short bursts only (RPE 9-10)
+
+### Calories per Minute (MET-based estimates)
+- Walking (moderate): 4-5 kcal/min
+- Running: 10-12 kcal/min
+- Swimming: 8-10 kcal/min
+- Cycling: 6-10 kcal/min
+- Strength training: 5-8 kcal/min
+- Yoga: 2-4 kcal/min
+- HIIT: 12-15 kcal/min
+
+### Safety Rules
+1. For beginners: Start with LOW intensity, 15-20 min sessions
+2. For intermediate: MODERATE intensity, 30-45 min sessions
+3. For advanced: HIGH intensity, 45-60 min sessions
+4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
+5. Joint problems: Prioritize LOW-impact exercises (swimming, cycling)
+6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
+7. Always include warm-up and cool-down
+
+## Output Format
+Return a valid JSON object matching the provided schema. Each exercise must include:
+- Clear name and type
+- Appropriate duration for fitness level
+- Calorie burn estimate
+- Safety considerations specific to user's conditions
+role=user
+## User Profile
+
+**Age**: 35
+**Gender**: male
+**Weight**: 70kg
+**Fitness Level**: intermediate
+**Medical Conditions**: None
+
+## Goal
+**Primary Goal**: weight_loss
+**Preferred Intensity**: moderate
+**Target Daily Calories Burn**: 400 kcal
+**Target Duration**: 40 minutes per session
+**Weekly Frequency**: 5 sessions per week
+
+## Environment Context
+**Weather**: {'condition': 'clear', 'temperature_c': 25}
+**Season**: summer
+
+
+
+## Task
+Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
+
+Example format:
+{
+  "id": 1,
+  "title": "Morning Cardio Plan",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Brisk Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 150,
+          "equipment": [],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+          "reason": "Low-impact cardio suitable for beginners",
+          "safety_notes": ["Stay hydrated", "Warm up first"]
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 150,
+      "overall_intensity": "low"
+    },
+    "afternoon": {
+      "time_of_day": "afternoon",
+      "exercises": [
+        {
+          "name": "Bodyweight Squats",
+          "exercise_type": "strength",
+          "duration_minutes": 15,
+          "intensity": "moderate",
+          "calories_burned": 80,
+          "equipment": [],
+          "target_muscles": ["legs", "core"],
+          "instructions": ["Keep back straight", "Lower until thighs parallel"],
+          "safety_notes": ["Avoid deep knee bend if knee issues"]
+        }
+      ],
+      "total_duration_minutes": 15,
+      "total_calories_burned": 80,
+      "overall_intensity": "moderate"
+    }
+  },
+  "total_duration_minutes": 45,
+  "total_calories_burned": 230,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Establish baseline. Week 3-4: Increase duration by 5min/session",
+  "reasoning": "This plan combines low-impact cardio with strength training",
+  "safety_notes": ["Consult physician before starting", "Listen to your body"]
+}
+
+### Strategy: VARIETY
+Include diverse exercises to prevent boredom and plateaus.
+- response:
+{
+  "id": 1,
+  "title": "Summer Weight Loss Circuit",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Dynamic Warm-up",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 5,
+          "intensity": "LOW",
+          "calories_burned": 20,
+          "equipment": [],
+          "target_muscles": ["full body"],
+          "instructions": ["Perform leg swings, arm circles, torso twists, and walking lunges for 5 minutes to increase heart rate and mobility."],
+          "reason": "Prepares muscles and joints for the main workout, reducing injury risk.",
+          "safety_notes": ["Move through a comfortable range of motion, avoid bouncing."]
+        },
+        {
+          "name": "Outdoor Cycling",
+          "exercise_type": "CARDIO",
+          "duration_minutes": 20,
+          "intensity": "MODERATE",
+          "calories_burned": 180,
+          "equipment": ["bicycle", "helmet"],
+          "target_muscles": ["legs", "glutes", "cardio"],
+          "instructions": ["Cycle at a steady pace on a flat or gently rolling route. Aim for a speed where conversation is possible but requires effort."],
+          "reason": "Excellent moderate-intensity cardio that leverages the clear summer weather for enjoyable, consistent calorie burn.",
+          "safety_notes": ["Wear a helmet. Stay hydrated in the 25°C heat. Use sunscreen."]
+        },
+        {
+          "name": "Bodyweight Strength Circuit",
+          "exercise_type": "STRENGTH",
+          "duration_minutes": 10,
+          "intensity": "MODERATE",
+          "calories_burned": 80,
+          "equipment": [],
+          "target_muscles": ["chest", "back", "legs", "core"],
+          "instructions": ["Perform 3 rounds of the following circuit with minimal rest: 10 Push-ups, 15 Bodyweight Squats, 30-second Plank hold."],
+          "reason": "Builds lean muscle mass to boost metabolism and adds variety to the cardio-focused plan.",
+          "safety_notes": ["Maintain proper form. For push-ups, drop to knees if needed to complete reps with good form."]
+        },
+        {
+          "name": "Cool-down Stretch",
+          "exercise_type": "FLEXIBILITY",
+          "duration_minutes": 5,
+          "intensity": "LOW",
+          "calories_burned": 15,
+          "equipment": ["yoga mat"],
+          "target_muscles": ["hamstrings", "quadriceps", "chest", "back"],
+          "instructions": ["Hold each stretch for 20-30 seconds: Standing hamstring stretch, quad stretch, chest opener, and cat-cow."],
+          "reason": "Promotes recovery, improves flexibility, and gradually lowers heart rate.",
+          "safety_notes": ["Stretch to the point of mild tension, not pain. Breathe deeply."]
+        }
+      ],
+      "total_duration_minutes": 40,
+      "total_calories_burned": 295,
+      "overall_intensity": "MODERATE"
+    }
+  },
+  "total_duration_minutes": 40,
+  "total_calories_burned": 295,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Complete the circuit as prescribed. Week 3-4: Increase cycling duration to 25 minutes and add 1 round to the strength circuit.",
+  "reasoning": "This plan uses a VARIETY strategy, combining outdoor cardio (cycling), strength training, and flexibility work within a 40-minute session. It is tailored for an intermediate user with a weight loss goal, leveraging favorable summer weather for enjoyable exercise. The estimated calorie burn is slightly below the 400 kcal target for safety and sustainability, with progression built in to increase intensity over time.",
+  "safety_notes": ["Hydrate well before, during, and after the workout, especially in summer heat. Perform the workout during cooler morning hours. As you have no medical conditions, listen to your body and adjust intensity if needed."]
+}
+- duration <29226.264> ms

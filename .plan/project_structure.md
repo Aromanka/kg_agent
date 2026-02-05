@@ -38,6 +38,8 @@ kg_agents/
 │   └── health_pipeline.py           # HealthPlanPipeline ✅
 │
 ├── data/
+│   ├── diet/                        # diet knowledge docs
+│   └── exer/                        # exer knowledge docs
 ├── tests/
 │   ├── __init__.py
 │   └── test_read.py

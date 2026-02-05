@@ -440,6 +440,41 @@ Example format:
 
         return prompt
 
+    def _normalize_enum_values(self, data: Dict) -> Dict:
+        """Normalize enum values to lowercase (LLM may return UPPERCASE)"""
+        exercise_type_map = {
+            "CARDIO": "cardio", "STRENGTH": "strength", "FLEXIBILITY": "flexibility",
+            "BALANCE": "balance", "HIIT": "hiit"
+        }
+        intensity_map = {
+            "LOW": "low", "MODERATE": "moderate", "HIGH": "high", "VERY_HIGH": "very_high"
+        }
+        time_map = {
+            "MORNING": "morning", "AFTERNOON": "afternoon", "EVENING": "evening", "ANY": "any"
+        }
+
+        def normalize_item(exercise: Dict) -> Dict:
+            if exercise.get("exercise_type") in exercise_type_map:
+                exercise["exercise_type"] = exercise_type_map[exercise["exercise_type"]]
+            if exercise.get("intensity") in intensity_map:
+                exercise["intensity"] = intensity_map[exercise["intensity"]]
+            return exercise
+
+        def normalize_session(session: Dict) -> Dict:
+            if "overall_intensity" in session:
+                session["overall_intensity"] = intensity_map.get(
+                    session["overall_intensity"], session["overall_intensity"]
+                )
+            if "exercises" in session:
+                session["exercises"] = [normalize_item(ex) for ex in session["exercises"]]
+            return session
+
+        if "sessions" in data:
+            for key, session in data["sessions"].items():
+                data["sessions"][key] = normalize_session(session)
+
+        return data
+
     def _generate_single_candidate(
         self,
         user_prompt: str,
@@ -484,6 +519,9 @@ Example format:
                 plan_data = data
             else:
                 return None
+
+            # Normalize enum values (LLM may return UPPERCASE)
+            plan_data = self._normalize_enum_values(plan_data)
 
             # Ensure ID is set
             if "id" not in plan_data:

@@ -303,9 +303,16 @@ class ExerciseAgentMixin:
         # Try KG query first
         try:
             for condition in conditions:
+                # Query recommended exercises
                 kg_exercises = self._kg.query_exercise_for_condition(condition)
                 if kg_exercises:
                     results["recommended_exercises"].extend([dict(r) for r in kg_exercises])
+
+                # Query exercises to avoid
+                kg_avoid = self._kg.query_exercise_avoid_for_condition(condition)
+                if kg_avoid:
+                    results["avoid_exercises"].extend([dict(r) for r in kg_avoid])
+
         except Exception as e:
             print(f"[WARN] KG query failed, using fallback: {e}")
 
