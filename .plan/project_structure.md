@@ -31,7 +31,10 @@ kg_agents/
 │   │   └── query.py                # KG查询工具
 │   └── llm/
 │       ├── __init__.py
-│       └── client.py                # LLM客户端
+│       ├── client.py                # LLM客户端 (DeepSeek API)
+│       ├── factory.py              # LLM工厂 (检测local_model_path)
+│       ├── local_llm.py            # 本地模型实现 (Transformers)
+│       └── interface.py            # 统一接口 (支持自动切换)
 │
 ├── pipeline/                       # 管道编排
 │   ├── __init__.py
@@ -57,13 +60,14 @@ kg_agents/
 
 ---
 
-## 当前进度总结
-
-### 已完成 ✅
+## 已完成 ✅
 
 | 模块 | 组件 | 文件 | 状态 |
 |------|------|------|------|
 | **Core** | LLM客户端 | `core/llm/client.py` | ✅ |
+| | LLM工厂 | `core/llm/factory.py` | ✅ |
+| | 本地LLM | `core/llm/local_llm.py` | ✅ |
+| | 统一接口 | `core/llm/interface.py` | ✅ |
 | | Neo4j驱动 | `core/neo4j/driver.py` | ✅ |
 | | KG查询工具 | `core/neo4j/query.py` | ✅ |
 | | FastAPI服务 | `core/server.py` | ✅ |
@@ -178,6 +182,8 @@ python -m core.import_kg
 | `/api/exercise/generate` | POST | 运动方案生成 |
 | `/api/health/generate` | POST | 健康方案生成（饮食+运动+安全评估） |
 | `/api/diet/init_db` | POST | 初始化食物数据库 |
+| `/api/llm/status` | GET | 获取当前LLM模式 |
+| `/api/llm/reload` | POST | 重新加载LLM模式 |
 
 ### 请求示例
 
@@ -303,7 +309,43 @@ class DietRecommendation(BaseModel):
     safety_notes: List[str]
 ```
 
-### 3. 健康管道编排
+### 4. 本地模型支持 (Dual LLM Mode)
+
+#### 配置启用本地模型
+```json
+// config.json
+{
+    "local_model_path": "/path/to/Qwen3-VL-8B-Instruct",
+    "deepseek": {
+        "api_key": "...",
+        "model": "deepseek-chat"
+    }
+}
+```
+
+#### 架构
+```
+config.json
+    ↓
+factory.py (should_use_local())
+    ↓
+┌──────────────┬──────────────┐
+│   local_llm  │  client.py   │
+│ (Transformers)│  (DeepSeek)  │
+└──────────────┴──────────────┘
+    ↓
+interface.py (UnifiedLLM)
+    ↓
+server.py / build_kg.py
+```
+
+#### 特性
+- **自动检测**: 启动时检查 `local_model_path` 是否存在
+- **懒加载**: 本地模型首次调用时才加载
+- **自动降级**: 本地模型加载失败时自动切换到 API
+- **热切换**: 支持运行时通过 `/api/llm/reload` 切换模式
+
+### 5. 健康管道编排
 ```python
 class HealthPlanPipeline:
     def generate(self, input_data):

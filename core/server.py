@@ -6,12 +6,12 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from neo4j import GraphDatabase
-from openai import OpenAI
 from config_loader import get_config
 
 from agents.diet.generator import generate_diet_candidates
 from agents.exercise.generator import generate_exercise_candidates
 from pipeline.health_pipeline import HealthPlanPipeline, generate_health_plans
+from core.llm import get_unified_llm, get_llm_type
 
 # ================= 配置加载 =================
 config = get_config()
@@ -21,10 +21,10 @@ driver = GraphDatabase.driver(
     config["neo4j"]["uri"],
     auth=(config["neo4j"]["username"], config["neo4j"]["password"])
 )
-client = OpenAI(
-    api_key=config["deepseek"]["api_key"],
-    base_url=config["deepseek"]["base_url"]
-)
+
+# Initialize unified LLM
+llm = get_unified_llm()
+print(f"[INFO] LLM initialized in mode: {get_llm_type()}")
 
 # ================= API 服务 =================
 app = FastAPI(title="Health KG Agent API", description="基于知识图谱的健康方案生成系统")
@@ -63,13 +63,9 @@ class HealthGenerateReq(BaseModel):
 def extract_keywords(question):
     """提取关键词"""
     try:
-        resp = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[{"role": "user", "content": f"提取用户问题中的1-3个医学实体关键词，只返回JSON列表，如['Apple']。问题：{question}"}],
-            temperature=0.1
-        )
-        return json.loads(resp.choices[0].message.content.strip())
-    except:
+        return llm.extract_keywords(question, max_count=3)
+    except Exception as e:
+        print(f"[ERROR] extract_keywords failed: {e}")
         return []
 
 def search_kg(keywords):
@@ -107,10 +103,10 @@ def validate_and_correct(kg_data, question, initial_reply):
     若有冲突，指出错误；否则输出 PASS。
     """
     try:
-        check_resp = client.chat.completions.create(
-            model="deepseek-chat", messages=[{"role": "user", "content": prompt_check}], temperature=0.1
-        )
-        validation = check_resp.choices[0].message.content.strip()
+        validation = llm.chat(
+            messages=[{"role": "user", "content": prompt_check}],
+            temperature=0.1
+        ).strip()
 
         if "PASS" in validation.upper():
             return initial_reply
@@ -124,11 +120,13 @@ def validate_and_correct(kg_data, question, initial_reply):
             错误：{validation}
             请输出修正后的准确回答。
             """
-            fix_resp = client.chat.completions.create(
-                model="deepseek-chat", messages=[{"role": "user", "content": prompt_fix}], temperature=0.5
+            fix_resp = llm.chat(
+                messages=[{"role": "user", "content": prompt_fix}],
+                temperature=0.5
             )
-            return fix_resp.choices[0].message.content + "\n\n(注：本回答已通过知识图谱自动修正)"
-    except:
+            return fix_resp + "\n\n(注：本回答已通过知识图谱自动修正)"
+    except Exception as e:
+        print(f"[ERROR] validate_and_correct failed: {e}")
         return initial_reply
 
 
@@ -144,10 +142,12 @@ def chat_endpoint(req: ChatReq):
     # 初次回答
     system_prompt = f"基于以下事实回答，必须引用数值。事实：\n{kg_context}"
     try:
-        draft = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": req.question}]
-        ).choices[0].message.content
+        draft = llm.chat(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": req.question}
+            ]
+        )
 
         # 验证并修正
         final_reply = validate_and_correct(kg_context, req.question, draft)
@@ -286,6 +286,41 @@ def health_generate_endpoint(req: HealthGenerateReq):
 def get_assessments_endpoint(plan_type: str = "all"):
     """获取评估信息"""
     return {"status": "placeholder", "message": "评估详情查询功能待实现"}
+
+
+# ================= LLM Status Endpoint =================
+
+@app.get("/api/llm/status")
+def llm_status_endpoint():
+    """获取当前 LLM 模式状态"""
+    return {
+        "llm_type": get_llm_type(),
+        "is_local": llm.is_local,
+        "local_model_path": config.get("local_model_path"),
+        "api_model": config.get("deepseek", {}).get("model", "deepseek-chat")
+    }
+
+
+@app.post("/api/llm/reload")
+def llm_reload_endpoint(mode: str = None):
+    """
+    重新加载 LLM 模式
+
+    Args:
+        mode: 'local' | 'api' | None (use config)
+    """
+    if mode == "local":
+        llm.reload(force_local=True)
+    elif mode == "api":
+        llm.reload(force_local=False)
+    else:
+        llm.reload()
+
+    return {
+        "status": "success",
+        "llm_type": get_llm_type(),
+        "message": f"LLM reloaded in mode: {get_llm_type()}"
+    }
 
 
 # ================= Web UI =================

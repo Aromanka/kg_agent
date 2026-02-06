@@ -5,7 +5,6 @@ import re
 import time
 import datetime
 import pandas as pd
-from openai import OpenAI
 from tqdm import tqdm
 from config_loader import get_config
 
@@ -16,6 +15,13 @@ from agents.diet.prompts import (
     EXER_VALID_RELS
 )
 
+# Optional import for local model support
+try:
+    from core.llm import should_use_local, get_unified_llm
+    HAS_UNIFIED_LLM = True
+except ImportError:
+    HAS_UNIFIED_LLM = False
+
 # 处理 PDF 和 Word 的库
 import pymupdf4llm
 from docx import Document
@@ -24,7 +30,12 @@ from docx import Document
 config = get_config()
 DEEPSEEK_API_KEY = config["deepseek"]["api_key"]
 DEEPSEEK_BASE_URL = config["deepseek"]["base_url"]
-MODEL_NAME = config["deepseek"]["model"]
+MODEL_NAME = config["deepseek"].get("model", "deepseek-chat")
+LOCAL_MODEL_PATH = config.get("local_model_path")
+
+# Determine LLM mode
+USE_LOCAL = should_use_local() if HAS_UNIFIED_LLM and LOCAL_MODEL_PATH else False
+print(f"[INFO] KG Builder LLM mode: {'local' if USE_LOCAL else 'api'}")
 
 # ================= 核心配置区域 =================
 
@@ -183,58 +194,66 @@ def split_text(text, chunk_size=CHUNK_SIZE, overlap=OVERLAP):
         start += (chunk_size - overlap)
     return chunks
 
-def extract_triplets_with_deepseek(client, text_chunk, schema_prompt):
+def extract_triplets_with_llm(text_chunk, schema_prompt):
     """
-    Extract triplets using DeepSeek with JSON Object response format.
+    Extract triplets using LLM (API or local) with JSON Object response format.
     Prioritizes "triplets" key from the response.
 
     Args:
-        client: DeepSeek client
         text_chunk: Text to extract from
         schema_prompt: Schema prompt to use (DIET or EXER)
     """
     if len(text_chunk.strip()) < 10: return []
 
     prompt = f"{schema_prompt}\n\n## 待处理文本\n{text_chunk}"
+    messages = [
+        {"role": "system", "content": "You are a helpful medical assistant. Always output valid JSON."},
+        {"role": "user", "content": prompt}
+    ]
 
     try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": "You are a helpful medical assistant. Always output valid JSON."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.1,
-            stream=False,
-            response_format={'type': 'json_object'}
-        )
-        content = response.choices[0].message.content.strip()
-
-        try:
+        if USE_LOCAL and HAS_UNIFIED_LLM:
+            # Use unified LLM (local mode)
+            result = get_unified_llm().chat_with_json(
+                messages=messages,
+                temperature=0.1
+            )
+            data = result if isinstance(result, dict) else {}
+        else:
+            # Use API mode
+            from openai import OpenAI
+            client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
+            response = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=messages,
+                temperature=0.1,
+                stream=False,
+                response_format={'type': 'json_object'}
+            )
+            content = response.choices[0].message.content.strip()
             data = json.loads(content)
 
-            # Priority 1: Look for "triplets" key (required by new prompt)
-            if isinstance(data, dict):
-                if "triplets" in data and isinstance(data["triplets"], list):
-                    return data["triplets"]
+        # Priority 1: Look for "triplets" key (required by new prompt)
+        if isinstance(data, dict):
+            if "triplets" in data and isinstance(data["triplets"], list):
+                return data["triplets"]
 
-                # Priority 2: Look for any list value as fallback
-                for val in data.values():
-                    if isinstance(val, list):
-                        return val
+            # Priority 2: Look for any list value as fallback
+            for val in data.values():
+                if isinstance(val, list):
+                    return val
 
-            # Priority 3: Direct list response
-            elif isinstance(data, list):
-                return data
+        # Priority 3: Direct list response
+        elif isinstance(data, list):
+            return data
 
-            return []
+        return []
 
-        except json.JSONDecodeError as e:
-            print(f"⚠️ JSON解析失败: {e}, 内容片段: {content[:100]}...")
-            return []
-
+    except json.JSONDecodeError as e:
+        print(f"⚠️ JSON解析失败: {e}, 内容片段: {content[:100] if 'content' in dir() else 'N/A'}...")
+        return []
     except Exception as e:
-        print(f"❌ API 调用失败: {e}")
+        print(f"❌ LLM 调用失败: {e}")
         time.sleep(2)
         return []
 
@@ -267,9 +286,6 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
     # 创建文件夹
     os.makedirs(current_output_dir, exist_ok=True)
     print(f"📂 [{kg_name} KG] 本次结果将保存在: {current_output_dir}")
-
-    # 初始化客户端
-    client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
 
     # 扫描文件
     files = glob.glob(os.path.join(input_dir, "*.pdf")) + \
@@ -306,7 +322,7 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
         chunks = split_text_by_headers(cleaned_content)
 
         for chunk in tqdm(chunks, desc=f"解析 {file_name[:10]}", leave=False):
-            triplets = extract_triplets_with_deepseek(client, chunk, schema_prompt)
+            triplets = extract_triplets_with_llm(chunk, schema_prompt)
 
             for t in triplets:
                 if "head" in t and "relation" in t and "tail" in t:
