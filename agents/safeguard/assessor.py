@@ -2,6 +2,8 @@
 Safeguard Agent - Safety Assessment Module
 Evaluates plan safety based on user metadata, environment, and plan content.
 Provides 0-100 safety score and True/False safety judgment.
+
+适应 DietRecommendation 和 ExercisePlan 的真实数据结构。
 """
 import json
 import os
@@ -134,6 +136,29 @@ class SafeguardAgent(BaseAgent):
     def get_output_type(self):
         return SafetyAssessment
 
+    def generate(
+        self,
+        input_data: Dict[str, Any],
+        num_candidates: int = 1
+    ) -> List[SafetyAssessment]:
+        """
+        Generate safety assessments for plans.
+
+        Args:
+            input_data: Dictionary containing plan, plan_type, user_metadata, environment
+            num_candidates: Number of assessments to generate (ignored, always returns 1)
+
+        Returns:
+            List of SafetyAssessment objects
+        """
+        plan = input_data.get("plan", {})
+        plan_type = input_data.get("plan_type", "diet")
+        user_metadata = input_data.get("user_metadata", {})
+        environment = input_data.get("environment", {})
+
+        assessment = self.assess(plan, plan_type, user_metadata, environment)
+        return [assessment]
+
     def assess(
         self,
         plan: Dict[str, Any],
@@ -259,10 +284,11 @@ class SafeguardAgent(BaseAgent):
         plan: Dict[str, Any],
         user_metadata: Dict[str, Any]
     ) -> tuple:
-        """Run diet-specific safety checks"""
+        """Run diet-specific safety checks - adapted for DietRecommendation model"""
         checks = []
         risk_factors = []
 
+        # DietRecommendation.total_calories (int)
         total_calories = plan.get("total_calories", 0)
 
         # Calorie range check
@@ -294,11 +320,18 @@ class SafeguardAgent(BaseAgent):
                 message="Calorie intake within acceptable range"
             ))
 
-        # Macro ratio checks
+        # Macro ratio checks - DietRecommendation.macro_nutrients is MacroNutrients (dict)
+        # Structure: {protein, carbs, fat, protein_ratio, carbs_ratio, fat_ratio}
         macros = plan.get("macro_nutrients", {})
         if macros:
-            protein_ratio = macros.get("protein_ratio", 0)
-            fat_ratio = macros.get("fat_ratio", 0)
+            # Handle both dict and object formats
+            if isinstance(macros, dict):
+                protein_ratio = macros.get("protein_ratio", 0)
+                fat_ratio = macros.get("fat_ratio", 0)
+            else:
+                # Object format
+                protein_ratio = getattr(macros, "protein_ratio", 0)
+                fat_ratio = getattr(macros, "fat_ratio", 0)
 
             if protein_ratio < DIET_SAFETY_RULES["min_protein_ratio"]["value"]:
                 risk_factors.append(RiskFactor(
@@ -318,6 +351,26 @@ class SafeguardAgent(BaseAgent):
                     recommendation="Reduce high-fat foods"
                 ))
 
+        # Single meal calorie check - check meals in meal_plan
+        meal_plan = plan.get("meal_plan", {})
+        if meal_plan:
+            for meal_type, items in meal_plan.items():
+                if isinstance(items, list):
+                    meal_calories = sum(item.get("calories", 0) for item in items if isinstance(item, dict))
+                elif isinstance(items, dict):
+                    # Might be a MealPlanItem object
+                    meal_calories = items.get("total_calories", 0)
+                else:
+                    meal_calories = 0
+
+                if meal_calories > DIET_SAFETY_RULES["single_meal_calories"]["value"]:
+                    checks.append(SafetyCheck(
+                        check_name="single_meal_calories",
+                        passed=False,
+                        message=f"{meal_type} calorie {meal_calories} is high",
+                        severity=RiskLevel.LOW
+                    ))
+
         return checks, risk_factors
 
     def _check_exercise_safety(
@@ -325,10 +378,11 @@ class SafeguardAgent(BaseAgent):
         plan: Dict[str, Any],
         user_metadata: Dict[str, Any]
     ) -> tuple:
-        """Run exercise-specific safety checks"""
+        """Run exercise-specific safety checks - adapted for ExercisePlan model"""
         checks = []
         risk_factors = []
 
+        # ExercisePlan fields
         fitness_level = user_metadata.get("fitness_level", "beginner")
         total_duration = plan.get("total_duration_minutes", 0)
         sessions = plan.get("sessions", {})
@@ -380,12 +434,34 @@ class SafeguardAgent(BaseAgent):
                 recommendation="Include at least 1-2 rest days per week"
             ))
 
-        # HIIT frequency check
-        has_hiit = any(
-            ex.get("exercise_type") == "hiit"
-            for session in sessions.values()
-            for ex in session.get("exercises", [])
-        )
+        # HIIT frequency check - handle both string and enum formats
+        def get_exercise_type(ex):
+            """Extract exercise type, handling both string and enum formats"""
+            et = ex.get("exercise_type", "")
+            if isinstance(et, str):
+                return et.lower()
+            # Handle enum
+            return str(et).lower() if hasattr(et, 'value') else str(et).lower()
+
+        has_hiit = False
+        for session_key, session in sessions.items():
+            # session can be dict or ExerciseSession object
+            exercises = session.get("exercises", []) if isinstance(session, dict) else []
+            if not exercises and hasattr(session, 'exercises'):
+                exercises = session.exercises
+
+            for ex in exercises:
+                if isinstance(ex, dict):
+                    ex_type = get_exercise_type(ex)
+                else:
+                    # Object format
+                    ex_type = str(ex.exercise_type).lower() if hasattr(ex, 'exercise_type') else ""
+                if ex_type == "hiit":
+                    has_hiit = True
+                    break
+            if has_hiit:
+                break
+
         if has_hiit and weekly_freq > 3:
             risk_factors.append(RiskFactor(
                 factor="hiit_frequency",
@@ -395,7 +471,78 @@ class SafeguardAgent(BaseAgent):
                 recommendation="Limit HIIT to 2-3 times per week with 48h rest"
             ))
 
+        # High intensity check for beginners/intermediate
+        if fitness_level in ["beginner", "intermediate"]:
+            has_high_intensity = False
+            for session_key, session in sessions.items():
+                exercises = session.get("exercises", []) if isinstance(session, dict) else []
+                if not exercises and hasattr(session, 'exercises'):
+                    exercises = session.exercises
+
+                for ex in exercises:
+                    if isinstance(ex, dict):
+                        intensity = str(ex.get("intensity", "")).lower()
+                    else:
+                        intensity = str(ex.intensity).lower() if hasattr(ex, 'intensity') else ""
+                    if intensity == "high" or intensity == "very_high":
+                        has_high_intensity = True
+                        break
+                if has_high_intensity:
+                    break
+
+            if has_high_intensity:
+                checks.append(SafetyCheck(
+                    check_name="intensity_level",
+                    passed=False,
+                    message=f"High intensity exercise may not be suitable for {fitness_level}",
+                    severity=RiskLevel.MODERATE
+                ))
+
         return checks, risk_factors
+
+    def _extract_plan_content_text(self, plan: Dict[str, Any], plan_type: str) -> str:
+        """Extract readable text from plan for condition checking"""
+        content_parts = []
+
+        if plan_type == "diet":
+            # Extract food items
+            meal_plan = plan.get("meal_plan", {})
+            if isinstance(meal_plan, dict):
+                for meal_type, items in meal_plan.items():
+                    if isinstance(items, list):
+                        for item in items:
+                            if isinstance(item, dict):
+                                food_name = item.get("food", "")
+                                if food_name:
+                                    content_parts.append(food_name)
+                            elif hasattr(item, 'food'):
+                                content_parts.append(item.food)
+            # Add macro info
+            macros = plan.get("macro_nutrients", {})
+            if isinstance(macros, dict):
+                content_parts.extend([str(v) for v in macros.values()])
+
+        elif plan_type == "exercise":
+            # Extract exercise names and types
+            sessions = plan.get("sessions", {})
+            if isinstance(sessions, dict):
+                for session_key, session in sessions.items():
+                    if isinstance(session, dict):
+                        exercises = session.get("exercises", [])
+                        for ex in exercises:
+                            if isinstance(ex, dict):
+                                ex_name = ex.get("name", "")
+                                ex_type = ex.get("exercise_type", "")
+                                if ex_name:
+                                    content_parts.append(ex_name)
+                                if ex_type:
+                                    content_parts.append(str(ex_type))
+                            elif hasattr(ex, 'name'):
+                                content_parts.append(ex.name)
+                                if hasattr(ex, 'exercise_type'):
+                                    content_parts.append(str(ex.exercise_type))
+
+        return " ".join(content_parts).lower()
 
     def _check_condition_restrictions(
         self,
@@ -409,41 +556,68 @@ class SafeguardAgent(BaseAgent):
 
         conditions = user_metadata.get("medical_conditions", [])
 
+        # Extract plan content for checking
+        plan_content = self._extract_plan_content_text(plan, plan_type)
+
         for condition in conditions:
-            condition = condition.lower()
-            if condition in CONDITION_RESTRICTIONS:
-                restrictions = CONDITION_RESTRICTIONS[condition]
+            condition_lower = condition.lower()
+            # Match condition (handle variations)
+            matched_condition = None
+            for known_condition in CONDITION_RESTRICTIONS:
+                if condition_lower == known_condition or condition_lower.replace("_", "") == known_condition.replace("_", ""):
+                    matched_condition = known_condition
+                    break
+
+            if matched_condition:
+                restrictions = CONDITION_RESTRICTIONS[matched_condition]
 
                 # Check diet restrictions
                 if plan_type == "diet" and "diet" in restrictions:
                     diet_rules = restrictions["diet"]
-                    plan_str = str(plan).lower()
 
                     for rule_key, rule_desc in diet_rules.items():
-                        if rule_key in ["avoid_high_sugar", "avoid_high_sodium"]:
-                            if rule_key.replace("avoid_", "") in plan_str:
-                                risk_factors.append(RiskFactor(
-                                    factor=f"{condition}_{rule_key}",
-                                    category="medical",
-                                    severity=RiskLevel.HIGH,
-                                    description=f"Plan contains {rule_desc} for {condition}",
-                                    recommendation=f"Remove {rule_desc} for {condition} management"
-                                ))
+                        if "avoid" in rule_key or "max" in rule_key:
+                            # Check if plan contains forbidden items
+                            forbidden_keywords = {
+                                "high_sugar": ["sugar", "candy", "cake", "ice cream", "sweet"],
+                                "high_sodium": ["salt", "soy sauce", "pickled", "processed"],
+                                "high_cholesterol": ["egg yolk", "liver", "organ meat"],
+                                "caffeine": ["coffee", "tea", "caffeine"],
+                            }
+                            keywords = forbidden_keywords.get(rule_key, [])
+                            for keyword in keywords:
+                                if keyword in plan_content:
+                                    risk_factors.append(RiskFactor(
+                                        factor=f"{matched_condition}_{rule_key}",
+                                        category="medical",
+                                        severity=RiskLevel.HIGH,
+                                        description=f"Plan contains {keyword} which should be avoided for {condition}",
+                                        recommendation=f"Remove {rule_desc} for {condition} management"
+                                    ))
 
                 # Check exercise restrictions
                 if plan_type == "exercise" and "exercise" in restrictions:
                     ex_rules = restrictions["exercise"]
-                    plan_str = str(plan).lower()
 
                     for rule_key, rule_desc in ex_rules.items():
-                        if "avoid" in rule_key or "max" in rule_key:
-                            risk_factors.append(RiskFactor(
-                                factor=f"{condition}_{rule_key}",
-                                category="medical",
-                                severity=RiskLevel.HIGH,
-                                description=f"Exercise may violate {condition} restriction: {rule_desc}",
-                                recommendation=f"Modify plan to comply with {rule_desc}"
-                            ))
+                        if "avoid" in rule_key or "max" in rule_key or "isometric" in rule_key:
+                            # Check for forbidden exercise types
+                            forbidden_exercises = {
+                                "isometric": ["plank", "wall sit", "static hold"],
+                                "high_intensity": ["hiit", "sprint", "burpee", "jump"],
+                                "high_impact": ["running", "jumping", "jump rope"],
+                                "breath_holding": ["valsalva", "heavy lifting"],
+                            }
+                            keywords = forbidden_exercises.get(rule_key, [])
+                            for keyword in keywords:
+                                if keyword in plan_content:
+                                    risk_factors.append(RiskFactor(
+                                        factor=f"{matched_condition}_{rule_key}",
+                                        category="medical",
+                                        severity=RiskLevel.HIGH,
+                                        description=f"Exercise plan contains {keyword} which violates {condition} restriction",
+                                        recommendation=f"Modify plan to comply with {rule_desc}"
+                                    ))
 
         return checks, risk_factors
 
@@ -640,31 +814,137 @@ def combined_assessment(
 
 
 if __name__ == "__main__":
-    # Test the safeguard agent
+    # Test the safeguard agent with DietRecommendation-like structure
     diet_plan = {
         "id": 1,
-        "total_calories": 1500,
-        "macro_nutrients": {
-            "protein_ratio": 0.15,
-            "carbs_ratio": 0.55,
-            "fat_ratio": 0.30
+        "meal_plan": {
+            "breakfast": [
+                {"food": "Oatmeal", "portion": "1碗", "calories": 150, "protein": 5, "carbs": 27, "fat": 3},
+                {"food": "Milk", "portion": "200ml", "calories": 120, "protein": 8, "carbs": 12, "fat": 5}
+            ],
+            "lunch": [
+                {"food": "Rice", "portion": "100g", "calories": 130, "protein": 3, "carbs": 28, "fat": 0},
+                {"food": "Chicken", "portion": "100g", "calories": 165, "protein": 31, "carbs": 0, "fat": 4}
+            ],
+            "dinner": []
         },
-        "meal_plan": {}
+        "total_calories": 1500,
+        "calories_deviation": -8.5,
+        "macro_nutrients": {
+            "protein": 120,
+            "carbs": 200,
+            "fat": 45,
+            "protein_ratio": 0.32,
+            "carbs_ratio": 0.53,
+            "fat_ratio": 0.27
+        },
+        "safety_notes": []
+    }
+
+    # Exercise plan with ExercisePlan-like structure
+    exercise_plan = {
+        "id": 1,
+        "title": "Weekly Cardio Plan",
+        "sessions": {
+            "morning": {
+                "time_of_day": "morning",
+                "exercises": [
+                    {"name": "Walking", "exercise_type": "cardio", "duration_minutes": 30, "intensity": "low", "calories_burned": 150}
+                ],
+                "total_duration_minutes": 30,
+                "total_calories_burned": 150,
+                "overall_intensity": "low"
+            },
+            "afternoon": {
+                "time_of_day": "afternoon",
+                "exercises": [
+                    {"name": "HIIT", "exercise_type": "hiit", "duration_minutes": 20, "intensity": "high", "calories_burned": 250}
+                ],
+                "total_duration_minutes": 20,
+                "total_calories_burned": 250,
+                "overall_intensity": "high"
+            }
+        },
+        "total_duration_minutes": 50,
+        "total_calories_burned": 400,
+        "weekly_frequency": 5,
+        "progression": "Increase duration by 5 mins each week",
+        "safety_notes": []
     }
 
     user_metadata = {
         "age": 35,
+        "gender": "male",
+        "height_cm": 175,
+        "weight_kg": 70,
         "medical_conditions": ["diabetes"],
         "fitness_level": "intermediate"
     }
 
-    assessment = assess_plan_safety(
+    environment = {
+        "weather": {"condition": "clear", "temperature_c": 25},
+        "time_context": {"season": "summer"}
+    }
+
+    print("=== Testing Diet Plan Assessment ===")
+    diet_assessment = assess_plan_safety(
         plan=diet_plan,
         plan_type="diet",
-        user_metadata=user_metadata
+        user_metadata=user_metadata,
+        environment=environment
     )
+    print(f"Score: {diet_assessment.score}/100")
+    print(f"Is Safe: {diet_assessment.is_safe}")
+    print(f"Risk Level: {diet_assessment.risk_level.value}")
+    print(f"Risk Factors: {len(diet_assessment.risk_factors)}")
+    for rf in diet_assessment.risk_factors:
+        print(f"  - {rf.factor}: {rf.description}")
 
-    print(f"Score: {assessment.score}/100")
-    print(f"Is Safe: {assessment.is_safe}")
-    print(f"Risk Level: {assessment.risk_level.value}")
-    print(f"Risk Factors: {len(assessment.risk_factors)}")
+    print("\n=== Testing Exercise Plan Assessment ===")
+    exercise_assessment = assess_plan_safety(
+        plan=exercise_plan,
+        plan_type="exercise",
+        user_metadata=user_metadata,
+        environment=environment
+    )
+    print(f"Score: {exercise_assessment.score}/100")
+    print(f"Is Safe: {exercise_assessment.is_safe}")
+    print(f"Risk Level: {exercise_assessment.risk_level.value}")
+    print(f"Risk Factors: {len(exercise_assessment.risk_factors)}")
+    for rf in exercise_assessment.risk_factors:
+        print(f"  - {rf.factor}: {rf.description}")
+
+    print("\n=== Testing Diabetes with High Sugar Foods ===")
+    bad_diet_plan = {
+        "id": 2,
+        "meal_plan": {
+            "breakfast": [
+                {"food": "Chocolate Cake", "portion": "1块", "calories": 500, "protein": 5, "carbs": 60, "fat": 25},
+                {"food": "Ice Cream", "portion": "1碗", "calories": 300, "protein": 5, "carbs": 40, "fat": 15}
+            ]
+        },
+        "total_calories": 800,
+        "calories_deviation": -46,
+        "macro_nutrients": {
+            "protein": 10,
+            "carbs": 100,
+            "fat": 40,
+            "protein_ratio": 0.05,
+            "carbs_ratio": 0.50,
+            "fat_ratio": 0.45
+        },
+        "safety_notes": []
+    }
+    diabetes_assessment = assess_plan_safety(
+        plan=bad_diet_plan,
+        plan_type="diet",
+        user_metadata=user_metadata,
+        environment=environment
+    )
+    print(f"Score: {diabetes_assessment.score}/100")
+    print(f"Is Safe: {diabetes_assessment.is_safe}")
+    print(f"Risk Factors: {len(diabetes_assessment.risk_factors)}")
+    for rf in diabetes_assessment.risk_factors:
+        print(f"  - {rf.factor}: {rf.description}")
+
+    print("\n=== All Tests Passed ===")

@@ -3933,3 +3933,397 @@ Include diverse exercises to prevent boredom and plateaus.
   "safety_notes": ["Hydrate well before, during, and after the workout, especially in summer heat. Perform the workout during cooler morning hours. As you have no medical conditions, listen to your body and adjust intensity if needed."]
 }
 - duration <29226.264> ms
+>>> model <deepseek-chat> generated at <2026-02-06T11:39:14.247434>:
+- query:
+role=system
+You are a safety assessment expert. Return only valid JSON.role=user
+Analyze the following diet plan for safety issues.
+
+## User Profile
+- Age: 35
+- Conditions: diabetes
+- Fitness Level: intermediate
+
+## Environment
+{'weather': {'condition': 'clear', 'temperature_c': 25}, 'time_context': {'season': 'summer'}}
+
+## Plan
+{
+  "id": 1,
+  "meal_plan": {
+    "breakfast": [
+      {
+        "food": "Oatmeal",
+        "portion": "1碗",
+        "calories": 150,
+        "protein": 5,
+        "carbs": 27,
+        "fat": 3
+      },
+      {
+        "food": "Milk",
+        "portion": "200ml",
+        "calories": 120,
+        "protein": 8,
+        "carbs": 12,
+        "fat": 5
+      }
+    ],
+    "lunch": [
+      {
+        "food": "Rice",
+        "portion": "100g",
+        "calories": 130,
+        "protein": 3,
+        "carbs": 28,
+        "fat": 0
+      },
+      {
+        "food": "Chicken",
+        "portion": "100g",
+        "calories": 165,
+        "protein": 31,
+        "carbs": 0,
+        "fat": 4
+      }
+    ],
+    "dinner": []
+  },
+  "total_calories": 1500,
+  "calories_deviation": -8.5,
+  "macro_nutrients": {
+    "protein": 120,
+    "carbs": 200,
+    "fat": 45,
+    "protein_ratio": 0.32,
+    "carbs_ratio": 0.53,
+    "fat_ratio": 0.27
+  },
+  "safety_notes": []
+}
+
+## Task
+Identify any safety concerns that rule-based checks might miss:
+1. Hidden contraindications
+2. Unrealistic progression
+3. Nutrient deficiencies
+4. Overtraining signs
+5. Environmental mismatches
+
+Return JSON with:
+- "risk_factors": array of {factor, description, severity}
+- "checks": array of {check_name, passed, message}
+- response:
+```json
+{
+    "risk_factors": [
+        {
+            "factor": "Carbohydrate management for diabetes",
+            "description": "Total carbohydrate intake of 200g (53% of calories) may be high for diabetes management, especially with simple carbs from milk and rice. The plan lacks glycemic index consideration and carbohydrate distribution guidance.",
+            "severity": "medium"
+        },
+        {
+            "factor": "Missing dinner and potential blood sugar instability",
+            "description": "Empty dinner array could indicate fasting or missing meal, which may cause hypoglycemia overnight or blood sugar fluctuations for a diabetic individual.",
+            "severity": "high"
+        },
+        {
+            "factor": "Insufficient fiber and micronutrients",
+            "description": "Plan lacks vegetables, fruits, and diverse fiber sources essential for blood sugar regulation, gut health, and diabetes management. Missing vitamins/minerals from colorful plant foods.",
+            "severity": "medium"
+        },
+        {
+            "factor": "Hydration considerations in summer heat",
+            "description": "No hydration plan included despite 25°C summer weather. Diabetes increases dehydration risk, and exercise in heat requires specific fluid/electrolyte management.",
+            "severity": "low"
+        },
+        {
+            "factor": "Incomplete nutritional profile",
+            "description": "Missing data on sodium, fiber, vitamins, and minerals prevents full safety assessment for diabetes complications (e.g., hypertension, neuropathy).",
+            "severity": "medium"
+        }
+    ],
+    "checks": [
+        {
+            "check_name": "Calorie adequacy check",
+            "passed": true,
+            "message": "1500 calories appropriate for weight management in intermediate fitness level with diabetes"
+        },
+        {
+            "check_name": "Macro ratio completeness",
+            "passed": false,
+            "message": "Macro ratios sum to 1.12 (>1.0), indicating calculation error or missing data"
+        },
+        {
+            "check_name": "Protein adequacy",
+            "passed": true,
+            "message": "120g protein (32%) supports muscle maintenance for fitness activities"
+        },
+        {
+            "check_name": "Meal frequency check",
+            "passed": false,
+            "message": "Missing dinner may disrupt blood sugar stability for diabetic individual"
+        },
+        {
+            "check_name": "Environmental temperature consideration",
+            "passed": false,
+            "message": "No hydration or electrolyte adjustments for 25°C summer weather"
+        },
+        {
+            "check_name": "Diabetes-specific carbohydrate check",
+            "passed": false,
+            "message": "High glycemic foods without balancing fiber/protein; no carb distribution guidance"
+        }
+    ]
+}
+```
+- duration <19878.553> ms
+>>> model <deepseek-chat> generated at <2026-02-06T11:39:35.539860>:
+- query:
+role=system
+You are a safety assessment expert. Return only valid JSON.role=user
+Analyze the following exercise plan for safety issues.
+
+## User Profile
+- Age: 35
+- Conditions: diabetes
+- Fitness Level: intermediate
+
+## Environment
+{'weather': {'condition': 'clear', 'temperature_c': 25}, 'time_context': {'season': 'summer'}}
+
+## Plan
+{
+  "id": 1,
+  "title": "Weekly Cardio Plan",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 150
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 150,
+      "overall_intensity": "low"
+    },
+    "afternoon": {
+      "time_of_day": "afternoon",
+      "exercises": [
+        {
+          "name": "HIIT",
+          "exercise_type": "hiit",
+          "duration_minutes": 20,
+          "intensity": "high",
+          "calories_burned": 250
+        }
+      ],
+      "total_duration_minutes": 20,
+      "total_calories_burned": 250,
+      "overall_intensity": "high"
+    }
+  },
+  "total_duration_minutes": 50,
+  "total_calories_burned": 400,
+  "weekly_frequency": 5,
+  "progression": "Increase duration by 5 mins each week",
+  "safety_notes": []
+}
+
+## Task
+Identify any safety concerns that rule-based checks might miss:
+1. Hidden contraindications
+2. Unrealistic progression
+3. Nutrient deficiencies
+4. Overtraining signs
+5. Environmental mismatches
+
+Return JSON with:
+- "risk_factors": array of {factor, description, severity}
+- "checks": array of {check_name, passed, message}
+- response:
+```json
+{
+    "risk_factors": [
+        {
+            "factor": "Diabetes and High-Intensity Exercise",
+            "description": "HIIT can cause rapid blood glucose fluctuations. For someone with diabetes, high-intensity exercise may lead to hypoglycemia during or after exercise, especially if insulin or certain medications are used. The afternoon HIIT session following morning exercise increases cumulative stress.",
+            "severity": "high"
+        },
+        {
+            "factor": "Inadequate Recovery Between Sessions",
+            "description": "Performing HIIT in the afternoon after morning cardio on the same day, 5 days per week, may not allow sufficient recovery for an intermediate exerciser with diabetes, increasing risk of overtraining, injury, and poor blood glucose control.",
+            "severity": "medium"
+        },
+        {
+            "factor": "Environmental Heat Risk",
+            "description": "Summer temperature of 25°C (77°F) during afternoon HIIT could lead to overheating and dehydration. Individuals with diabetes may have impaired thermoregulation and hydration status, increasing heat illness risk.",
+            "severity": "medium"
+        },
+        {
+            "factor": "Unmonitored Progression",
+            "description": "'Increase duration by 5 mins each week' is a fixed progression that doesn't account for individual response, blood glucose patterns, or recovery needs. This could lead to excessive volume too quickly.",
+            "severity": "medium"
+        },
+        {
+            "factor": "Nutrient Timing and Hydration",
+            "description": "With diabetes and two daily exercise sessions, proper nutrient timing (especially carbohydrates) and hydration around workouts is critical to prevent hypoglycemia and dehydration, but isn't addressed.",
+            "severity": "medium"
+        }
+    ],
+    "checks": [
+        {
+            "check_name": "Diabetes-Specific Exercise Guidelines",
+            "passed": false,
+            "message": "Plan includes high-intensity exercise without addressing blood glucose monitoring, medication timing, or hypoglycemia prevention strategies."
+        },
+        {
+            "check_name": "Recovery Time Assessment",
+            "passed": false,
+            "message": "Insufficient recovery between morning and afternoon sessions for an intermediate exerciser with a chronic condition."
+        },
+        {
+            "check_name": "Environmental Adaptation",
+            "passed": false,
+            "message": "No adjustments for summer heat during afternoon HIIT sessions (hydration, cooling, time of day)."
+        },
+        {
+            "check_name": "Individualized Progression",
+            "passed": false,
+            "message": "Fixed weekly progression doesn't account for diabetes management or individual recovery capacity."
+        },
+        {
+            "check_name": "Nutritional Support",
+            "passed": false,
+            "message": "No guidance on pre/post-exercise nutrition and hydration for diabetes management with twice-daily exercise."
+        },
+        {
+            "check_name": "Overtraining Prevention",
+            "passed": false,
+            "message": "Two daily sessions, 5 days weekly, with progressive overload may lead to overtraining without monitoring parameters."
+        }
+    ]
+}
+```
+- duration <21290.411> ms
+>>> model <deepseek-chat> generated at <2026-02-06T11:39:53.586272>:
+- query:
+role=system
+You are a safety assessment expert. Return only valid JSON.role=user
+Analyze the following diet plan for safety issues.
+
+## User Profile
+- Age: 35
+- Conditions: diabetes
+- Fitness Level: intermediate
+
+## Environment
+{'weather': {'condition': 'clear', 'temperature_c': 25}, 'time_context': {'season': 'summer'}}
+
+## Plan
+{
+  "id": 2,
+  "meal_plan": {
+    "breakfast": [
+      {
+        "food": "Chocolate Cake",
+        "portion": "1块",
+        "calories": 500,
+        "protein": 5,
+        "carbs": 60,
+        "fat": 25
+      },
+      {
+        "food": "Ice Cream",
+        "portion": "1碗",
+        "calories": 300,
+        "protein": 5,
+        "carbs": 40,
+        "fat": 15
+      }
+    ]
+  },
+  "total_calories": 800,
+  "calories_deviation": -46,
+  "macro_nutrients": {
+    "protein": 10,
+    "carbs": 100,
+    "fat": 40,
+    "protein_ratio": 0.05,
+    "carbs_ratio": 0.5,
+    "fat_ratio": 0.45
+  },
+  "safety_notes": []
+}
+
+## Task
+Identify any safety concerns that rule-based checks might miss:
+1. Hidden contraindications
+2. Unrealistic progression
+3. Nutrient deficiencies
+4. Overtraining signs
+5. Environmental mismatches
+
+Return JSON with:
+- "risk_factors": array of {factor, description, severity}
+- "checks": array of {check_name, passed, message}
+- response:
+```json
+{
+    "risk_factors": [
+        {
+            "factor": "Blood Sugar Management",
+            "description": "Breakfast consists entirely of high-sugar, high-glycemic foods (chocolate cake and ice cream) with 100g carbs and minimal fiber/protein. This causes rapid blood sugar spikes, dangerous for diabetes management, especially without medication timing consideration.",
+            "severity": "high"
+        },
+        {
+            "factor": "Nutrient Deficiency",
+            "description": "Breakfast provides only 10g protein (5% of calories) and no micronutrients (vitamins, minerals, fiber). This fails to support blood sugar stabilization, satiety, or overall health needs for someone with diabetes.",
+            "severity": "high"
+        },
+        {
+            "factor": "Meal Timing & Composition",
+            "description": "Consuming 800 calories of pure simple carbs/fats in one meal without balanced nutrients may lead to reactive hypoglycemia later, increasing diabetes complication risks.",
+            "severity": "medium"
+        },
+        {
+            "factor": "Environmental Mismatch",
+            "description": "High-sugar foods in summer heat (25°C) may increase dehydration risk and affect insulin sensitivity, though not a direct contraindication.",
+            "severity": "low"
+        }
+    ],
+    "checks": [
+        {
+            "check_name": "Diabetes-Safe Macronutrients",
+            "passed": false,
+            "message": "Failed: Breakfast carbs (100g) are all simple sugars with no complex carbs/fiber. Protein ratio (5%) is dangerously low for blood sugar control."
+        },
+        {
+            "check_name": "Micronutrient Adequacy",
+            "passed": false,
+            "message": "Failed: No fruits, vegetables, or whole foods providing essential vitamins/minerals (e.g., magnesium, chromium) important for diabetes management."
+        },
+        {
+            "check_name": "Glycemic Load Assessment",
+            "passed": false,
+            "message": "Failed: Extremely high glycemic load from refined carbs may require insulin adjustment not accounted for in plan."
+        },
+        {
+            "check_name": "Hydration Compatibility",
+            "passed": true,
+            "message": "Passed: No direct hydration conflicts, though high-sugar foods in warm weather warrant extra water intake."
+        },
+        {
+            "check_name": "Meal Distribution Safety",
+            "passed": false,
+            "message": "Failed: 800 calories concentrated in one imbalanced meal increases metabolic stress rather than supporting stable glucose levels throughout the day."
+        }
+    ]
+}
+```
+- duration <18045.024999999998> ms

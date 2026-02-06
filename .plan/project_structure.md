@@ -5,41 +5,41 @@
 ```
 kg_agents/
 ├── agents/                          # 三种Agent实现
-│   ├── base.py                      # Agent基类 ✅
-│   ├── diet/                        # 饮食Agent ✅
+│   ├── base.py                      # Agent基类 + Mixins
+│   ├── diet/                        # 饮食Agent
 │   │   ├── __init__.py
-│   │   ├── generator.py             # 饮食生成器 ✅
-│   │   ├── prompts.py               # Prompt模板
-│   │   └── models.py                # Pydantic模型 ✅
-│   ├── exercise/                    # 运动Agent ✅
+│   │   ├── generator.py             # DietAgent生成器
+│   │   ├── prompts.py              # Prompt模板
+│   │   └── models.py               # Pydantic模型
+│   ├── exercise/                    # 运动Agent
 │   │   ├── __init__.py
-│   │   ├── generator.py             # 运动生成器 ✅
-│   │   └── models.py                # Pydantic模型 ✅
-│   └── safeguard/                   # 风险评估Agent ✅
+│   │   ├── generator.py             # ExerciseAgent生成器
+│   │   └── models.py               # Pydantic模型
+│   └── safeguard/                  # 风险评估Agent
 │       ├── __init__.py
-│       ├── assessor.py               # 安全评估器 ✅
-│       └── models.py                # Pydantic模型 ✅
+│       ├── assessor.py              # SafeguardAgent评估器
+│       └── models.py                # Pydantic模型
 │
-├── core/                            # 核心服务层 ✅
+├── core/                            # 核心服务层
 │   ├── __init__.py
-│   ├── server.py                    # FastAPI服务
-│   ├── build_kg.py                  # 知识图谱构建 (LLM提取)
-│   ├── import_kg.py                 # 知识图谱导入Neo4j
+│   ├── server.py                   # FastAPI服务
+│   ├── build_kg.py                 # 知识图谱构建 (LLM提取)
+│   ├── import_kg.py                # 知识图谱导入Neo4j
 │   ├── neo4j/
 │   │   ├── __init__.py
-│   │   ├── driver.py                # Neo4j驱动 ✅
-│   │   └── query.py                 # KG查询工具 ✅
+│   │   ├── driver.py               # Neo4j驱动
+│   │   └── query.py                # KG查询工具
 │   └── llm/
 │       ├── __init__.py
-│       └── client.py                # LLM客户端 ✅
+│       └── client.py                # LLM客户端
 │
-├── pipeline/                         # 管道编排 ✅
+├── pipeline/                       # 管道编排
 │   ├── __init__.py
-│   └── health_pipeline.py           # HealthPlanPipeline ✅
+│   └── health_pipeline.py          # HealthPlanPipeline
 │
 ├── data/
-│   ├── diet/                        # diet knowledge docs
-│   └── exer/                        # exer knowledge docs
+│   ├── diet/                       # 饮食知识文档
+│   └── exer/                       # 运动知识文档
 ├── tests/
 │   ├── __init__.py
 │   └── test_read.py
@@ -52,35 +52,32 @@ kg_agents/
 ├── CLAUDE.md
 └── .plan/
     ├── targets.md
-    └── project_structure.md         # 本文件
+    └── project_structure.md
 ```
 
 ---
 
 ## 当前进度总结
 
-### ✅ 已完成
+### 已完成 ✅
 
 | 模块 | 组件 | 文件 | 状态 |
 |------|------|------|------|
 | **Core** | LLM客户端 | `core/llm/client.py` | ✅ |
 | | Neo4j驱动 | `core/neo4j/driver.py` | ✅ |
 | | KG查询工具 | `core/neo4j/query.py` | ✅ |
-| **Agents Base** | Agent基类 | `agents/base.py` | ✅ |
+| | FastAPI服务 | `core/server.py` | ✅ |
+| | KG构建工具 | `core/build_kg.py` | ✅ |
+| | KG导入工具 | `core/import_kg.py` | ✅ |
+| **Base** | Agent基类 | `agents/base.py` | ✅ |
 | **Diet Agent** | 生成器 | `agents/diet/generator.py` | ✅ |
 | | 模型 | `agents/diet/models.py` | ✅ |
+| | Prompt模板 | `agents/diet/prompts.py` | ✅ |
 | **Exercise Agent** | 生成器 | `agents/exercise/generator.py` | ✅ |
 | | 模型 | `agents/exercise/models.py` | ✅ |
 | **Safeguard Agent** | 评估器 | `agents/safeguard/assessor.py` | ✅ |
 | | 模型 | `agents/safeguard/models.py` | ✅ |
 | **Pipeline** | 编排器 | `pipeline/health_pipeline.py` | ✅ |
-
-### ⏳ 待实现
-
-| 组件 | 文件 | 优先级 |
-|------|------|--------|
-| FastAPI整合 | `core/server.py` | P1 |
-| 编写测试 | `tests/` | P1 |
 
 ---
 
@@ -93,46 +90,139 @@ kg_agents/
 - Excel (.xlsx)
 - 文本 (.txt)
 
+**目录结构**：
+```
+data/
+├── diet/          # 饮食知识文档
+│   ├── nutrition_guide.pdf
+│   └── diabetes_diet.docx
+└── exer/          # 运动知识文档
+    └── exercise_guide.pdf
+```
+
 ### 2. 运行知识提取
 ```bash
-python core/build_kg.py
+# 默认同时构建饮食和运动 KG
+python -m core.build_kg
+
+# 只构建饮食 KG
+python -m core.build_kg --kg=diet
+
+# 只构建运动 KG
+python -m core.build_kg --kg=exercise
 ```
 
 流程：
-1. 读取 `data/` 下所有文件
+1. 读取 `data/diet/` 或 `data/exer/` 下所有文件
 2. 文本清洗（移除引用、页码）
 3. 按 Markdown 标题切分 chunks
 4. 调用 DeepSeek LLM 提取知识三元组
-5. 保存到 `output_history/Run_YYYYMMDD_HHMMSS/kg_triplets.json`
+5. 保存到 `output_history/Diet_YYYYMMDD_HHMMSS/` 或 `output_history/Exercise_...`
 
 ### 3. 导入 Neo4j
 ```bash
-python core/import_kg.py
+python -m core.import_kg
 ```
 
 选项：
 - 1: 从 output_history 导入（推荐）
 - 2: 从指定目录导入
 - 3: 显示数据库统计
+- 4: 清空数据库
 
-### 提取的关系类型 (12种)
+---
+
+## 提取的关系类型
+
+### 饮食 KG (12种)
 | 关系类型 | 说明 |
 |---------|------|
-| Diet_Disease | 饮食与疾病关系 |
-| Food_Diet | 食物与饮食方案 |
-| Food_Disease | 食物与疾病关系 |
-| Amount_Food | 食物用量 |
-| Frequency_Food | 食用频率 |
-| Method_Food | 烹饪方式 |
-| Nutrient_Disease | 营养素与疾病 |
-| Restriction_Disease | 饮食禁忌 |
-| Benefit_Food | 食物益处 |
-| Risk_Food | 食物风险 |
-| Contraindication_Food | 禁忌症 |
-| Interaction_Food | 食物相互作用 |
+| Target_Recommendation | 针对特定人群的推荐 |
+| Target_Avoid | 针对特定人群的禁忌 |
+| Disease_Management | 饮食对疾病的管理作用 |
+| Nutrient_Content | 食物营养成分 |
+| Has_Benefit | 摄入带来的益处 |
+| Has_Risk | 摄入可能导致的风险 |
+| Recommended_Intake | 推荐摄入量 |
+| Recommended_Freq | 推荐摄入频率 |
+| Max_Limit | 建议上限 |
+| Preparation_Method | 烹饪方式 |
+| Interaction | 食物相互作用 |
+| Substitute_With | 替代方案 |
 
-### 当前问题
-⚠️ **Schema 不匹配**: `import_kg.py` 创建通用 `Entity` 节点，但 diet generator 查询期望 `Disease`, `Food`, `Nutrient` 等特定标签。
+### 运动 KG (12种)
+| 关系类型 | 说明 |
+|---------|------|
+| Target_Recommendation | 针对特定人群的推荐 |
+| Target_Avoid | 针对特定人群的禁忌 |
+| Disease_Management | 运动对疾病的管理作用 |
+| Targets_Muscle | 运动针对的肌肉群 |
+| Has_Benefit | 运动的益处 |
+| Has_Risk | 运动的风险 |
+| Recommended_Duration | 推荐时长 |
+| Recommended_Freq | 推荐频率 |
+| Max_Limit | 建议上限 |
+| Technique_Method | 运动技巧 |
+| Interaction | 运动相互作用 |
+| Substitute_With | 替代运动 |
+
+---
+
+## API 端点
+
+| 端点 | 方法 | 功能 |
+|------|------|------|
+| `/api/chat` | POST | 知识图谱问答 |
+| `/api/graph` | GET | 获取实体关系图 |
+| `/api/diet/generate` | POST | 饮食方案生成 |
+| `/api/exercise/generate` | POST | 运动方案生成 |
+| `/api/health/generate` | POST | 健康方案生成（饮食+运动+安全评估） |
+| `/api/diet/init_db` | POST | 初始化食物数据库 |
+
+### 请求示例
+
+**饮食生成**：
+```json
+POST /api/diet/generate
+{
+    "user_metadata": {
+        "age": 35,
+        "gender": "male",
+        "height_cm": 175,
+        "weight_kg": 70,
+        "medical_conditions": ["diabetes"],
+        "fitness_level": "intermediate"
+    },
+    "environment": {"time_context": {"season": "summer"}},
+    "user_requirement": {"goal": "weight_loss"},
+    "num_candidates": 3
+}
+```
+
+**运动生成**：
+```json
+POST /api/exercise/generate
+{
+    "user_metadata": {...},
+    "user_requirement": {"goal": "weight_loss", "intensity": "moderate"},
+    "num_candidates": 3
+}
+```
+
+**健康方案（完整管道）**：
+```json
+POST /api/health/generate
+{
+    "user_metadata": {...},
+    "environment": {...},
+    "user_requirement": {"goal": "weight_loss"},
+    "num_candidates": 3,
+    "diet_only": false,
+    "exercise_only": false,
+    "filter_safe": true,
+    "min_score": 60
+}
+```
 
 ---
 
@@ -147,14 +237,9 @@ pip install -r requirements.txt
 net start Neo4j
 
 # 配置 API Key (config.json)
-
-# extract data and import database
-python -m core.build_kg
-python -m core.import_kg
 ```
 
 ### 统一入口 (推荐)
-
 ```bash
 # 运行完整集成测试
 python run.py all
@@ -165,67 +250,20 @@ python run.py diet --goal weight_loss
 # 生成运动方案
 python run.py exercise --goal weight_loss
 
-# 运行安全评估
-python run.py safeguard
-
-# 运行完整管道
-python run.py pipeline
-
-# 带参数示例
-python run.py diet --conditions diabetes,hypertension --goal weight_loss -N 3
-python run.py pipeline --conditions diabetes --no-filter
-
 # 启动服务器
-python -m core.server 
+python -m core.server
 ```
 
-### 独立模块测试 (Python脚本)
-
+### 独立模块测试
 ```python
 # test_diet.py
-from pipeline import generate_health_plans
-result = generate_health_plans(...)
-```
+from agents.diet import generate_diet_candidates
 
-运行: `python test_diet.py`
-
----
-
-## 快速使用示例
-
-```python
-from pipeline import generate_health_plans
-
-# 1. 准备输入
-input_data = {
-    "user_metadata": {
-        "age": 35,
-        "gender": "male",
-        "height_cm": 175,
-        "weight_kg": 70,
-        "medical_conditions": ["diabetes"],
-        "dietary_restrictions": ["low_sodium"],
-        "fitness_level": "intermediate"
-    },
-    "environment": {
-        "weather": {"condition": "clear", "temperature_c": 25},
-        "time_context": {"season": "summer"}
-    },
-    "user_requirement": {
-        "goal": "weight_loss",
-        "intensity": "moderate"
-    },
-    "num_candidates": 3
-}
-
-# 2. 生成健康计划
-result = generate_health_plans(**input_data)
-
-# 3. 查看结果
-print(f"饮食候选数: {len(result['diet_candidates'])}")
-print(f"运动候选数: {len(result['exercise_candidates'])}")
-print(f"综合评分: {result['combined_assessment']['overall_score']}/100")
-print(f"是否安全: {result['combined_assessment']['is_safe']}")
+candidates = generate_diet_candidates(
+    user_metadata={...},
+    user_requirement={"goal": "weight_loss"},
+    num_candidates=2
+)
 ```
 
 ---
@@ -234,11 +272,88 @@ print(f"是否安全: {result['combined_assessment']['is_safe']}")
 
 | Agent | 输入 | 输出 |
 |-------|------|------|
-| Diet | user_metadata + env + requirement | 饮食候选 (含营养素) |
-| Exercise | user_metadata + env + requirement | 运动候选 (含卡路里) |
-| Safeguard | plan + user_metadata + env | {0-100分, is_safe, 风险因素} |
+| DietAgent | user_metadata + env + requirement | 饮食候选 (含营养素) |
+| ExerciseAgent | user_metadata + env + requirement | 运动候选 (含卡路里) |
+| SafeguardAgent | plan + user_metadata + env | {0-100分, is_safe, 风险因素} |
 
 ---
 
-### P1 - 服务与测试
-1. **更新 FastAPI** (`core/server.py`) - 接入新架构
+## 架构特点
+
+### 1. BaseAgent + Mixin 模式
+- `BaseAgent`: 提供通用 Agent 功能（LLM 调用、输入解析）
+- `DietAgentMixin`: 饮食知识查询
+- `ExerciseAgentMixin`: 运动知识查询
+
+### 2. Pydantic 数据模型
+所有输入输出都有严格的类型验证：
+```python
+class DietAgentInput(BaseModel):
+    user_metadata: Dict[str, Any]
+    environment: Optional[Dict[str, Any]] = None
+    user_requirement: Optional[Dict[str, Any]] = None
+    num_candidates: int = 3
+
+class DietRecommendation(BaseModel):
+    id: int
+    meal_plan: Dict[str, List[FoodItem]]
+    total_calories: int
+    calories_deviation: float
+    macro_nutrients: MacroNutrients
+    safety_notes: List[str]
+```
+
+### 3. 健康管道编排
+```python
+class HealthPlanPipeline:
+    def generate(self, input_data):
+        # 1. 饮食方案生成
+        diet_candidates = diet_agent.generate(...)
+
+        # 2. 运动方案生成
+        exer_candidates = exercise_agent.generate(...)
+
+        # 3. 安全评估
+        for plan in diet_candidates + exer_candidates:
+            score = safeguard.evaluate(plan, ...)
+
+        # 4. 排序返回
+        return safe_plans_sorted_by_score
+```
+
+---
+
+## 最近的 Bug 修复
+
+### 1. 枚举值大小写问题
+- **问题**: LLM 返回大写枚举值 (`'CARDIO'`, `'LOW'`)，但 Pydantic 期望小写
+- **修复**: 添加 `_normalize_enum_values()` 方法自动转换
+
+### 2. 关系类型显示为 "RELATION"
+- **问题**: `import_kg.py` 硬编码关系类型为 `"RELATION"`
+- **修复**: 使用实际关系名称（如 `"Has_Benefit"`, `"Target_Recommendation"`）
+- **命令**: 重新运行 `python -m core.import_kg` 导入数据
+
+### 3. 节点字段名大小写不匹配
+- **问题**: 后端返回 `"Name"` 但前端期望 `"name"`
+- **修复**: 统一使用小写 `"name"`
+
+---
+
+## 下一步优化方向
+
+1. **Safeguard Agent 完善**
+   - 实现完整的风险评估逻辑
+   - 添加更多安全规则
+
+2. **测试覆盖**
+   - 添加单元测试
+   - 添加集成测试
+
+3. **性能优化**
+   - 缓存 LLM 响应
+   - 批量查询 Neo4j
+
+4. **前端改进**
+   - 支持健康方案可视化
+   - 支持方案对比
