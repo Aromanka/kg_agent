@@ -33,10 +33,21 @@ class DietPipelineOutput:
     generated_at: str
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary, handling datetime serialization"""
+        def convert_datetime(obj):
+            """Recursively convert datetime to ISO string"""
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            elif isinstance(obj, dict):
+                return {k: convert_datetime(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_datetime(item) for item in obj]
+            return obj
+
         return {
-            "all_plans": self.all_plans,
-            "top_plans": self.top_plans,
-            "assessments": self.assessments,
+            "all_plans": convert_datetime(self.all_plans),
+            "top_plans": convert_datetime(self.top_plans),
+            "assessments": convert_datetime(self.assessments),
             "generated_at": self.generated_at
         }
 
