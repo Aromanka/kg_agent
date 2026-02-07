@@ -21,6 +21,8 @@ from agents.diet.models import DietRecommendation
 from agents.safeguard.assessor import SafeguardAgent
 from agents.safeguard.models import SafetyAssessment
 
+import argparse
+
 
 # ================= Pipeline Output =================
 
@@ -292,6 +294,10 @@ def run_diet_pipeline(
 # ================= CLI =================
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('--bn', type=int, default=3, help='base plan num')
+    parser.add_argument('--vn', type=int, default=3, help='var plan num')
+    args = parser.parse_args()
     test_input = {
         "user_metadata": {
             "age": 35,
@@ -309,8 +315,8 @@ if __name__ == "__main__":
         "user_requirement": {
             "goal": "weight_loss"
         },
-        "num_base_plans": 2,
-        "num_variants": 2,
+        "num_base_plans": args.bn,
+        "num_variants": args.vn,
         "meal_type": "lunch",
         "temperature": 0.9,
         "top_k": 10,
