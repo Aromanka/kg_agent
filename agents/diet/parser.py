@@ -94,19 +94,22 @@ class DietPlanParser:
         """
         unit = item.portion_unit
         original_num = item.portion_number
-        calories_per_unit = item.calories_per_unit
+        original_total = item.total_calories
+
+        # Calculate calories_per_unit from total_calories for scaling
+        calories_per_unit = original_total / original_num
 
         # Calculate scaled portion number
         scaled_num = self._calculate_scaled_number(original_num, unit, scale_factor)
 
-        # Calculate total calories
+        # Calculate total calories for the scaled portion
         total_calories = round(scaled_num * calories_per_unit, 1)
 
         return {
             "food_name": item.food_name,
             "portion_number": scaled_num,
             "portion_unit": unit,
-            "calories_per_unit": calories_per_unit,
+            "calories_per_unit": round(calories_per_unit, 2),
             "total_calories": total_calories
         }
 

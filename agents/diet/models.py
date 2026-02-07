@@ -28,7 +28,8 @@ class BaseFoodItem(BaseModel):
     food_name: str = Field(..., description="Name of the food dish")
     portion_number: float = Field(..., description="Numeric quantity (e.g., 100, 1.5)")
     portion_unit: ALLOWED_UNITS = Field(..., description="Unit: gram, ml, piece, slice, cup, bowl, or spoon")
-    calories_per_unit: float = Field(..., description="Calories per single unit (e.g., per gram or per piece)")
+    total_calories: float = Field(..., description="Total calories for this portion size (e.g., for 150g salmon, ~200 kcal)")
+    # calories_per_unit is calculated from total_calories / portion_number for scaling
 
 
 class RawDietPlan(BaseModel):

@@ -23,41 +23,73 @@ from core.llm.utils import parse_json_response
 # Allowed units for portion (must match parser rules)
 UNIT_LIST_STR = '["gram", "ml", "piece", "slice", "cup", "bowl", "spoon"]'
 
+# ================= Ingredient Pools for Mandatory Injection =================
+
+PROTEIN_SOURCES = [
+    "Cod Fillet", "Salmon", "Tofu", "Lean Beef Steak", "Shrimp",
+    "Turkey Breast", "Pork Tenderloin", "Lamb Chop", "Edamame", "Tempeh",
+    "Duck Breast", "Tuna Steak", "Sardines", "Chickpeas"
+]
+
+CARB_SOURCES = [
+    "Quinoa", "Sweet Potato", "Buckwheat", "Whole Wheat Pasta", "Couscous",
+    "Barley", "Corn", "Multigrain Bread", "Red Potato", "Wild Rice",
+    "Polenta", "Bulgur", "Millet"
+]
+
+VEG_SOURCES = [
+    "Asparagus", "Spinach", "Kale", "Zucchini", "Bell Peppers",
+    "Eggplant", "Cauliflower", "Green Beans", "Brussels Sprouts",
+    "Bok Choy", "Artichokes", "Mushrooms", "Snow Peas"
+]
+
+COMMON_BORING_FOODS = ["Chicken Breast", "Brown Rice", "Broccoli", "Boiled Egg"]
+
 DIET_GENERATION_SYSTEM_PROMPT = f"""You are a professional nutritionist. Generate BASE meal plans with standardized portions.
 
 ## Output Format
 Output MUST be a valid JSON list of objects. Each object is a food item with these fields:
-- "food_name": string (name of the food)
-- "portion_number": number (numeric quantity, e.g., 100, 1.5, 2)
+- "food_name": string (Name of the food, e.g., "Grilled Salmon")
+- "portion_number": number (Numeric quantity, e.g., 150, 1.5)
 - "portion_unit": string (MUST be one of: {UNIT_LIST_STR})
-- "calories_per_unit": number (calories for ONE unit, e.g., per gram or per piece)
+- "total_calories": number (Total calories for THIS portion size. E.g., for 150g salmon, output ~200)
 
 ## Rules
 1. Use ONLY the allowed units listed above
-2. Provide accurate calories_per_unit based on nutritional data
-3. Output food items for ONE meal type as a JSON LIST
-4. Do NOT wrap in extra keys like "meal_plan" or "items"
-5. Do NOT output markdown code blocks
+2. STRICTLY follow the "Mandatory Ingredients" and "Excluded Ingredients" in the user prompt
+3. Estimate "total_calories" realistically:
+   - Vegetables are low calorie (~0.2-0.5 kcal/g)
+   - Oils and fats are high calorie (~9 kcal/g)
+   - Proteins and carbs are moderate (~4 kcal/g)
+4. Output food items for ONE meal type as a JSON LIST
+5. Do NOT wrap in extra keys like "meal_plan" or "items"
+6. Do NOT output markdown code blocks
 
-## Example Output (breakfast):
+## Example Output:
 [
   {{
-    "food_name": "Oatmeal",
-    "portion_number": 50,
+    "food_name": "Pan-Seared White Fish",
+    "portion_number": 150,
     "portion_unit": "gram",
-    "calories_per_unit": 3.5
+    "total_calories": 180
   }},
   {{
-    "food_name": "Boiled Egg",
-    "portion_number": 2,
-    "portion_unit": "piece",
-    "calories_per_unit": 78
-  }},
-  {{
-    "food_name": "Banana",
+    "food_name": "Whole Grain Bowl",
     "portion_number": 1,
-    "portion_unit": "piece",
-    "calories_per_unit": 105
+    "portion_unit": "bowl",
+    "total_calories": 250
+  }},
+  {{
+    "food_name": "Olive Oil",
+    "portion_number": 5,
+    "portion_unit": "ml",
+    "total_calories": 45
+  }},
+  {{
+    "food_name": "Mixed Greens",
+    "portion_number": 1,
+    "portion_unit": "bowl",
+    "total_calories": 25
   }}
 ]
 
@@ -74,11 +106,38 @@ def _to_food_item(item_dict: Dict[str, Any]) -> FoodItem:
     return FoodItem(
         food=item_dict.get("food_name", ""),
         portion=f"{item_dict.get('portion_number', '')}{item_dict.get('portion_unit', '')}",
-        calories=int(item_dict.get("total_calories", 0)),
+        calories=int(round(item_dict.get("total_calories", 0))),
         protein=0.0,  # Placeholder - not tracked in new format
         carbs=0.0,    # Placeholder
         fat=0.0        # Placeholder
     )
+
+
+# ================= Constraint Builder =================
+
+def build_constraint_prompt(protein: str, carb: str, veg: str, excluded: List[str] = None) -> str:
+    """
+    Build constraint prompt for mandatory ingredient injection.
+
+    Args:
+        protein: Main protein source (must be included)
+        carb: Carb source (must be included)
+        veg: Vegetable source (must be included)
+        excluded: List of ingredients to exclude
+
+    Returns:
+        Constraint prompt string to be added to LLM prompt
+    """
+    prompt = "\n## Mandatory Ingredients (YOU MUST USE THESE)\n"
+    prompt += f"- Main Protein: {protein}\n"
+    prompt += f"- Carb Source: {carb}\n"
+    prompt += f"- Vegetable: {veg}\n"
+
+    if excluded:
+        prompt += f"\n## Excluded Ingredients (DO NOT USE)\n"
+        prompt += f"- {', '.join(excluded)}\n"
+
+    return prompt
 
 
 # ================= Diet Agent =================
@@ -166,6 +225,7 @@ class DietAgent(BaseAgent, DietAgentMixin):
         available_strategies = ["balanced", "protein_focus", "variety", "low_carb", "fiber_rich"]
         available_cuisines = ["Mediterranean", "Asian", "Western", "Fusion", "Local Home-style", "Simple & Quick"]
         used_strategies = set()  # 避免单次生成中策略过度重复
+        used_combinations = set()  # 避免蛋白质+碳水组合重复
 
         # Collect base plans for each meal type
         meal_base_plans: Dict[str, Dict[str, Any]] = {}
@@ -182,6 +242,32 @@ class DietAgent(BaseAgent, DietAgentMixin):
             # [改进] 随机选择菜系/风格
             cuisine = random.choice(available_cuisines)
 
+            # [新增] 随机抽取核心食材 (Hero Ingredients)
+            protein = random.choice(PROTEIN_SOURCES)
+            carb = random.choice(CARB_SOURCES)
+            veg = random.choice(VEG_SOURCES)
+
+            # [新增] 避免重复组合
+            combo_key = f"{protein}-{carb}"
+            max_attempts = 3
+            attempts = 0
+            while combo_key in used_combinations and attempts < max_attempts:
+                protein = random.choice(PROTEIN_SOURCES)
+                carb = random.choice(CARB_SOURCES)
+                combo_key = f"{protein}-{carb}"
+                attempts += 1
+            used_combinations.add(combo_key)
+
+            # [新增] 随机禁用"无聊"食材 (50% 概率)
+            excluded = []
+            if random.random() > 0.5:
+                excluded = random.sample(COMMON_BORING_FOODS, k=random.randint(1, 2))
+
+            # [新增] 构建约束 Prompt
+            constraint_prompt = build_constraint_prompt(protein, carb, veg, excluded)
+
+            print(f"[DEBUG] {mt}: protein={protein}, carb={carb}, veg={veg}, excluded={excluded}")
+
             base_items = self._generate_base_plan(
                 user_meta=user_meta,
                 environment=env,
@@ -193,13 +279,18 @@ class DietAgent(BaseAgent, DietAgentMixin):
                 top_p=top_p,
                 top_k=top_k,
                 strategy=strategy,
-                cuisine=cuisine
+                cuisine=cuisine,
+                constraint_prompt=constraint_prompt
             )
             if base_items:
                 meal_base_plans[mt] = {
                     "items": base_items,
                     "strategy": strategy,
-                    "cuisine": cuisine
+                    "cuisine": cuisine,
+                    "protein": protein,
+                    "carb": carb,
+                    "veg": veg,
+                    "excluded": excluded
                 }
 
         if not meal_base_plans:
@@ -251,6 +342,10 @@ class DietAgent(BaseAgent, DietAgentMixin):
                 # Build safety notes
                 safety_notes = [f"Meal: {meal_type}", f"Variant: {variant_name}"]
                 safety_notes.append(f"Style: {cuisine}, Strategy: {strategy}")
+                # [新增] 记录食材约束
+                excluded = plan_info.get("excluded", [])
+                if excluded:
+                    safety_notes.append(f"Excluded: {', '.join(excluded)}")
                 if abs(deviation) > 10:
                     safety_notes.append(f"Calorie deviation: {deviation}%")
 
@@ -284,7 +379,8 @@ class DietAgent(BaseAgent, DietAgentMixin):
         top_p: float = 0.92,
         top_k: int = 50,
         strategy: str = "balanced",
-        cuisine: str = "General"
+        cuisine: str = "General",
+        constraint_prompt: str = ""
     ) -> Optional[List[BaseFoodItem]]:
         """Generate base food items for a single meal type with diversity injection"""
 
@@ -308,6 +404,7 @@ class DietAgent(BaseAgent, DietAgentMixin):
         # [改进] 构建更具独特性的 Prompt
         full_prompt = user_prompt + f"\n\n### Optimization Strategy: {strategy.upper()}\n{strategy_guidance.get(strategy, '')}"
         full_prompt += f"\n\n### Culinary Style: {cuisine}\nPLEASE strictly follow this style. Use ingredients and cooking methods typical for {cuisine} cuisine."
+        full_prompt += constraint_prompt  # [新增] 注入强制食材约束
 
         response = self._call_llm(
             system_prompt=DIET_GENERATION_SYSTEM_PROMPT,
