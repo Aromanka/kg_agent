@@ -75,7 +75,6 @@ class ExercisePlanParser:
         for variant_name in variants:
             scale_factor = self.variants.get(variant_name, 1.0)
             expanded_plan = self._scale_plan(base_plan, scale_factor, variant_name)
-            expanded_plan.id = variant_name  # Use variant name as ID
             result[variant_name] = expanded_plan
 
         return result
