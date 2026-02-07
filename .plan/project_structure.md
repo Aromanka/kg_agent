@@ -266,6 +266,9 @@ python -m agents.diet.generator
 python -m agents.exercise.generator
 python -m pipeline.health_pipeline
 
+python -m pipeline.diet_pipeline --bn 4 --vn 3
+python pipeline/exer_pipeline.py --bn 3 --topk 3
+
 ```
 
 ---

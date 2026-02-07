@@ -11,14 +11,68 @@ from agents.exercise.models import (
     ExerciseItem, ExerciseSession, ExercisePlan,
     ExerciseCandidatesResponse, ExerciseAgentInput
 )
+from agents.exercise.parser import ExercisePlanParser
 from core.llm import get_llm
 from core.llm.utils import parse_json_response
 from core.neo4j import get_kg_query
+import random
+
+
+# ================= Exercise Pools for Mandatory Selection =================
+
+CARDIO_ACTIVITIES = [
+    "Outdoor Running", "Treadmill Running", "Cycling (Outdoor)", "Stationary Bike",
+    "Swimming (Freestyle)", "Swimming (Laps)", "Rowing Machine", "Jump Rope",
+    "Hiking (Trail)", "Stair Climbing", "Elliptical Training", " Dancing (Aerobic)",
+    "Boxing (Bag Work)", "Kettlebell Cardio", "Battle Ropes", "Mountain Climbers"
+]
+
+STRENGTH_MOVEMENTS = [
+    "Barbell Squats", "Deadlifts", "Bench Press", "Overhead Press",
+    "Pull-Ups", "Dips", "Push-Ups", "Lunges",
+    "Goblet Squats", "Turkish Get-Up", "Kettlebell Swings", "Farmer's Walk",
+    "Romanian Deadlifts", "Face Pulls", "Plank Variations", "Bulgarian Split Squats"
+]
+
+FLEXIBILITY_POSES = [
+    "Sun Salutation Flow", "Hip Flexor Stretch", "Hamstring Stretch",
+    "Cat-Cow Pose", "Child's Pose", "Pigeon Pose", "Seated Forward Fold",
+    "Quad Stretch", "Chest Opener", "Thread the Needle Stretch",
+    "Downward Dog", "Warrior Poses", "Balance Tree Pose", "Deep Breathing"
+]
+
+EQUIPMENT_OPTIONS = [
+    "Resistance Bands", "Dumbbells", "Kettlebell", "Medicine Ball",
+    "TRX Suspension", "Pull-Up Bar", "Jump Rope", "Foam Roller",
+    "Yoga Mat", "Exercise Bench", "None (Bodyweight Only)"
+]
+
+OUTDOOR_ACTIVITIES = [
+    "Trail Running", "Hiking", "Outdoor Cycling", "Park Workout",
+    "Beach Workout", "Stair Climbing (Stadium)", "Outdoor Yoga",
+    "Kayaking", "Rock Climbing (Indoor/Bouldering)"
+]
+
+WATER_ACTIVITIES = [
+    "Lap Swimming", "Water Aerobics", "Treading Water", "Pool Laps"
+]
+
+HIIT_EXERCISES = [
+    "Burpees", "Mountain Climbers", "Box Jumps", "High Knees",
+    "Jump Squats", "Skaters", "Tuck Jumps", "Battle Ropes",
+    "Sprint Intervals", "Cycle Sprints"
+]
+
+# Boring/common exercises that may be excluded for variety
+COMMON_BORING_EXERCISES = [
+    "Brisk Walking", "Bodyweight Squats", "Jumping Jacks", "Plank Hold",
+    "Stationary Biking (Easy)", "Basic Stretching"
+]
 
 
 # ================= System Prompts =================
 
-EXERCISE_GENERATION_SYSTEM_PROMPT = """You are a professional exercise prescription AI. Your task is to generate personalized exercise plans based on user health data.
+EXERCISE_GENERATION_SYSTEM_PROMPT = """You are a professional exercise prescription AI. Your task to generate personalized exercise plans based on user health data.
 
 ## Guidelines
 
@@ -54,11 +108,46 @@ EXERCISE_GENERATION_SYSTEM_PROMPT = """You are a professional exercise prescript
 7. Always include warm-up and cool-down
 
 ## Output Format
-Return a valid JSON object matching the provided schema. Each exercise must include:
-- Clear name and type
-- Appropriate duration for fitness level
-- Calorie burn estimate
-- Safety considerations specific to user's conditions
+Return a valid JSON object matching the provided schema. STRICTLY follow:
+- "calories_burned": TOTAL calories for this exercise (NOT per minute)
+- Use lowercase for all enum values: "cardio", "strength", "low", "moderate", etc.
+- "duration_minutes": Integer (not fractional)
+
+## Example Output:
+{
+  "id": 1,
+  "title": "Morning Cardio Plan",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Brisk Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 135,
+          "equipment": [],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+          "reason": "Low-impact cardio suitable for beginners",
+          "safety_notes": ["Stay hydrated", "Warm up first"]
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 135,
+      "overall_intensity": "low"
+    }
+  },
+  "total_duration_minutes": 30,
+  "total_calories_burned": 135,
+  "weekly_frequency": 5,
+  "progression": "Week 1-2: Establish baseline. Week 3-4: Increase duration by 5min/session",
+  "reasoning": "This plan combines low-impact cardio with strength training",
+  "safety_notes": ["Consult physician before starting", "Listen to your body"]
+}
+
+IMPORTANT: calories_burned should be realistic totals (e.g., 30 min walking = ~135 kcal, NOT 4-5 kcal).
 """
 
 
@@ -85,6 +174,57 @@ def calculate_target_calories_burned(
     }
 
     return goal_targets.get(goal, 200)
+
+
+# ================= Constraint Builder =================
+
+def build_exercise_constraint_prompt(
+    primary_cardio: str = None,
+    primary_strength: str = None,
+    flexibility: str = None,
+    excluded: List[str] = None,
+    equipment: str = None,
+    outdoor: bool = False
+) -> str:
+    """
+    Build constraint prompt for mandatory exercise selection.
+
+    Args:
+        primary_cardio: Main cardio activity to include
+        primary_strength: Main strength movement to include
+        flexibility: Flexibility pose/flow to include
+        excluded: List of exercises to exclude
+        equipment: Required equipment to use
+        outdoor: Whether to prioritize outdoor activities
+
+    Returns:
+        Formatted constraint string for LLM prompt
+    """
+    prompt_parts = []
+
+    if primary_cardio:
+        prompt_parts.append(f"- PRIMARY CARDIO: {primary_cardio}")
+
+    if primary_strength:
+        prompt_parts.append(f"- PRIMARY STRENGTH: {primary_strength}")
+
+    if flexibility:
+        prompt_parts.append(f"- FLEXIBILITY ELEMENT: {flexibility}")
+
+    if equipment:
+        prompt_parts.append(f"- EQUIPMENT REQUIRED: {equipment}")
+
+    if outdoor:
+        prompt_parts.append("- PRIORITIZE: Outdoor activities where possible")
+
+    if excluded:
+        prompt_parts.append(f"\n## EXCLUDED EXERCISES (DO NOT USE):")
+        prompt_parts.append(f"- {', '.join(excluded)}")
+
+    if prompt_parts:
+        return "\n## MANDATORY EXERCISE CONSTRAINTS\n" + "\n".join(prompt_parts)
+
+    return ""
 
 
 # ================= Exercise Agent =================
@@ -260,7 +400,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         input_data: Dict[str, Any],
         num_candidates: int = 3
     ) -> List[ExercisePlan]:
-        """Generate exercise plan candidates"""
+        """Generate exercise plan candidates with mandatory exercise injection"""
         # Parse input
         input_obj = ExerciseAgentInput(**input_data)
         self._input_meta = input_obj.user_metadata  # Store for condition access
@@ -292,8 +432,8 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         weather = env.get("weather", {})
         season = env.get("time_context", {}).get("season", "any")
 
-        # Build user prompt
-        user_prompt = self._build_exercise_prompt(
+        # Build base user prompt
+        base_prompt = self._build_exercise_prompt(
             user_meta=user_meta,
             environment=env,
             requirement=requirement,
@@ -303,15 +443,57 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
             target_frequency=target_frequency
         )
 
-        # Generate candidates using LLM
+        # Generate candidates with mandatory exercise injection
         candidates = []
-        strategies = strategies[:num_candidates] if num_candidates > 1 else [strategies[0]] if strategies else ["balanced"]
+        used_combinations = set()
 
         for i in range(num_candidates):
+            # 1. Randomly select primary exercises
+            primary_cardio = random.choice(CARDIO_ACTIVITIES)
+            primary_strength = random.choice(STRENGTH_MOVEMENTS)
+            flexibility = random.choice(FLEXIBILITY_POSES)
+
+            # 2. Randomly exclude boring exercises (50% chance)
+            excluded = []
+            if random.random() > 0.5:
+                excluded = random.sample(COMMON_BORING_EXERCISES, k=random.randint(1, 2))
+
+            # 3. Optionally add equipment constraint (30% chance)
+            equipment = None
+            if random.random() > 0.7:
+                equipment = random.choice(EQUIPMENT_OPTIONS)
+
+            # 4. Optionally prioritize outdoor (based on weather/season)
+            outdoor = False
+            if weather.get("condition") in ["clear", "sunny"] and random.random() > 0.5:
+                outdoor = True
+
+            # 5. Avoid duplicate combinations
+            combo_key = f"{primary_cardio}-{primary_strength}"
+            if combo_key in used_combinations and num_candidates < len(CARDIO_ACTIVITIES):
+                # Try a different combo
+                primary_cardio = random.choice(CARDIO_ACTIVITIES)
+                combo_key = f"{primary_cardio}-{primary_strength}"
+            used_combinations.add(combo_key)
+
+            # 6. Build constraint prompt
+            constraint_prompt = build_exercise_constraint_prompt(
+                primary_cardio=primary_cardio,
+                primary_strength=primary_strength,
+                flexibility=flexibility,
+                excluded=excluded,
+                equipment=equipment,
+                outdoor=outdoor
+            )
+
+            # 7. Combine prompts
+            full_prompt = base_prompt + "\n" + constraint_prompt
+
+            # 8. Get strategy
             strategy = strategies[i % len(strategies)] if strategies else "balanced"
 
             candidate = self._generate_single_candidate(
-                user_prompt=user_prompt,
+                user_prompt=full_prompt,
                 candidate_id=i + 1,
                 fitness_level=fitness_level,
                 weight=weight,
@@ -563,6 +745,45 @@ def generate_exercise_candidates(
         "num_candidates": num_candidates
     }
     return agent.generate(input_data, num_candidates)
+
+
+def generate_exercise_variants(
+    user_metadata: Dict[str, Any],
+    environment: Dict[str, Any] = {},
+    user_requirement: Dict[str, Any] = {},
+    num_candidates: int = 3
+) -> Dict[str, List[ExercisePlan]]:
+    """
+    Generate exercise plans with intensity variants (Lite/Standard/Plus).
+
+    Args:
+        user_metadata: User physiological data
+        environment: Environmental context
+        user_requirement: User goals
+        num_candidates: Number of base candidates to generate
+
+    Returns:
+        Dict mapping candidate_id to dict of variants:
+        {
+            1: {"Lite": ExercisePlan, "Standard": ExercisePlan, "Plus": ExercisePlan},
+            2: {...},
+            ...
+        }
+    """
+    # Generate base candidates
+    base_candidates = generate_exercise_candidates(
+        user_metadata, environment, user_requirement, num_candidates
+    )
+
+    # Expand each candidate into variants
+    parser = ExercisePlanParser()
+    result = {}
+
+    for base_plan in base_candidates:
+        variants = parser.expand_plan(base_plan)
+        result[base_plan.id] = variants
+
+    return result
 
 
 if __name__ == "__main__":
