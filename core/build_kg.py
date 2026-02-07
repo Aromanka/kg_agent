@@ -28,14 +28,16 @@ from docx import Document
 
 # ================= 配置加载 =================
 config = get_config()
-DEEPSEEK_API_KEY = config["deepseek"]["api_key"]
-DEEPSEEK_BASE_URL = config["deepseek"]["base_url"]
-MODEL_NAME = config["deepseek"].get("model", "deepseek-chat")
+API_MODEL = config.get("api_model", {})
+DEEPSEEK_API_KEY = API_MODEL.get("api_key", config.get("deepseek", {}).get("api_key", ""))
+DEEPSEEK_BASE_URL = API_MODEL.get("base_url", config.get("deepseek", {}).get("base_url", ""))
+MODEL_NAME = API_MODEL.get("model", config.get("deepseek", {}).get("model", "deepseek-chat"))
 LOCAL_MODEL_PATH = config.get("local_model_path")
 
-# Determine LLM mode
+# Determine LLM mode (use api_model by default, fallback to local only if configured)
 USE_LOCAL = should_use_local() if HAS_UNIFIED_LLM and LOCAL_MODEL_PATH else False
 print(f"[INFO] KG Builder LLM mode: {'local' if USE_LOCAL else 'api'}")
+print(f"[INFO] API Model: {MODEL_NAME} @ {DEEPSEEK_BASE_URL}")
 
 # ================= 核心配置区域 =================
 
