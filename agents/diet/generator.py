@@ -267,41 +267,41 @@ Example format:
 
         full_prompt = user_prompt + f"\n\n### Strategy: {strategy.upper()}\n{strategy_guidance.get(strategy, '')}"
 
-        try:
-            response = self._call_llm(
-                system_prompt=DIET_GENERATION_SYSTEM_PROMPT,
-                user_prompt=full_prompt,
-                temperature=0.7
-            )
+        # try:
+        response = self._call_llm(
+            system_prompt=DIET_GENERATION_SYSTEM_PROMPT,
+            user_prompt=full_prompt,
+            temperature=0.7
+        )
 
-            # Handle empty response
-            if not response or response == {}:
-                print(f"[WARN] LLM returned empty response for candidate {candidate_id}")
-                return None
-
-            try:
-                data = parse_json_response(response)
-            except json.JSONDecodeError:
-                print(f"[WARN] Invalid JSON from LLM: {response[:100]}...")
-                return None
-
-            # Handle list response
-            if isinstance(data, list):
-                plan_data = data[0] if data else {}
-            elif isinstance(data, dict):
-                plan_data = data
-            else:
-                return None
-
-            # Ensure ID
-            if "id" not in plan_data:
-                plan_data["id"] = candidate_id
-
-            return DietRecommendation(**plan_data)
-
-        except Exception as e:
-            print(f"Error generating diet candidate {candidate_id}: {e}")
+        # Handle empty response
+        if not response or response == {}:
+            print(f"[WARN] LLM returned empty response for candidate {candidate_id}")
             return None
+
+        try:
+            data = parse_json_response(response)
+        except json.JSONDecodeError:
+            print(f"[WARN] Invalid JSON from LLM: {response[:100]}...")
+            return None
+
+        # Handle list response
+        if isinstance(data, list):
+            plan_data = data[0] if data else {}
+        elif isinstance(data, dict):
+            plan_data = data
+        else:
+            return None
+
+        # Ensure ID
+        if "id" not in plan_data:
+            plan_data["id"] = candidate_id
+
+        return DietRecommendation(**plan_data)
+
+        # except Exception as e:
+        #     print(f"Error generating diet candidate {candidate_id}: {e}")
+        #     return None
 
 
 # ================= Convenience Functions =================
