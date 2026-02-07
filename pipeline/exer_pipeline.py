@@ -16,7 +16,7 @@ from typing import List, Dict, Any
 from datetime import datetime
 from dataclasses import dataclass
 
-from agents.exercise import generate_exercise_variants
+from agents.exercise.generator import generate_exercise_variants
 from agents.exercise.models import ExercisePlan
 from agents.safeguard.assessor import SafeguardAgent
 from agents.safeguard.models import SafetyAssessment
