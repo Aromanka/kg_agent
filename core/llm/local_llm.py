@@ -243,5 +243,10 @@ def unload_local_model():
 
 
 def is_local_mode() -> bool:
-    """Check if local model path is configured"""
-    return _get_local_model_path() is not None
+    """Check if local model is configured (field must exist in config)"""
+    try:
+        config = get_config()
+        # Only use local mode if 'local_model_path' field explicitly exists
+        return "local_model_path" in config
+    except Exception:
+        return False
