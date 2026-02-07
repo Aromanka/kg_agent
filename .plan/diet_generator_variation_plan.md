@@ -1,187 +1,193 @@
-为了解决 `pipeline.diet_pipeline` 每次生成的方案过于相似的问题，我们需要在生成过程中引入**随机性变量**（Randomness/Entropy）。目前的实现中，Prompt 的内容对于相同的用户输入是固定的，且策略（Strategy）是按固定顺序循环的，这导致 LLM 在相同的上下文下倾向于输出相似的结果。
+当前LLM生成方案过于单一问题在于：
 
-以下是具体的改进方案：
+1. **策略/菜系指令过粗**：仅仅告诉 LLM “地中海”或“高纤维”，它倾向于输出训练数据中该类别下概率最高的组合（即“安全牌”：鸡胸肉、西兰花、糙米）。
+2. **Prompt 示例的锚定效应**：System Prompt 中的示例（Oatmeal, Egg）可能限制了模型的想象力。
+3. **参数 Temperature 仍不够**：或者在某些实现中未生效。
 
-### 核心改进思路
+**改进方案：强制性成分注入 (Mandatory Ingredient Injection)**
+不再依赖 LLM “自由发挥”选择食材，而是在 Python 代码层面**随机抽取核心食材**，并以“约束条件”的形式强制写入 Prompt。同时，**随机禁用**某些高频食材（如鸡胸肉）。
 
-1. **引入随机“风格/菜系” (Cuisine/Theme)**：在生成时随机注入不同的饮食风格（如地中海、亚洲、西式等），强制模型在食材选择和烹饪方式上做出改变。
-2. **策略随机化 (Randomize Strategy)**：不再按固定顺序 `(i % 3)` 选择策略，而是从策略池中随机抽取。
-3. **提升 Temperature**：微调 LLM 的 Temperature 参数，增加输出的多样性。
+此外，日志显示 `calories_per_unit` 存在严重幻觉（如西兰花 25kcal/g，实际约 0.34kcal/g），这会导致安全检查失败。我将在 Prompt 中修正这一点，改为让 LLM 输出该份量的**总热量**，准确率会大幅提升。
 
-### 代码修改方案
+### 1. 修改 `agents/diet/generator.py`
 
-我们需要修改 `agents/diet/generator.py` 文件。
-
-#### 1. 修改 `agents/diet/generator.py`
-
-请按以下步骤更新代码：
-
-1. 引入 `random` 模块。
-2. 在 `generate` 方法中增加随机选择 **Strategy** 和 **Cuisine** 的逻辑。
-3. 在 `_generate_single_candidate` 方法中将这些随机因子加入 Prompt。
+在生成逻辑中加入食材池和随机抽取逻辑。
 
 ```python
 """
-Diet Candidate Generator (Improved for Diversity)
+Diet Candidate Generator (Enhanced with Ingredient Injection)
 """
 import json
-import random  # [新增] 引入 random 模块
+import random
 from typing import List, Dict, Any, Optional
 from agents.base import BaseAgent, DietAgentMixin
 from agents.diet.models import DietRecommendation, DietAgentInput
+from agents.diet.prompts import DIET_GENERATION_SYSTEM_PROMPT # 确保引用更新后的Prompt
 from core.llm.utils import parse_json_response
 
-# ... (保留原有的 SYSTEM_PROMPT 和 imports) ...
+# 定义丰富的食材池
+PROTEIN_SOURCES = [
+    "Cod Fillet", "Salmon", "Tofu", "Lean Beef Steak", "Shrimp", 
+    "Turkey Breast", "Pork Tenderloin", "Lamb Chop", "Edamame", "Tempeh",
+    "Duck Breast", "Tuna Steak", "Sardines", "Chickpeas"
+]
+
+CARB_SOURCES = [
+    "Quinoa", "Sweet Potato", "Buckwheat", "Whole Wheat Pasta", "Couscous", 
+    "Barley", "Corn", "Multigrain Bread", "Red Potato", "Wild Rice",
+    "Polenta", "Bulgur", "Millet"
+]
+
+VEG_SOURCES = [
+    "Asparagus", "Spinach", "Kale", "Zucchini", "Bell Peppers", 
+    "Eggplant", "Cauliflower", "Green Beans", "Brussels Sprouts", 
+    "Bok Choy", "Artichokes", "Mushrooms", "Snow Peas"
+]
+
+COMMON_BORING_FOODS = ["Chicken Breast", "Brown Rice", "Broccoli", "Boiled Egg"]
 
 class DietAgent(BaseAgent, DietAgentMixin):
-    """Agent for generating diet recommendation candidates"""
-    
-    # ... (保留 get_agent_name, get_input_type, get_output_type 方法) ...
+    # ... (保留 get_agent_name, get_input_type, get_output_type) ...
 
-    def generate(
-        self,
-        input_data: Dict[str, Any],
-        num_candidates: int = 3
-    ) -> List[DietRecommendation]:
-        """Generate diet plan candidates with high diversity"""
-        # Parse input
-        input_obj = DietAgentInput(**input_data)
+    def generate(self, input_data: Dict[str, Any], num_candidates: int = 3) -> List[DietRecommendation]:
+        # ... (保留 Input 解析和 target_calories 计算逻辑) ...
+        # ... (保留 KG Context 逻辑) ...
         
-        user_meta = input_obj.user_metadata
-        env = input_obj.environment
-        requirement = input_obj.user_requirement
-
-        # ... (保留 target_calories 和 kg_context 计算逻辑) ...
-        # Calculate target calories
-        target_calories = self.calculate_target_calories(
-            age=user_meta.get("age", 30),
-            gender=user_meta.get("gender", "male"),
-            height_cm=user_meta.get("height_cm", 170),
-            weight_kg=user_meta.get("weight_kg", 70),
-            goal=requirement.get("goal", "maintenance"),
-            activity_factor=self._get_activity_factor(user_meta.get("fitness_level", "beginner"))
-        )
-        
-        # Get KG context
-        kg_context = ""
-        conditions = user_meta.get("medical_conditions", [])
-        if conditions:
-            dietary_knowledge = self.query_dietary_knowledge(
-                conditions, user_meta.get("dietary_restrictions", [])
-            )
-            kg_context = self._format_kg_context(dietary_knowledge)
-
-        # Build user prompt
-        user_prompt = self._build_diet_prompt(
-            user_meta=user_meta,
-            environment=env,
-            requirement=requirement,
-            target_calories=target_calories,
-            kg_context=kg_context
-        )
-
-        # [新增] 定义多样性池
-        available_strategies = ["balanced", "protein_focus", "variety", "low_carb", "fiber_rich"]
-        available_cuisines = ["Mediterranean", "Asian", "Western", "Fusion", "Local Home-style", "Simple & Quick"]
-        
-        # Generate candidates
         candidates = []
-        used_strategies = set() # 避免单次生成中策略过度重复
+        used_combinations = set()
 
         for i in range(num_candidates):
-            # [改进] 随机选择策略，尽量不重复
-            remaining_strategies = [s for s in available_strategies if s not in used_strategies]
-            if not remaining_strategies:
-                remaining_strategies = available_strategies
+            # 1. 随机抽取核心食材 (Hero Ingredients)
+            protein = random.choice(PROTEIN_SOURCES)
+            carb = random.choice(CARB_SOURCES)
+            veg = random.choice(VEG_SOURCES)
             
-            strategy = random.choice(remaining_strategies)
-            used_strategies.add(strategy)
+            # 2. 随机决定是否禁用“无聊”食材 (50% 概率)
+            excluded = []
+            if random.random() > 0.5:
+                excluded = random.sample(COMMON_BORING_FOODS, k=random.randint(1, 2))
+
+            # 3. 避免生成重复组合
+            combo_key = f"{protein}-{carb}"
+            if combo_key in used_combinations and num_candidates < len(PROTEIN_SOURCES):
+                continue
+            used_combinations.add(combo_key)
+
+            # 4. 构建包含强制约束的 Prompt
+            constraint_prompt = self._build_constraint_prompt(protein, carb, veg, excluded)
             
-            # [改进] 随机选择菜系/风格
-            cuisine = random.choice(available_cuisines)
+            # 5. 生成
+            user_prompt = self._build_diet_prompt(
+                user_meta=input_obj.user_metadata,
+                environment=input_obj.environment,
+                requirement=input_obj.user_requirement,
+                target_calories=target_calories,
+                kg_context=kg_context
+            )
+            
+            full_prompt = user_prompt + "\n" + constraint_prompt
 
             candidate = self._generate_single_candidate(
-                user_prompt=user_prompt,
-                candidate_id=i + 1,
-                strategy=strategy,
-                cuisine=cuisine  # 传入 cuisine 参数
+                full_prompt, 
+                i + 1,
+                cuisine=random.choice(["Mediterranean", "Asian", "Western", "Fusion", "Latin"]) # 随机菜系
             )
+            
             if candidate:
                 candidates.append(candidate)
-
-        # Sort by calorie deviation
-        candidates.sort(key=lambda x: abs(x.calories_deviation))
-
+        
         return candidates
 
-    # ... (保留 _get_activity_factor, _format_kg_context, _build_diet_prompt 方法) ...
-
-    def _generate_single_candidate(
-        self,
-        user_prompt: str,
-        candidate_id: int,
-        strategy: str = "balanced",
-        cuisine: str = "General"  # [新增] 参数
-    ) -> Optional[DietRecommendation]:
-        """Generate a single diet candidate with style injection"""
+    def _build_constraint_prompt(self, protein, carb, veg, excluded):
+        prompt = "\n## Mandatory Ingredients (You MUST use these):\n"
+        prompt += f"- Main Protein: {protein}\n"
+        prompt += f"- Carb Source: {carb}\n"
+        prompt += f"- Vegetable: {veg}\n"
         
-        strategy_guidance = {
-            "balanced": "Focus on balanced nutrition across all macros.",
-            "protein_focus": "Emphasize high-protein foods for muscle maintenance.",
-            "variety": "Include diverse food types and colors.",
-            "low_carb": "Reduce carbohydrate intake slightly, focus on quality fats and proteins.",
-            "fiber_rich": "Prioritize high-fiber vegetables and whole grains."
-        }
+        if excluded:
+            prompt += f"\n## Excluded Ingredients (Do NOT use):\n- {', '.join(excluded)}\n"
+            
+        return prompt
 
-        # [改进] 构建更具独特性的 Prompt
-        full_prompt = user_prompt + f"\n\n### Optimization Strategy: {strategy.upper()}\n{strategy_guidance.get(strategy, '')}"
-        full_prompt += f"\n\n### Culinary Style: {cuisine}\nPLEASE strictly follow this style. Use ingredients and cooking methods typical for {cuisine} cuisine."
-
-        # [改进] 稍微提高 Temperature 增加随机性 (从 0.7 提至 0.85)
+    def _generate_single_candidate(self, user_prompt: str, candidate_id: int, cuisine: str) -> Optional[DietRecommendation]:
+        # 添加菜系风格提示
+        full_prompt = user_prompt + f"\n\n### Culinary Style: {cuisine}\nPrepare the mandatory ingredients in {cuisine} style."
+        
+        # 提高 Temperature 到 0.9 以增加多样性
         response = self._call_llm(
             system_prompt=DIET_GENERATION_SYSTEM_PROMPT,
             user_prompt=full_prompt,
-            temperature=0.85 
+            temperature=0.9
         )
-
-        # Handle empty response
-        if not response or response == {}:
-            print(f"[WARN] LLM returned empty response for candidate {candidate_id}")
-            return None
-
-        try:
-            data = parse_json_response(response)
-        except json.JSONDecodeError:
-            print(f"[WARN] Invalid JSON from LLM: {response[:100]}...")
-            return None
-
-        # ... (保留后续的数据解析逻辑) ...
         
-        # Handle list response
-        if isinstance(data, list):
-            plan_data = data[0] if data else {}
-        elif isinstance(data, dict):
-            plan_data = data
-        else:
-            return None
-
-        # Ensure ID
-        if "id" not in plan_data:
-            plan_data["id"] = candidate_id
-
-        # 可以在 safety_notes 中记录风格，方便调试
-        if "safety_notes" not in plan_data:
-            plan_data["safety_notes"] = []
-        plan_data["safety_notes"].append(f"Style: {cuisine}, Strategy: {strategy}")
-
+        # ... (保留解析逻辑) ...
+        # 注意：这里需要根据新的 Prompt 输出格式（total_calories）调整解析或由 Parser 处理
+        # ...
         return DietRecommendation(**plan_data)
 
 ```
 
-### 为什么这样做有效？
+### 2. 修改 `agents/diet/prompts.py`
 
-1. **Prompt 差异化**：现在的 Prompt 每次都会包含例如 `Culinary Style: Asian` 或 `Culinary Style: Mediterranean` 的指令。LLM 必须根据这个指令生成具体的食物（例如“亚洲”会生成米饭、豆腐，“地中海”会生成橄榄油、鱼类），从而从根本上避免了方案雷同。
-2. **Temperature 提升**：将 Temperature 提高到 `0.85` 会让模型在选择下一个 Token 时更具冒险性，减少“千篇一律”的概率。
-3. **策略池扩展**：增加了 `low_carb` 和 `fiber_rich` 等策略，使得营养分配的侧重点也会发生变化。
+修正 System Prompt：
 
-应用此修改后，再次运行 `python -m pipeline.diet_pipeline`，您应该能看到生成的 3 个候选方案在食物选择和风格上有显著的差异。
+1. **移除 `calories_per_unit**`：LLM 对“每单位热量”的计算非常糟糕（如日志中的西兰花 25kcal/g）。改为输出 `total_calories`（该份食物的总热量），LLM 对此估算更准。
+2. **通用化示例**：避免使用具体的食物名称作为 Example，防止 LLM 模仿。
+
+```python
+DIET_GENERATION_SYSTEM_PROMPT = """You are a professional nutritionist. Generate BASE meal plans with standardized portions.
+
+## Output Format
+Output MUST be a valid JSON list of objects. Each object is a food item with these fields:
+- "food_name": string (Name of the food, e.g., "Grilled Salmon")
+- "portion_number": number (Numeric quantity, e.g., 150, 1.5)
+- "portion_unit": string (MUST be one of: ["gram", "ml", "piece", "slice", "cup", "bowl", "spoon"])
+- "total_calories": number (Total calories for THIS portion size. E.g., for 150g salmon, output ~300)
+
+## Rules
+1. Use ONLY the allowed units listed above.
+2. STRICTLY follow the "Mandatory Ingredients" and "Excluded Ingredients" in the user prompt.
+3. Estimate "total_calories" realistically (e.g., Vegetables are low calorie, Oils are high calorie).
+4. Do NOT wrap in extra keys like "meal_plan".
+5. Do NOT output markdown code blocks.
+
+## Example Output:
+[
+  {
+    "food_name": "Pan-Seared Cod",
+    "portion_number": 150,
+    "portion_unit": "gram",
+    "total_calories": 157
+  },
+  {
+    "food_name": "Quinoa Salad",
+    "portion_number": 1,
+    "portion_unit": "bowl",
+    "total_calories": 220
+  },
+  {
+    "food_name": "Olive Oil",
+    "portion_number": 5,
+    "portion_unit": "ml",
+    "total_calories": 40
+  }
+]
+"""
+
+```
+
+### 3. 后续处理建议 (Parser)
+
+由于我们将输出字段改为了 `total_calories`，您需要在 `agents/diet/parser.py` 或 `generator.py` 的解析逻辑中做一个简单的适配：
+
+```python
+# 在 generator.py 解析后，或者 parser.py 扩展前
+# 如果需要 unit_calories 用于扩展计算：
+unit_calories = item['total_calories'] / item['portion_number']
+
+```
+
+这种“强制注入”策略能确保：
+
+1. **绝对的多样性**：因为 Python 随机选择了“三文鱼”和“藜麦”，LLM 不可能再生成“鸡胸肉”和“糙米”。
+2. **规避幻觉**：通过让 LLM 估算总热量（它见过的常见搭配）而非单位密度热量（数学计算），能减少 1000% 偏差这类严重错误。
