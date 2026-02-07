@@ -8,7 +8,7 @@ import pandas as pd
 from tqdm import tqdm
 from config_loader import get_config
 
-from agents.diet.prompts import (
+from kg.prompts import (
     DIET_KG_EXTRACT_SCHEMA_PROMPT as DIET_SCHEMA_PROMPT,
     DIET_VALID_RELS,
     EXER_KG_EXTRACT_SCHEMA_PROMPT as EXER_SCHEMA_PROMPT,

@@ -1,15 +1,3 @@
-"""
-Diet Pipeline
-Generates lunch options with safety assessment and selection.
-
-Flow:
-1. Generate multiple lunch base plans via LLM
-2. Expand each base plan to Lite/Standard/Plus variants
-3. Assess each variant through safeguard
-4. Select top_k (default 3) by safety score
-5. Output all expanded plans to plan.json
-6. Output chosen plans to terminal
-"""
 import json
 import os
 from typing import List, Dict, Any
