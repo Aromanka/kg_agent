@@ -261,15 +261,11 @@ python -m core.server
 ```
 
 ### 独立模块测试
-```python
-# test_diet.py
-from agents.diet import generate_diet_candidates
+```bash
+python -m agents.diet.generator
+python -m agents.exercise.generator
+python -m pipeline.health_pipeline
 
-candidates = generate_diet_candidates(
-    user_metadata={...},
-    user_requirement={"goal": "weight_loss"},
-    num_candidates=2
-)
 ```
 
 ---
