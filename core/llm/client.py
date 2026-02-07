@@ -101,6 +101,7 @@ class LLMClient:
         """发送对话请求，返回解析后的 JSON"""
         start_time = datetime.now()
         try:
+            print(f"call llm with temp={temperature}...")
             resp = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,

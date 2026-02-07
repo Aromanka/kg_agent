@@ -301,21 +301,26 @@ class DietAgent(BaseAgent, DietAgentMixin):
 
     def _format_kg_context(self, knowledge: Dict) -> str:
         """Format KG knowledge for prompt"""
-        context = "\n## Knowledge Graph Context\n"
+        if not knowledge:
+            return ""
+
+        parts = []
 
         if knowledge.get("recommended_foods"):
             foods = [f.get("food", "") for f in knowledge["recommended_foods"]]
-            context += f"- Recommended foods: {', '.join(set(foods))}\n"
+            parts.append(f"- Recommended: {', '.join(set(foods))}")
 
         if knowledge.get("restricted_foods"):
             restrictions = [r.get("restriction", "") for r in knowledge["restricted_foods"]]
-            context += f"- Restrictions: {', '.join(set(restrictions))}\n"
+            parts.append(f"- Avoid: {', '.join(set(restrictions))}")
 
         if knowledge.get("nutrient_advice"):
             for advice in knowledge["nutrient_advice"][:3]:
-                context += f"- {advice.get('nutrient', '')}: {advice.get('advice', '')}\n"
+                parts.append(f"- {advice.get('nutrient', '')}: {advice.get('advice', '')}")
 
-        return context
+        if parts:
+            return "## KG Guidelines\n" + "\n".join(parts) + "\n"
+        return ""
 
     def _build_diet_prompt(
         self,
@@ -329,58 +334,47 @@ class DietAgent(BaseAgent, DietAgentMixin):
         """Build the user prompt for a specific meal type generation"""
         conditions = user_meta.get("medical_conditions", [])
         restrictions = user_meta.get("dietary_restrictions", [])
-        season = environment.get("time_context", {}).get("season", "any")
 
         # Calorie targets per meal
-        meal_calories = {
+        meal_targets = {
             "breakfast": int(target_calories * 0.25),
             "lunch": int(target_calories * 0.35),
             "dinner": int(target_calories * 0.30),
             "snacks": int(target_calories * 0.10)
         }
-        target = meal_calories.get(meal_type, int(target_calories * 0.25))
+        target = meal_targets.get(meal_type, int(target_calories * 0.25))
 
-        prompt = f"""## User Profile
+        # Build user profile section
+        profile_parts = [
+            f"Age: {user_meta.get('age', 30)}",
+            f"Gender: {user_meta.get('gender', 'male')}",
+        ]
+        if conditions:
+            profile_parts.append(f"Conditions: {', '.join(conditions)}")
+        if restrictions:
+            profile_parts.append(f"Restrictions: {', '.join(restrictions)}")
 
-**Age**: {user_meta.get('age', 30)}
-**Gender**: {user_meta.get('gender', 'male')}
-**Medical Conditions**: {', '.join(conditions) if conditions else 'None'}
-**Dietary Restrictions**: {', '.join(restrictions) if restrictions else 'None'}
+        prompt = f"""## Profile
+{chr(10).join(profile_parts)}
 
-## Goal
-**Primary Goal**: {requirement.get('goal', 'maintenance')}
-**Target Calories**: {target_calories} kcal total
+## Target
+Goal: {requirement.get('goal', 'maintenance')}
+{meal_type.capitalize()}: {target} kcal (max)
+{chr(10)}{kg_context}## Output Format
+JSON list of foods. Each item:
+- food_name: name
+- portion_number: number
+- portion_unit: gram/ml/piece/slice/cup/bowl/spoon
+- calories_per_unit: calories per single unit
 
-## This Meal: {meal_type.upper()}
-**Target for {meal_type}: {target} kcal**
-
-{kg_context}
+## Example (~{target} kcal)
+[
+  {{"food_name": "X", "portion_number": 100, "portion_unit": "gram", "calories_per_unit": 3.5}},
+  {{"food_name": "Y", "portion_number": 2, "portion_unit": "piece", "calories_per_unit": 78}}
+]
 
 ## Task
-Generate food items for {meal_type} totaling approximately {target} kcal.
-Return ONLY a JSON list of food items with standardized portions.
-
-Each item must have:
-- food_name: name of the food
-- portion_number: numeric quantity
-- portion_unit: gram, ml, piece, slice, cup, bowl, or spoon
-- calories_per_unit: calories for ONE unit
-
-Example (breakfast ~450 kcal):
-[
-  {{
-    "food_name": "Oatmeal",
-    "portion_number": 80,
-    "portion_unit": "gram",
-    "calories_per_unit": 3.5
-  }},
-  {{
-    "food_name": "Boiled Egg",
-    "portion_number": 2,
-    "portion_unit": "piece",
-    "calories_per_unit": 78
-  }}
-]"""
+Generate {meal_type} foods totaling ~{target} kcal. List only JSON."""
 
         return prompt
 
