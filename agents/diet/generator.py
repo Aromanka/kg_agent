@@ -103,7 +103,9 @@ class DietAgent(BaseAgent, DietAgentMixin):
         input_data: Dict[str, Any],
         num_variants: int = 3,
         meal_type: str = None,
-        temperature: float = 0.7
+        temperature: float = 0.7,
+        top_p: float = 0.92,
+        top_k: int = 50
     ) -> List[DietRecommendation]:
         """
         Generate diet plan candidates using LLM + Parser pipeline.
