@@ -5,6 +5,7 @@ Generates personalized meal plan candidates based on user metadata and knowledge
 Architecture: LLM generates base plan → Parser expands to Lite/Standard/Plus variants.
 """
 import json
+import random
 import re
 from typing import List, Dict, Any, Optional
 from agents.base import BaseAgent, DietAgentMixin
@@ -161,10 +162,26 @@ class DietAgent(BaseAgent, DietAgentMixin):
 
         variant_names = ["Lite", "Standard", "Plus"][:num_variants]
 
+        # [新增] 定义多样性池
+        available_strategies = ["balanced", "protein_focus", "variety", "low_carb", "fiber_rich"]
+        available_cuisines = ["Mediterranean", "Asian", "Western", "Fusion", "Local Home-style", "Simple & Quick"]
+        used_strategies = set()  # 避免单次生成中策略过度重复
+
         # Collect base plans for each meal type
-        meal_base_plans: Dict[str, List[BaseFoodItem]] = {}
+        meal_base_plans: Dict[str, Dict[str, Any]] = {}
 
         for mt in meal_types:
+            # [改进] 随机选择策略，尽量不重复
+            remaining_strategies = [s for s in available_strategies if s not in used_strategies]
+            if not remaining_strategies:
+                remaining_strategies = available_strategies
+
+            strategy = random.choice(remaining_strategies)
+            used_strategies.add(strategy)
+
+            # [改进] 随机选择菜系/风格
+            cuisine = random.choice(available_cuisines)
+
             base_items = self._generate_base_plan(
                 user_meta=user_meta,
                 environment=env,
@@ -174,10 +191,16 @@ class DietAgent(BaseAgent, DietAgentMixin):
                 kg_context=kg_context,
                 temperature=temperature,
                 top_p=top_p,
-                top_k=top_k
+                top_k=top_k,
+                strategy=strategy,
+                cuisine=cuisine
             )
             if base_items:
-                meal_base_plans[mt] = base_items
+                meal_base_plans[mt] = {
+                    "items": base_items,
+                    "strategy": strategy,
+                    "cuisine": cuisine
+                }
 
         if not meal_base_plans:
             print("[WARN] No base plans generated for any meal type")
@@ -185,8 +208,8 @@ class DietAgent(BaseAgent, DietAgentMixin):
 
         # Expand each meal to variants
         expanded_meals: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
-        for meal_type, base_items in meal_base_plans.items():
-            expanded_meals[meal_type] = self.parser.expand_plan(base_items, variant_names)
+        for meal_type, plan_info in meal_base_plans.items():
+            expanded_meals[meal_type] = self.parser.expand_plan(plan_info["items"], variant_names)
 
         # Build candidates: one DietRecommendation per meal with variants
         # Output structure: [breakfast_lite, breakfast_std, breakfast_plus, lunch_lite, ...]
@@ -205,6 +228,11 @@ class DietAgent(BaseAgent, DietAgentMixin):
             if meal_type not in expanded_meals:
                 continue
 
+            # Get strategy and cuisine for this meal
+            plan_info = meal_base_plans.get(meal_type, {})
+            strategy = plan_info.get("strategy", "balanced")
+            cuisine = plan_info.get("cuisine", "General")
+
             meal_variants = expanded_meals[meal_type]
             target = meal_targets.get(meal_type, int(target_calories * 0.25))
 
@@ -222,6 +250,7 @@ class DietAgent(BaseAgent, DietAgentMixin):
 
                 # Build safety notes
                 safety_notes = [f"Meal: {meal_type}", f"Variant: {variant_name}"]
+                safety_notes.append(f"Style: {cuisine}, Strategy: {strategy}")
                 if abs(deviation) > 10:
                     safety_notes.append(f"Calorie deviation: {deviation}%")
 
@@ -251,11 +280,22 @@ class DietAgent(BaseAgent, DietAgentMixin):
         target_calories: int,
         meal_type: str,
         kg_context: str = "",
-        temperature: float = 0.7,
+        temperature: float = 0.85,  # [改进] 提高温度增加随机性
         top_p: float = 0.92,
-        top_k: int = 50
+        top_k: int = 50,
+        strategy: str = "balanced",
+        cuisine: str = "General"
     ) -> Optional[List[BaseFoodItem]]:
-        """Generate base food items for a single meal type"""
+        """Generate base food items for a single meal type with diversity injection"""
+
+        strategy_guidance = {
+            "balanced": "Focus on balanced nutrition across all macros.",
+            "protein_focus": "Emphasize high-protein foods for muscle maintenance.",
+            "variety": "Include diverse food types and colors.",
+            "low_carb": "Reduce carbohydrate intake slightly, focus on quality fats and proteins.",
+            "fiber_rich": "Prioritize high-fiber vegetables and whole grains."
+        }
+
         user_prompt = self._build_diet_prompt(
             user_meta=user_meta,
             environment=environment,
@@ -265,9 +305,13 @@ class DietAgent(BaseAgent, DietAgentMixin):
             kg_context=kg_context
         )
 
+        # [改进] 构建更具独特性的 Prompt
+        full_prompt = user_prompt + f"\n\n### Optimization Strategy: {strategy.upper()}\n{strategy_guidance.get(strategy, '')}"
+        full_prompt += f"\n\n### Culinary Style: {cuisine}\nPLEASE strictly follow this style. Use ingredients and cooking methods typical for {cuisine} cuisine."
+
         response = self._call_llm(
             system_prompt=DIET_GENERATION_SYSTEM_PROMPT,
-            user_prompt=user_prompt,
+            user_prompt=full_prompt,
             temperature=temperature,
             top_p=top_p,
             top_k=top_k
