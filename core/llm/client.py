@@ -158,9 +158,17 @@ class LLMClient:
 _llm_client: Optional[LLMClient] = None
 
 
-def get_llm() -> LLMClient:
-    """获取全局 LLM 客户端实例"""
+def get_llm():
+    """获取全局 LLM 客户端实例，优先使用本地模型"""
     global _llm_client
     if _llm_client is None:
-        _llm_client = LLMClient()
+        if is_local_mode():
+            from core.llm.local_llm import get_local_llm
+            _llm_client = get_local_llm()
+        else:
+            _llm_client = LLMClient()
     return _llm_client
+
+
+# 保持向后兼容
+def get_llm_client() -> OpenAI:
