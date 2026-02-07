@@ -90,10 +90,27 @@ class ExerciseSession(BaseModel):
     overall_intensity: IntensityLevel = Field(..., description="Session intensity")
 
 
+class MealTiming(str, Enum):
+    """When to exercise relative to meals"""
+    BEFORE_BREAKFAST = "before_breakfast"
+    AFTER_BREAKFAST = "after_breakfast"
+    BEFORE_LUNCH = "before_lunch"
+    AFTER_LUNCH = "after_lunch"
+    BEFORE_DINNER = "before_dinner"
+    AFTER_DINNER = "after_dinner"
+    MORNING = "morning"
+    AFTERNOON = "afternoon"
+    EVENING = "evening"
+
+
 class ExercisePlan(BaseModel):
     """Complete exercise plan for one candidate"""
     id: int = Field(..., description="Candidate ID", ge=1)
     title: str = Field(..., description="Plan title")
+    meal_timing: MealTiming = Field(
+        ...,
+        description="When to exercise relative to meals"
+    )
     sessions: Dict[str, ExerciseSession] = Field(
         ...,
         description="Exercise sessions keyed by time of day"
@@ -110,14 +127,8 @@ class ExercisePlan(BaseModel):
         le=3000,
         description="Total calories burned (0-3000)"
     )
-    weekly_frequency: int = Field(
-        ...,
-        ge=0,
-        le=7,
-        description="Recommended sessions per week (0-7)"
-    )
-    progression: str = Field(
-        ...,
+    progression: Optional[str] = Field(
+        None,
         description="How to progress over time"
     )
     reasoning: Optional[str] = Field(

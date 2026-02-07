@@ -203,15 +203,15 @@ class ExercisePipeline:
             assessment = plan.get("_assessment", {})
             print(f"\n#{i} Plan ID:{plan.get('id')} | {plan.get('_variant', 'N/A')}")
             print(f"   Title: {plan.get('title', 'N/A')}")
+            print(f"   Meal Timing: {plan.get('meal_timing', 'N/A')}")
             print(f"   Safety Score: {assessment.get('score', 'N/A')}/100")
             print(f"   Risk Level: {assessment.get('risk_level', 'N/A')}")
             print(f"   Safe: {'Yes' if assessment.get('is_safe') else 'No'}")
             print(f"   Duration: {plan.get('total_duration_minutes', 'N/A')} min")
             print(f"   Calories Burned: {plan.get('total_calories_burned', 'N/A')} kcal")
-            print(f"   Weekly Frequency: {plan.get('weekly_frequency', 'N/A')} days/week")
 
             # Print sessions
-            print("   Sessions:")
+            print("   Session:")
             sessions = plan.get("sessions", {})
             for time_key, session in sessions.items():
                 print(f"     [{time_key.upper()}] {session.get('total_duration_minutes', 0)} min, "

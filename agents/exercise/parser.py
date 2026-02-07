@@ -113,10 +113,10 @@ class ExercisePlanParser:
         return ExercisePlan(
             id=base_plan.id,
             title=f"{base_plan.title} ({variant_name})",
+            meal_timing=base_plan.meal_timing,
             sessions=scaled_sessions,
             total_duration_minutes=total_duration,
             total_calories_burned=total_calories,
-            weekly_frequency=base_plan.weekly_frequency,
             progression=base_plan.progression,
             reasoning=base_plan.reasoning,
             safety_notes=base_plan.safety_notes

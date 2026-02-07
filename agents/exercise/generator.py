@@ -7,7 +7,7 @@ import os
 from typing import List, Dict, Any, Optional
 from agents.base import BaseAgent, DietAgentMixin, ExerciseAgentMixin
 from agents.exercise.models import (
-    ExerciseType, IntensityLevel, TimeOfDay,
+    ExerciseType, IntensityLevel, TimeOfDay, MealTiming,
     ExerciseItem, ExerciseSession, ExercisePlan,
     ExerciseCandidatesResponse, ExerciseAgentInput
 )
@@ -117,6 +117,7 @@ Return a valid JSON object matching the provided schema. STRICTLY follow:
 {
   "id": 1,
   "title": "Morning Cardio Plan",
+  "meal_timing": "after_breakfast",
   "sessions": {
     "morning": {
       "time_of_day": "morning",
@@ -141,13 +142,14 @@ Return a valid JSON object matching the provided schema. STRICTLY follow:
   },
   "total_duration_minutes": 30,
   "total_calories_burned": 135,
-  "weekly_frequency": 5,
-  "progression": "Week 1-2: Establish baseline. Week 3-4: Increase duration by 5min/session",
   "reasoning": "This plan combines low-impact cardio with strength training",
   "safety_notes": ["Consult physician before starting", "Listen to your body"]
 }
 
-IMPORTANT: calories_burned should be realistic totals (e.g., 30 min walking = ~135 kcal, NOT 4-5 kcal).
+IMPORTANT:
+- calories_burned should be realistic totals (e.g., 30 min walking = ~135 kcal, NOT 4-5 kcal).
+- meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".
+- Generate only ONE session per day (single morning/afternoon/evening block).
 """
 
 
@@ -178,13 +180,18 @@ def calculate_target_calories_burned(
 
 # ================= Constraint Builder =================
 
+MEAL_TIMING_OPTIONS = [
+    "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner"
+]
+
 def build_exercise_constraint_prompt(
     primary_cardio: str = None,
     primary_strength: str = None,
     flexibility: str = None,
     excluded: List[str] = None,
     equipment: str = None,
-    outdoor: bool = False
+    outdoor: bool = False,
+    meal_timing: str = None
 ) -> str:
     """
     Build constraint prompt for mandatory exercise selection.
@@ -196,11 +203,16 @@ def build_exercise_constraint_prompt(
         excluded: List of exercises to exclude
         equipment: Required equipment to use
         outdoor: Whether to prioritize outdoor activities
+        meal_timing: When to exercise relative to meals
 
     Returns:
         Formatted constraint string for LLM prompt
     """
     prompt_parts = []
+
+    if meal_timing:
+        timing_display = meal_timing.replace("_", " ").title()
+        prompt_parts.append(f"- MEAL TIMING: {timing_display}")
 
     if primary_cardio:
         prompt_parts.append(f"- PRIMARY CARDIO: {primary_cardio}")
@@ -222,7 +234,7 @@ def build_exercise_constraint_prompt(
         prompt_parts.append(f"- {', '.join(excluded)}")
 
     if prompt_parts:
-        return "\n## MANDATORY EXERCISE CONSTRAINTS\n" + "\n".join(prompt_parts)
+        return "\n## EXERCISE CONSTRAINTS\n" + "\n".join(prompt_parts)
 
     return ""
 
@@ -448,42 +460,45 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         used_combinations = set()
 
         for i in range(num_candidates):
-            # 1. Randomly select primary exercises
+            # 1. Randomly select meal timing
+            meal_timing = random.choice(MEAL_TIMING_OPTIONS)
+
+            # 2. Randomly select primary exercises
             primary_cardio = random.choice(CARDIO_ACTIVITIES)
             primary_strength = random.choice(STRENGTH_MOVEMENTS)
             flexibility = random.choice(FLEXIBILITY_POSES)
 
-            # 2. Randomly exclude boring exercises (50% chance)
+            # 3. Randomly exclude boring exercises (50% chance)
             excluded = []
             if random.random() > 0.5:
                 excluded = random.sample(COMMON_BORING_EXERCISES, k=random.randint(1, 2))
 
-            # 3. Optionally add equipment constraint (30% chance)
+            # 4. Optionally add equipment constraint (30% chance)
             equipment = None
             if random.random() > 0.7:
                 equipment = random.choice(EQUIPMENT_OPTIONS)
 
-            # 4. Optionally prioritize outdoor (based on weather/season)
+            # 5. Optionally prioritize outdoor (based on weather/season)
             outdoor = False
             if weather.get("condition") in ["clear", "sunny"] and random.random() > 0.5:
                 outdoor = True
 
-            # 5. Avoid duplicate combinations
-            combo_key = f"{primary_cardio}-{primary_strength}"
+            # 6. Avoid duplicate combinations
+            combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
             if combo_key in used_combinations and num_candidates < len(CARDIO_ACTIVITIES):
-                # Try a different combo
                 primary_cardio = random.choice(CARDIO_ACTIVITIES)
-                combo_key = f"{primary_cardio}-{primary_strength}"
+                combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
             used_combinations.add(combo_key)
 
-            # 6. Build constraint prompt
+            # 7. Build constraint prompt
             constraint_prompt = build_exercise_constraint_prompt(
                 primary_cardio=primary_cardio,
                 primary_strength=primary_strength,
                 flexibility=flexibility,
                 excluded=excluded,
                 equipment=equipment,
-                outdoor=outdoor
+                outdoor=outdoor,
+                meal_timing=meal_timing
             )
 
             # 7. Combine prompts
@@ -566,11 +581,13 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 ## Task
 Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
 Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
+Generate ONLY ONE session per day (single morning/afternoon/evening block).
 
 Example format:
 {{
   "id": 1,
   "title": "Morning Cardio Plan",
+  "meal_timing": "after_breakfast",
   "sessions": {{
     "morning": {{
       "time_of_day": "morning",
@@ -580,7 +597,7 @@ Example format:
           "exercise_type": "cardio",
           "duration_minutes": 30,
           "intensity": "low",
-          "calories_burned": 150,
+          "calories_burned": 135,
           "equipment": [],
           "target_muscles": ["legs", "cardio"],
           "instructions": ["Walk at comfortable pace", "Maintain good posture"],
@@ -589,33 +606,12 @@ Example format:
         }}
       ],
       "total_duration_minutes": 30,
-      "total_calories_burned": 150,
+      "total_calories_burned": 135,
       "overall_intensity": "low"
-    }},
-    "afternoon": {{
-      "time_of_day": "afternoon",
-      "exercises": [
-        {{
-          "name": "Bodyweight Squats",
-          "exercise_type": "strength",
-          "duration_minutes": 15,
-          "intensity": "moderate",
-          "calories_burned": 80,
-          "equipment": [],
-          "target_muscles": ["legs", "core"],
-          "instructions": ["Keep back straight", "Lower until thighs parallel"],
-          "safety_notes": ["Avoid deep knee bend if knee issues"]
-        }}
-      ],
-      "total_duration_minutes": 15,
-      "total_calories_burned": 80,
-      "overall_intensity": "moderate"
     }}
   }},
-  "total_duration_minutes": 45,
-  "total_calories_burned": 230,
-  "weekly_frequency": 5,
-  "progression": "Week 1-2: Establish baseline. Week 3-4: Increase duration by 5min/session",
+  "total_duration_minutes": 30,
+  "total_calories_burned": 135,
   "reasoning": "This plan combines low-impact cardio with strength training",
   "safety_notes": ["Consult physician before starting", "Listen to your body"]
 }}"""
@@ -633,6 +629,11 @@ Example format:
         }
         time_map = {
             "MORNING": "morning", "AFTERNOON": "afternoon", "EVENING": "evening", "ANY": "any"
+        }
+        meal_timing_map = {
+            "BEFORE_BREAKFAST": "before_breakfast", "AFTER_BREAKFAST": "after_breakfast",
+            "BEFORE_LUNCH": "before_lunch", "AFTER_LUNCH": "after_lunch",
+            "BEFORE_DINNER": "before_dinner", "AFTER_DINNER": "after_dinner"
         }
 
         def normalize_item(exercise: Dict) -> Dict:
@@ -654,6 +655,10 @@ Example format:
         if "sessions" in data:
             for key, session in data["sessions"].items():
                 data["sessions"][key] = normalize_session(session)
+
+        # Normalize meal_timing
+        if data.get("meal_timing") in meal_timing_map:
+            data["meal_timing"] = meal_timing_map[data["meal_timing"]]
 
         return data
 
