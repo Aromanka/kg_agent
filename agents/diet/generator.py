@@ -170,7 +170,9 @@ class DietAgent(BaseAgent, DietAgentMixin):
                 target_calories=target_calories,
                 meal_type=mt,
                 kg_context=kg_context,
-                temperature=temperature
+                temperature=temperature,
+                top_p=top_p,
+                top_k=top_k
             )
             if base_items:
                 meal_base_plans[mt] = base_items
@@ -247,7 +249,9 @@ class DietAgent(BaseAgent, DietAgentMixin):
         target_calories: int,
         meal_type: str,
         kg_context: str = "",
-        temperature: float = 0.7
+        temperature: float = 0.7,
+        top_p: float = 0.92,
+        top_k: int = 50
     ) -> Optional[List[BaseFoodItem]]:
         """Generate base food items for a single meal type"""
         user_prompt = self._build_diet_prompt(
@@ -262,7 +266,9 @@ class DietAgent(BaseAgent, DietAgentMixin):
         response = self._call_llm(
             system_prompt=DIET_GENERATION_SYSTEM_PROMPT,
             user_prompt=user_prompt,
-            temperature=temperature
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k
         )
 
         if not response or response == {}:
@@ -387,7 +393,9 @@ def generate_diet_candidates(
     user_requirement: Dict[str, Any] = {},
     num_variants: int = 3,
     meal_type: str = None,
-    temperature: float = 0.7
+    temperature: float = 0.7,
+    top_p: float = 0.92,
+    top_k: int = 50
 ) -> List[DietRecommendation]:
     """
     Convenience function to generate diet candidates.
@@ -399,6 +407,8 @@ def generate_diet_candidates(
         num_variants: Number of portion variants (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)
         meal_type: Specific meal type (breakfast/lunch/dinner/snacks) or None for all
         temperature: LLM temperature (0.0-1.0, default 0.7)
+        top_p: LLM top_p for nucleus sampling (0.0-1.0, default 0.92)
+        top_k: LLM top_k for top-k sampling (default 50)
 
     Returns:
         List of DietRecommendation objects
@@ -409,7 +419,7 @@ def generate_diet_candidates(
         "environment": environment,
         "user_requirement": user_requirement,
     }
-    return agent.generate(input_data, num_variants, meal_type, temperature)
+    return agent.generate(input_data, num_variants, meal_type, temperature, top_p, top_k)
 
 
 if __name__ == "__main__":

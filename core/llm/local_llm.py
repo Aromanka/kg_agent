@@ -98,10 +98,15 @@ class LocalLLM:
         messages: List[Dict[str, str]],
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
+        top_p: float = 0.9,
+        top_k: int = 50,
         **kwargs
     ) -> str:
         """Send chat request, return text content"""
         start_time = datetime.now()
+
+        # Debug print generation params
+        print(f"[DEBUG] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
 
         # Convert messages to text format for local model
         text_content = self._messages_to_text(messages)
@@ -120,7 +125,14 @@ class LocalLLM:
 
         # Generate
         max_new_tokens = max_tokens if max_tokens else 2048
-        generated_ids = model.generate(**inputs, max_new_tokens=max_new_tokens, temperature=temperature, **kwargs)
+        generated_ids = model.generate(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            **kwargs
+        )
 
         # Trim and decode
         generated_ids_trimmed = [
@@ -140,6 +152,8 @@ class LocalLLM:
         self,
         messages: List[Dict[str, str]],
         temperature: float = 0.0,
+        top_p: float = 0.9,
+        top_k: int = 50,
         **kwargs
     ) -> dict:
         """Send chat request, return parsed JSON"""
@@ -147,6 +161,9 @@ class LocalLLM:
         import re
 
         start_time = datetime.now()
+
+        # Debug print generation params
+        print(f"[DEBUG] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
 
         text_content = self._messages_to_text(messages)
         model, processor = _load_local_model()
@@ -160,7 +177,14 @@ class LocalLLM:
         )
         inputs = inputs.to(model.device)
 
-        generated_ids = model.generate(**inputs, max_new_tokens=2048, temperature=temperature, **kwargs)
+        generated_ids = model.generate(
+            **inputs,
+            max_new_tokens=2048,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            **kwargs
+        )
 
         generated_ids_trimmed = [
             out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)

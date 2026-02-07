@@ -74,7 +74,9 @@ class DietPipeline:
         num_variants: int = 3,
         meal_type: str = "lunch",
         temperature: float = 0.7,
-        top_k: int = 3,
+        top_p: float = 0.92,
+        top_k: int = 50,
+        top_k_selection: int = 3,
         output_path: str = "plan.json"
     ) -> DietPipelineOutput:
         """
@@ -84,10 +86,13 @@ class DietPipeline:
             user_metadata: User physiological data
             environment: Environmental context
             user_requirement: User goals
+            num_base_plans: Number of LLM-generated base plans
             num_variants: Number of portion variants per base (Lite/Standard/Plus)
             meal_type: Meal type to generate (breakfast/lunch/dinner/snacks)
             temperature: LLM temperature (0.0-1.0)
-            top_k: Number of top plans to select
+            top_p: LLM top_p for nucleus sampling (0.0-1.0)
+            top_k: LLM top_k for top-k sampling
+            top_k_selection: Number of top plans to select by safety score
             output_path: Path to save all plans JSON
 
         Returns:
@@ -99,20 +104,25 @@ class DietPipeline:
         print("=" * 60)
         print(f"DIET PIPELINE ({meal_type.upper()})")
         print("=" * 60)
+        print(f"[INFO] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
+        print(f"[INFO] Selection: {num_base_plans} bases x {num_variants} variants -> top {top_k_selection}")
 
         # Step 1: Generate meal candidates with variants
         print(f"\n[1/4] Generating {meal_type} candidates...")
         meal_candidates = []
-        for _ in range(num_base_plans):
+        for i in range(num_base_plans):
             candidates = generate_diet_candidates(
                 user_metadata=user_metadata,
                 environment=env,
                 user_requirement=req,
                 num_variants=num_variants,
                 meal_type=meal_type,
-                temperature=temperature
+                temperature=temperature,
+                top_p=top_p,
+                top_k=top_k
             )
             meal_candidates.extend(candidates)
+            print(f"      Base {i+1}/{num_base_plans}: {len(candidates)} variants")
 
         # Filter only lunch candidates (in case meal_type=None was passed)
         # meal_candidates = [c for c in candidates if c.meal_type == meal_type]
@@ -232,7 +242,9 @@ def run_diet_pipeline(
     num_variants: int = 3,
     meal_type: str = "lunch",
     temperature: float = 0.7,
-    top_k: int = 3,
+    top_p: float = 0.92,
+    top_k: int = 50,
+    top_k_selection: int = 3,
     output_path: str = "plan.json",
     print_results: bool = True
 ) -> DietPipelineOutput:
@@ -243,10 +255,13 @@ def run_diet_pipeline(
         user_metadata: User physiological data
         environment: Environmental context
         user_requirement: User goals
+        num_base_plans: Number of LLM-generated base plans
         num_variants: Number of portion variants per base (Lite/Standard/Plus)
         meal_type: Meal type to generate (breakfast/lunch/dinner/snacks)
         temperature: LLM temperature (0.0-1.0)
-        top_k: Number of top plans to select
+        top_p: LLM top_p for nucleus sampling (0.0-1.0)
+        top_k: LLM top_k for top-k sampling
+        top_k_selection: Number of top plans to select by safety score
         output_path: Path to save all plans JSON
         print_results: Whether to print top plans to terminal
 
@@ -258,11 +273,13 @@ def run_diet_pipeline(
         user_metadata=user_metadata,
         environment=environment,
         user_requirement=user_requirement,
-        num_base_plans = num_base_plans,
+        num_base_plans=num_base_plans,
         num_variants=num_variants,
         meal_type=meal_type,
         temperature=temperature,
+        top_p=top_p,
         top_k=top_k,
+        top_k_selection=top_k_selection,
         output_path=output_path
     )
 
