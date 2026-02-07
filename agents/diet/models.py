@@ -71,20 +71,16 @@ class MacroNutrients(BaseModel):
 
 
 class DietRecommendation(BaseModel):
-    """Complete diet recommendation for one candidate"""
+    """Diet recommendation for a single meal with multiple portion variants"""
     id: int = Field(..., description="Candidate ID")
-    meal_plan: Dict[str, List[FoodItem]] = Field(
-        ...,
-        description="Full day meal plan keyed by meal type"
-    )
-    total_calories: int = Field(..., description="Total daily calories")
+    meal_type: MealType = Field(..., description="Which meal this is for (breakfast/lunch/dinner/snacks)")
+    variant: str = Field(..., description="Portion variant: Lite/Standard/Plus")
+    items: List[FoodItem] = Field(..., description="Food items in this meal")
+    total_calories: int = Field(..., description="Total calories for this meal")
+    target_calories: int = Field(..., description="Target calories for this meal")
     calories_deviation: float = Field(
         ...,
         description="Deviation from target calories (%)"
-    )
-    macro_nutrients: MacroNutrients = Field(
-        ...,
-        description="Macro nutrient summary"
     )
     safety_notes: List[str] = Field(
         default_factory=list,

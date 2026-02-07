@@ -9,8 +9,8 @@ import re
 from typing import List, Dict, Any, Optional
 from agents.base import BaseAgent, DietAgentMixin
 from agents.diet.models import (
-    FoodItem, MealPlanItem, MacroNutrients,
-    DietRecommendation, DietCandidatesResponse, DietAgentInput,
+    FoodItem,
+    DietRecommendation, DietAgentInput,
     BaseFoodItem
 )
 from agents.diet.parser import DietPlanParser
@@ -175,44 +175,58 @@ class DietAgent(BaseAgent, DietAgentMixin):
         for meal_type, base_items in meal_base_plans.items():
             expanded_meals[meal_type] = self.parser.expand_plan(base_items, variant_names)
 
-        # Build complete day plans for each variant
+        # Build candidates: one DietRecommendation per meal with variants
+        # Output structure: [breakfast_lite, breakfast_std, breakfast_plus, lunch_lite, ...]
         candidates = []
-        for variant_idx, variant_name in enumerate(variant_names):
-            full_day_plan: Dict[str, List[FoodItem]] = {}
-            total_cal = 0
+        candidate_id = 1
 
-            for meal_type in meal_types:
-                if meal_type in expanded_meals:
-                    meal_items = expanded_meals[meal_type].get(variant_name, [])
-                    # Transform to FoodItem format
-                    food_items = [_to_food_item(item) for item in meal_items]
-                    full_day_plan[meal_type] = food_items
-                    meal_cal = sum(item.calories for item in food_items)
-                    total_cal += meal_cal
+        # Calorie targets per meal type
+        meal_targets = {
+            "breakfast": int(target_calories * 0.25),
+            "lunch": int(target_calories * 0.35),
+            "dinner": int(target_calories * 0.30),
+            "snacks": int(target_calories * 0.10)
+        }
 
-            # Calculate deviation from target
-            deviation = round(((total_cal - target_calories) / target_calories) * 100, 1)
+        for meal_type in meal_types:
+            if meal_type not in expanded_meals:
+                continue
 
-            # Build safety notes
-            safety_notes = [f"Variant: {variant_name}"]
-            if abs(deviation) > 10:
-                safety_notes.append(f"Calorie deviation: {deviation}%")
+            meal_variants = expanded_meals[meal_type]
+            target = meal_targets.get(meal_type, int(target_calories * 0.25))
 
-            candidate = DietRecommendation(
-                id=variant_idx + 1,
-                meal_plan=full_day_plan,
-                total_calories=int(total_cal),
-                calories_deviation=deviation,
-                macro_nutrients=MacroNutrients(
-                    protein=0, carbs=0, fat=0,
-                    protein_ratio=0.2, carbs_ratio=0.5, fat_ratio=0.3
-                ),
-                safety_notes=safety_notes
-            )
-            candidates.append(candidate)
+            for variant_name in variant_names:
+                meal_items = meal_variants.get(variant_name, [])
+                if not meal_items:
+                    continue
+
+                # Transform to FoodItem format
+                food_items = [_to_food_item(item) for item in meal_items]
+                total_cal = sum(item.calories for item in food_items)
+
+                # Calculate deviation
+                deviation = round(((total_cal - target) / target) * 100, 1)
+
+                # Build safety notes
+                safety_notes = [f"Meal: {meal_type}", f"Variant: {variant_name}"]
+                if abs(deviation) > 10:
+                    safety_notes.append(f"Calorie deviation: {deviation}%")
+
+                candidate = DietRecommendation(
+                    id=candidate_id,
+                    meal_type=meal_type,
+                    variant=variant_name,
+                    items=food_items,
+                    total_calories=int(total_cal),
+                    target_calories=target,
+                    calories_deviation=deviation,
+                    safety_notes=safety_notes
+                )
+                candidates.append(candidate)
+                candidate_id += 1
 
         # Sort by deviation
-        candidates.sort(key=lambda x: abs(x.calories_deviation))
+        candidates.sort(key=lambda x: (x.meal_type, abs(x.calories_deviation)))
 
         return candidates
 
@@ -415,6 +429,8 @@ if __name__ == "__main__":
     candidates = generate_diet_candidates(**test_input)
     print(f"Generated {len(candidates)} diet candidates")
     for c in candidates:
-        print(f"- ID: {c.id}, Calories: {c.total_calories}, Deviation: {c.calories_deviation}%")
-        print(c)
+        print(f"\n[ID:{c.id}] {c.meal_type.upper()} - {c.variant}")
+        print(f"  Target: {c.target_calories} kcal | Actual: {c.total_calories} kcal | Deviation: {c.calories_deviation}%")
+        for item in c.items:
+            print(f"  - {item.food}: {item.portion} ({item.calories} kcal)")
 
