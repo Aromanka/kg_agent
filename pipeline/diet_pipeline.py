@@ -295,7 +295,7 @@ if __name__ == "__main__":
         "num_base_plans": 3,
         "num_variants": 3,
         "meal_type": "lunch",
-        "temperature": 0.7,
+        "temperature": 1.2,
         "top_k": 3,
         "output_path": "plan.json"
     }
