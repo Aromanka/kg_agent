@@ -66,6 +66,20 @@ The output will be expanded by a parser into Lite/Standard/Plus portions.
 """
 
 
+# ================= Helper Functions =================
+
+def _to_food_item(item_dict: Dict[str, Any]) -> FoodItem:
+    """Transform parser output to FoodItem format for DietRecommendation"""
+    return FoodItem(
+        food=item_dict.get("food_name", ""),
+        portion=f"{item_dict.get('portion_number', '')}{item_dict.get('portion_unit', '')}",
+        calories=int(item_dict.get("total_calories", 0)),
+        protein=0.0,  # Placeholder - not tracked in new format
+        carbs=0.0,    # Placeholder
+        fat=0.0        # Placeholder
+    )
+
+
 # ================= Diet Agent =================
 
 class DietAgent(BaseAgent, DietAgentMixin):
@@ -157,21 +171,23 @@ class DietAgent(BaseAgent, DietAgentMixin):
             return []
 
         # Expand each meal to variants
-        expanded_meals: Dict[str, Dict[str, List[Dict]]] = {}
+        expanded_meals: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
         for meal_type, base_items in meal_base_plans.items():
             expanded_meals[meal_type] = self.parser.expand_plan(base_items, variant_names)
 
         # Build complete day plans for each variant
         candidates = []
         for variant_idx, variant_name in enumerate(variant_names):
-            full_day_plan: Dict[str, List[Dict]] = {}
+            full_day_plan: Dict[str, List[FoodItem]] = {}
             total_cal = 0
 
             for meal_type in meal_types:
                 if meal_type in expanded_meals:
                     meal_items = expanded_meals[meal_type].get(variant_name, [])
-                    full_day_plan[meal_type] = meal_items
-                    meal_cal = sum(item.get("total_calories", 0) for item in meal_items)
+                    # Transform to FoodItem format
+                    food_items = [_to_food_item(item) for item in meal_items]
+                    full_day_plan[meal_type] = food_items
+                    meal_cal = sum(item.calories for item in food_items)
                     total_cal += meal_cal
 
             # Calculate deviation from target
