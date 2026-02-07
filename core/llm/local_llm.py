@@ -240,3 +240,8 @@ def unload_local_model():
         _local_processor = None
     _local_llm_instance = None
     print("[INFO] Local model unloaded from memory")
+
+
+def is_local_mode() -> bool:
+    """Check if local model path is configured"""
+    return _get_local_model_path() is not None
