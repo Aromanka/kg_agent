@@ -1,9 +1,3 @@
-"""
-Diet Candidate Generator
-Generates personalized meal plan candidates based on user metadata and knowledge graph.
-
-Architecture: LLM generates base plan → Parser expands to Lite/Standard/Plus variants.
-"""
 import json
 import random
 import re
@@ -16,34 +10,8 @@ from agents.diet.models import (
 )
 from agents.diet.parser import DietPlanParser
 from core.llm.utils import parse_json_response
+from agents.diet.config import *
 
-
-# ================= System Prompt =================
-
-# Allowed units for portion (must match parser rules)
-UNIT_LIST_STR = '["gram", "ml", "piece", "slice", "cup", "bowl", "spoon"]'
-
-# ================= Ingredient Pools for Mandatory Injection =================
-
-PROTEIN_SOURCES = [
-    "Cod Fillet", "Salmon", "Tofu", "Lean Beef Steak", "Shrimp",
-    "Turkey Breast", "Pork Tenderloin", "Lamb Chop", "Edamame", "Tempeh",
-    "Duck Breast", "Tuna Steak", "Sardines", "Chickpeas"
-]
-
-CARB_SOURCES = [
-    "Quinoa", "Sweet Potato", "Buckwheat", "Whole Wheat Pasta", "Couscous",
-    "Barley", "Corn", "Multigrain Bread", "Red Potato", "Wild Rice",
-    "Polenta", "Bulgur", "Millet"
-]
-
-VEG_SOURCES = [
-    "Asparagus", "Spinach", "Kale", "Zucchini", "Bell Peppers",
-    "Eggplant", "Cauliflower", "Green Beans", "Brussels Sprouts",
-    "Bok Choy", "Artichokes", "Mushrooms", "Snow Peas"
-]
-
-COMMON_BORING_FOODS = ["Chicken Breast", "Brown Rice", "Broccoli", "Boiled Egg"]
 
 DIET_GENERATION_SYSTEM_PROMPT = f"""You are a professional nutritionist. Generate BASE meal plans with standardized portions.
 
@@ -104,8 +72,6 @@ The output will be expanded by a parser into Lite/Standard/Plus portions.
 """
 
 
-# ================= Helper Functions =================
-
 def _to_food_item(item_dict: Dict[str, Any]) -> FoodItem:
     """Transform parser output to FoodItem format for DietRecommendation"""
     return FoodItem(
@@ -118,21 +84,7 @@ def _to_food_item(item_dict: Dict[str, Any]) -> FoodItem:
     )
 
 
-# ================= Constraint Builder =================
-
 def build_constraint_prompt(protein: str, carb: str, veg: str, excluded: List[str] = None) -> str:
-    """
-    Build constraint prompt for mandatory ingredient injection.
-
-    Args:
-        protein: Main protein source (must be included)
-        carb: Carb source (must be included)
-        veg: Vegetable source (must be included)
-        excluded: List of ingredients to exclude
-
-    Returns:
-        Constraint prompt string to be added to LLM prompt
-    """
     prompt = "\n## Mandatory Ingredients (YOU MUST USE THESE)\n"
     prompt += f"- Main Protein: {protein}\n"
     prompt += f"- Carb Source: {carb}\n"

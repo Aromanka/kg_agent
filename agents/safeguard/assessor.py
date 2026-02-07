@@ -1,10 +1,3 @@
-"""
-Safeguard Agent - Safety Assessment Module
-Evaluates plan safety based on user metadata, environment, and plan content.
-Provides 0-100 safety score and True/False safety judgment.
-
-适应 DietRecommendation 和 ExercisePlan 的真实数据结构。
-"""
 import json
 import os
 from typing import List, Dict, Any, Optional
@@ -17,109 +10,12 @@ from agents.safeguard.models import (
 )
 from core.llm import get_llm
 from core.neo4j import get_kg_query
+from agents.safeguard.config import *
 
 
-# ================= Safety Rules =================
-
-# Rule-based safety thresholds
-DIET_SAFETY_RULES = {
-    "min_calories": {
-        "value": 1200,
-        "message": "Daily calories too low",
-        "severity": RiskLevel.HIGH
-    },
-    "max_calories": {
-        "value": 4000,
-        "message": "Daily calories too high",
-        "severity": RiskLevel.MODERATE
-    },
-    "min_protein_ratio": {
-        "value": 0.10,
-        "message": "Protein ratio too low (need adequate protein)",
-        "severity": RiskLevel.MODERATE
-    },
-    "max_fat_ratio": {
-        "value": 0.40,
-        "message": "Fat ratio too high",
-        "severity": RiskLevel.MODERATE
-    },
-    "single_meal_calories": {
-        "value": 1500,
-        "message": "Single meal calorie too high",
-        "severity": RiskLevel.LOW
-    }
-}
-
-EXERCISE_SAFETY_RULES = {
-    "max_daily_duration_beginner": {
-        "value": 30,
-        "message": "Exercise duration too long for beginner",
-        "severity": RiskLevel.HIGH
-    },
-    "max_daily_duration_intermediate": {
-        "value": 60,
-        "message": "Exercise duration too long",
-        "severity": RiskLevel.MODERATE
-    },
-    "max_daily_duration_advanced": {
-        "value": 120,
-        "message": "Exercise duration excessive",
-        "severity": RiskLevel.LOW
-    },
-    "min_rest_between_hiit": {
-        "value": 48,
-        "message": "HIIT sessions too frequent (need rest days)",
-        "severity": RiskLevel.HIGH
-    },
-    "max_weekly_sessions": {
-        "value": 7,
-        "message": "Daily exercise without rest (need rest days)",
-        "severity": RiskLevel.MODERATE
-    }
-}
-
-# Condition-specific restrictions
-CONDITION_RESTRICTIONS = {
-    "diabetes": {
-        "diet": {
-            "avoid_high_sugar": "High sugar foods",
-            "avoid_irregular_meals": "Irregular meal timing"
-        },
-        "exercise": {
-            "avoid_vigorous_if_below_100": "Vigorous exercise with blood sugar < 100mg/dL",
-            "avoid_late_exercise": "Late night exercise (hypoglycemia risk)"
-        }
-    },
-    "hypertension": {
-        "diet": {
-            "max_sodium": 2300,
-            "avoid_high_sodium": "High sodium foods"
-        },
-        "exercise": {
-            "avoid_isometric": "Isometric exercises (heavy static holds)",
-            "avoid_valsalva": "Breath holding during exercise"
-        }
-    },
-    "heart_disease": {
-        "exercise": {
-            "max_heart_rate": "220 - age * 0.7",
-            "avoid_high_intensity": "High intensity exercise",
-            "require_clearance": "Medical clearance required"
-        }
-    },
-    "obesity": {
-        "exercise": {
-            "avoid_high_impact": "High impact exercises",
-            "start_low": "Low impact, gradual progression"
-        }
-    },
-    "arthritis": {
-        "exercise": {
-            "avoid_high_impact": "Running, jumping",
-            "prefer_low_impact": "Swimming, cycling"
-        }
-    }
-}
+DIET_SAFETY_RULES = get_DIET_SAFETY_RULES(RiskLevel)
+EXERCISE_SAFETY_RULES = get_EXERCISE_SAFETY_RULES(RiskLevel)
+CONDITION_RESTRICTIONS = get_CONDITION_RESTRICTIONS()
 
 
 # ================= Safeguard Agent =================
