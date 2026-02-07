@@ -134,7 +134,9 @@ class BaseAgent(ABC):
         system_prompt: str,
         user_prompt: str,
         response_format: Optional[Type[T]] = None,
-        temperature: float = 0.7
+        temperature: float = 0.7,
+        top_p: float = 0.92,
+        top_k: int = 50
     ) -> Any:
         """
         Call LLM with system and user prompts.
@@ -144,6 +146,8 @@ class BaseAgent(ABC):
             user_prompt: User prompt with input data
             response_format: Optional Pydantic model for structured output
             temperature: LLM temperature (0.0-1.0)
+            top_p: LLM top_p for nucleus sampling (0.0-1.0)
+            top_k: LLM top_k for top-k sampling
 
         Returns:
             LLM response (string or parsed model)
@@ -153,14 +157,15 @@ class BaseAgent(ABC):
             {"role": "user", "content": user_prompt}
         ]
 
-        print(f" calling llm with temp={temperature}")
+        print(f" calling llm with temp={temperature}, top_p={top_p}, top_k={top_k}")
         if response_format:
             return self._llm.chat_with_json(
                 messages,
-                temperature=temperature
-            )
+                temperature=temperature,
+                top_p=top_p,
+                top_k=top_k)
         else:
-            return self._llm.chat(messages, temperature=temperature)
+            return self._llm.chat(messages, temperature=temperature, top_p=top_p, top_k=top_k)
 
     def _validate_input(self, input_data: Dict[str, Any]) -> AgentInput:
         """Validate and normalize input data"""
