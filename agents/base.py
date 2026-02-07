@@ -153,6 +153,7 @@ class BaseAgent(ABC):
             {"role": "user", "content": user_prompt}
         ]
 
+        print(f" calling llm with temp={temperature}")
         if response_format:
             return self._llm.chat_with_json(
                 messages,
