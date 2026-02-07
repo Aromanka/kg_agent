@@ -77,7 +77,8 @@ class ExercisePipeline:
         top_p: float = 0.92,
         top_k: int = 50,
         top_k_selection: int = 3,
-        output_path: str = "exer_plan.json"
+        output_path: str = "exer_plan.json",
+        meal_timing: str = ""
     ) -> ExercisePipelineOutput:
         """
         Generate exercise options with safety assessment.
@@ -111,7 +112,8 @@ class ExercisePipeline:
             user_metadata=user_metadata,
             environment=env,
             user_requirement=req,
-            num_candidates=num_base_plans
+            num_candidates=num_base_plans,
+            meal_timing=meal_timing
         )
 
         # Flatten variants into a single list
@@ -244,7 +246,8 @@ def run_exercise_pipeline(
     top_k: int = 50,
     top_k_selection: int = 3,
     output_path: str = "exer_plan.json",
-    print_results: bool = True
+    print_results: bool = True,
+    meal_timing: str = ""
 ) -> ExercisePipelineOutput:
     """
     Run the exercise pipeline and optionally print results.
@@ -274,7 +277,8 @@ def run_exercise_pipeline(
         top_p=top_p,
         top_k=top_k,
         top_k_selection=top_k_selection,
-        output_path=output_path
+        output_path=output_path,
+        meal_timing=meal_timing
     )
 
     if print_results:
@@ -289,6 +293,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--bn', type=int, default=3, help='base plan num')
     parser.add_argument('--topk', type=int, default=3, help='top k selection')
+    parser.add_argument('--meal_timing', type=str, default="before_breakfast", help='meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".')
     args = parser.parse_args()
     test_input = {
         "user_metadata": {
@@ -310,7 +315,8 @@ if __name__ == "__main__":
         "num_base_plans": args.bn,
         "temperature": 0.7,
         "top_k_selection": args.topk,
-        "output_path": "exer_plan.json"
+        "output_path": "exer_plan.json",
+        "meal_timing": args.meal_timing
     }
 
     result = run_exercise_pipeline(**test_input)

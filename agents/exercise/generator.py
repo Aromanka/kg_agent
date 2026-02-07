@@ -410,7 +410,8 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
     def generate(
         self,
         input_data: Dict[str, Any],
-        num_candidates: int = 3
+        num_candidates: int = 3,
+        meal_timing: str = ""
     ) -> List[ExercisePlan]:
         """Generate exercise plan candidates with mandatory exercise injection"""
         # Parse input
@@ -461,7 +462,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 
         for i in range(num_candidates):
             # 1. Randomly select meal timing
-            meal_timing = random.choice(MEAL_TIMING_OPTIONS)
+            # meal_timing = random.choice(MEAL_TIMING_OPTIONS)
 
             # 2. Randomly select primary exercises
             primary_cardio = random.choice(CARDIO_ACTIVITIES)
@@ -728,7 +729,8 @@ def generate_exercise_candidates(
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = {},
     user_requirement: Dict[str, Any] = {},
-    num_candidates: int = 3
+    num_candidates: int = 3,
+    meal_timing: str = ""
 ) -> List[ExercisePlan]:
     """
     Convenience function to generate exercise candidates.
@@ -749,14 +751,15 @@ def generate_exercise_candidates(
         "user_requirement": user_requirement,
         "num_candidates": num_candidates
     }
-    return agent.generate(input_data, num_candidates)
+    return agent.generate(input_data, num_candidates, meal_timing=meal_timing)
 
 
 def generate_exercise_variants(
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = {},
     user_requirement: Dict[str, Any] = {},
-    num_candidates: int = 3
+    num_candidates: int = 3,
+    meal_timing: str = ""
 ) -> Dict[str, List[ExercisePlan]]:
     """
     Generate exercise plans with intensity variants (Lite/Standard/Plus).
@@ -777,7 +780,7 @@ def generate_exercise_variants(
     """
     # Generate base candidates
     base_candidates = generate_exercise_candidates(
-        user_metadata, environment, user_requirement, num_candidates
+        user_metadata, environment, user_requirement, num_candidates, meal_timing
     )
 
     # Expand each candidate into variants

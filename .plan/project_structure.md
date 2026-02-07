@@ -267,7 +267,7 @@ python -m agents.exercise.generator
 python -m pipeline.health_pipeline
 
 python -m pipeline.diet_pipeline --bn 4 --vn 3
-python -m pipeline.exer_pipeline --bn 3 --topk 3
+python -m pipeline.exer_pipeline --bn 3 --topk 3 --meal_timing after_lunch
 
 ```
 
