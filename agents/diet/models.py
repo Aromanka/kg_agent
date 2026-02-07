@@ -2,7 +2,7 @@
 Diet Agent Models
 Pydantic models for diet recommendation input/output.
 """
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Literal
 from pydantic import BaseModel, Field
 from enum import Enum
 
