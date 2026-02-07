@@ -309,11 +309,11 @@ if __name__ == "__main__":
         "user_requirement": {
             "goal": "weight_loss"
         },
-        "num_base_plans": 3,
-        "num_variants": 3,
+        "num_base_plans": 2,
+        "num_variants": 2,
         "meal_type": "lunch",
-        "temperature": 1.2,
-        "top_k": 3,
+        "temperature": 0.9,
+        "top_k": 10,
         "output_path": "plan.json"
     }
 
