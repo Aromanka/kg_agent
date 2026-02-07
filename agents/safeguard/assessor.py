@@ -231,8 +231,13 @@ class SafeguardAgent(BaseAgent):
 
         # Merge LLM findings
         if llm_assessment:
-            risk_factors.extend(llm_assessment.get("risk_factors", []))
-            checks.extend(llm_assessment.get("checks", []))
+            # Convert dicts to model objects
+            for rf_dict in llm_assessment.get("risk_factors", []):
+                if isinstance(rf_dict, dict):
+                    risk_factors.append(RiskFactor(**rf_dict))
+            for check_dict in llm_assessment.get("checks", []):
+                if isinstance(check_dict, dict):
+                    checks.append(SafetyCheck(**check_dict))
 
         # Final score calculation
         final_score = max(0, min(100, base_score - severity_penalty))

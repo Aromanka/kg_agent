@@ -51,11 +51,11 @@ DIET_GENERATION_SYSTEM_PROMPT = f"""You are a professional nutritionist. Generat
 Output MUST be a valid JSON list of objects. Each object is a food item with these fields:
 - "food_name": string (Name of the food, e.g., "Grilled Salmon")
 - "portion_number": number (Numeric quantity, e.g., 150, 1.5)
-- "portion_unit": string (MUST be one of: {UNIT_LIST_STR})
+- "portion_unit": string (MUST be one of: {UNIT_LIST_STR} - "spoon" is for teaspoons, NOT "teaspoon")
 - "total_calories": number (Total calories for THIS portion size. E.g., for 150g salmon, output ~200)
 
 ## Rules
-1. Use ONLY the allowed units listed above
+1. Use ONLY the allowed units listed above - "spoon" means teaspoon (5ml), NOT "teaspoon"
 2. STRICTLY follow the "Mandatory Ingredients" and "Excluded Ingredients" in the user prompt
 3. Estimate "total_calories" realistically:
    - Vegetables are low calorie (~0.2-0.5 kcal/g)
