@@ -72,18 +72,21 @@ class DietPipeline:
         user_requirement: Dict[str, Any] = None,
         num_base_plans: int = 3,
         num_variants: int = 3,
+        meal_type: str = "lunch",
+        temperature: float = 0.7,
         top_k: int = 3,
         output_path: str = "plan.json"
     ) -> DietPipelineOutput:
         """
-        Generate lunch options with safety assessment.
+        Generate meal options with safety assessment.
 
         Args:
             user_metadata: User physiological data
             environment: Environmental context
             user_requirement: User goals
-            num_base_plans: Number of LLM-generated base plans
             num_variants: Number of portion variants per base (Lite/Standard/Plus)
+            meal_type: Meal type to generate (breakfast/lunch/dinner/snacks)
+            temperature: LLM temperature (0.0-1.0)
             top_k: Number of top plans to select
             output_path: Path to save all plans JSON
 
@@ -94,24 +97,32 @@ class DietPipeline:
         req = user_requirement or {}
 
         print("=" * 60)
-        print("DIET PIPELINE")
+        print(f"DIET PIPELINE ({meal_type.upper()})")
         print("=" * 60)
 
-        # Step 1: Generate lunch candidates with variants
-        print(f"\n[1/4] Generating {num_base_plans} lunch base plans...")
-        all_candidates = generate_diet_candidates(
-            user_metadata=user_metadata,
-            environment=env,
-            user_requirement=req,
-            num_variants=num_variants  # Lite/Standard/Plus per base plan
-        )
+        # Step 1: Generate meal candidates with variants
+        print(f"\n[1/4] Generating {meal_type} candidates...")
+        meal_candidates = []
+        for _ in range(num_base_plans):
+            candidates = generate_diet_candidates(
+                user_metadata=user_metadata,
+                environment=env,
+                user_requirement=req,
+                num_variants=num_variants,
+                meal_type=meal_type,
+                temperature=temperature
+            )
+            meal_candidates.extend(candidates)
 
-        # Filter only lunch candidates
-        lunch_candidates = [c for c in all_candidates if c.meal_type == "lunch"]
-        print(f"      Found {len(lunch_candidates)} lunch candidates")
+        # Filter only lunch candidates (in case meal_type=None was passed)
+        # meal_candidates = [c for c in candidates if c.meal_type == meal_type]
+        # if not meal_candidates:
+        #     meal_candidates = candidates  # Use all if already filtered
 
-        if not lunch_candidates:
-            print("[WARN] No lunch candidates generated!")
+        print(f"      Found {len(meal_candidates)} {meal_type} candidates")
+
+        if not meal_candidates:
+            print("[WARN] No candidates generated!")
             return DietPipelineOutput(
                 all_plans=[],
                 top_plans=[],
@@ -120,7 +131,7 @@ class DietPipeline:
             )
 
         # Convert to dicts for assessment
-        all_plans_dict = [c.model_dump() for c in lunch_candidates]
+        all_plans_dict = [c.model_dump() for c in meal_candidates]
 
         # Step 2: Assess each plan through safeguard
         print(f"\n[2/4] Assessing {len(all_plans_dict)} plans through safeguard...")
@@ -219,6 +230,8 @@ def run_diet_pipeline(
     user_requirement: Dict[str, Any] = None,
     num_base_plans: int = 3,
     num_variants: int = 3,
+    meal_type: str = "lunch",
+    temperature: float = 0.7,
     top_k: int = 3,
     output_path: str = "plan.json",
     print_results: bool = True
@@ -230,8 +243,9 @@ def run_diet_pipeline(
         user_metadata: User physiological data
         environment: Environmental context
         user_requirement: User goals
-ans: Number of LLM-generated base        num_base_pl plans
-        num_variants: Number of portion variants per base
+        num_variants: Number of portion variants per base (Lite/Standard/Plus)
+        meal_type: Meal type to generate (breakfast/lunch/dinner/snacks)
+        temperature: LLM temperature (0.0-1.0)
         top_k: Number of top plans to select
         output_path: Path to save all plans JSON
         print_results: Whether to print top plans to terminal
@@ -244,8 +258,10 @@ ans: Number of LLM-generated base        num_base_pl plans
         user_metadata=user_metadata,
         environment=environment,
         user_requirement=user_requirement,
-        num_base_plans=num_base_plans,
+        num_base_plans = num_base_plans,
         num_variants=num_variants,
+        meal_type=meal_type,
+        temperature=temperature,
         top_k=top_k,
         output_path=output_path
     )
@@ -278,6 +294,8 @@ if __name__ == "__main__":
         },
         "num_base_plans": 3,
         "num_variants": 3,
+        "meal_type": "lunch",
+        "temperature": 0.7,
         "top_k": 3,
         "output_path": "plan.json"
     }

@@ -101,7 +101,9 @@ class DietAgent(BaseAgent, DietAgentMixin):
     def generate(
         self,
         input_data: Dict[str, Any],
-        num_variants: int = 3
+        num_variants: int = 3,
+        meal_type: str = None,
+        temperature: float = 0.7
     ) -> List[DietRecommendation]:
         """
         Generate diet plan candidates using LLM + Parser pipeline.
@@ -109,14 +111,16 @@ class DietAgent(BaseAgent, DietAgentMixin):
         Flow:
         1. Calculate target calories from user profile
         2. Query KG for dietary knowledge (conditions, restrictions)
-        3. For each meal type (breakfast/lunch/dinner/snacks):
-           - Call LLM once to get base food items
+        3. For each meal type (or specified meal_type):
+           - Call LLM to get base food items
            - Use Parser to expand to Lite/Standard/Plus
-        4. Combine all meal types into complete day plans
+        4. Build candidates
 
         Args:
             input_data: User metadata, environment, requirements
             num_variants: Number of portion variants (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)
+            meal_type: Specific meal type (breakfast/lunch/dinner/snacks) or None for all
+            temperature: LLM temperature (0.0-1.0, default 0.7)
 
         Returns:
             List of DietRecommendation candidates
@@ -148,23 +152,28 @@ class DietAgent(BaseAgent, DietAgentMixin):
             kg_context = self._format_kg_context(dietary_knowledge)
 
         # Define meal types to generate
-        meal_types = ["breakfast", "lunch", "dinner", "snacks"]
+        if meal_type:
+            meal_types = [meal_type]
+        else:
+            meal_types = ["breakfast", "lunch", "dinner", "snacks"]
+
         variant_names = ["Lite", "Standard", "Plus"][:num_variants]
 
         # Collect base plans for each meal type
         meal_base_plans: Dict[str, List[BaseFoodItem]] = {}
 
-        for meal_type in meal_types:
+        for mt in meal_types:
             base_items = self._generate_base_plan(
                 user_meta=user_meta,
                 environment=env,
                 requirement=requirement,
                 target_calories=target_calories,
-                meal_type=meal_type,
-                kg_context=kg_context
+                meal_type=mt,
+                kg_context=kg_context,
+                temperature=temperature
             )
             if base_items:
-                meal_base_plans[meal_type] = base_items
+                meal_base_plans[mt] = base_items
 
         if not meal_base_plans:
             print("[WARN] No base plans generated for any meal type")
@@ -237,7 +246,8 @@ class DietAgent(BaseAgent, DietAgentMixin):
         requirement: Dict[str, Any],
         target_calories: int,
         meal_type: str,
-        kg_context: str = ""
+        kg_context: str = "",
+        temperature: float = 0.7
     ) -> Optional[List[BaseFoodItem]]:
         """Generate base food items for a single meal type"""
         user_prompt = self._build_diet_prompt(
@@ -252,7 +262,7 @@ class DietAgent(BaseAgent, DietAgentMixin):
         response = self._call_llm(
             system_prompt=DIET_GENERATION_SYSTEM_PROMPT,
             user_prompt=user_prompt,
-            temperature=0.7
+            temperature=temperature
         )
 
         if not response or response == {}:
@@ -381,7 +391,9 @@ def generate_diet_candidates(
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = {},
     user_requirement: Dict[str, Any] = {},
-    num_variants: int = 3
+    num_variants: int = 3,
+    meal_type: str = None,
+    temperature: float = 0.7
 ) -> List[DietRecommendation]:
     """
     Convenience function to generate diet candidates.
@@ -391,6 +403,8 @@ def generate_diet_candidates(
         environment: Environmental context
         user_requirement: User goals
         num_variants: Number of portion variants (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)
+        meal_type: Specific meal type (breakfast/lunch/dinner/snacks) or None for all
+        temperature: LLM temperature (0.0-1.0, default 0.7)
 
     Returns:
         List of DietRecommendation objects
@@ -401,7 +415,7 @@ def generate_diet_candidates(
         "environment": environment,
         "user_requirement": user_requirement,
     }
-    return agent.generate(input_data, num_variants)
+    return agent.generate(input_data, num_variants, meal_type, temperature)
 
 
 if __name__ == "__main__":
