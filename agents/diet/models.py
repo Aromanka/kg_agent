@@ -28,8 +28,12 @@ class BaseFoodItem(BaseModel):
     food_name: str = Field(..., description="Name of the food dish")
     portion_number: float = Field(..., description="Numeric quantity (e.g., 100, 1.5)")
     portion_unit: ALLOWED_UNITS = Field(..., description="Unit: gram, ml, piece, slice, cup, bowl, or spoon")
-    total_calories: float = Field(..., description="Total calories for this portion size (e.g., for 150g salmon, ~200 kcal)")
-    # calories_per_unit is calculated from total_calories / portion_number for scaling
+    total_calories: Optional[float] = Field(None, description="Total calories for this portion size (preferred)")
+    calories_per_unit: Optional[float] = Field(None, description="Legacy: calories per unit (deprecated, use total_calories)")
+
+    model_config = {
+        "populate_by_name": True
+    }
 
 
 class RawDietPlan(BaseModel):

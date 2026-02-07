@@ -94,9 +94,16 @@ class DietPlanParser:
         """
         unit = item.portion_unit
         original_num = item.portion_number
-        original_total = item.total_calories
 
-        # Calculate calories_per_unit from total_calories for scaling
+        # Support both old format (calories_per_unit) and new format (total_calories)
+        if hasattr(item, 'total_calories') and item.total_calories and item.total_calories > 0:
+            # New format: LLM outputs total_calories
+            original_total = item.total_calories
+        else:
+            # Old format: calculate total from calories_per_unit
+            original_total = item.calories_per_unit * original_num
+
+        # Calculate calories_per_unit for scaling
         calories_per_unit = original_total / original_num
 
         # Calculate scaled portion number
