@@ -241,32 +241,75 @@ def demo():
             click.echo(f"   - Entities: {ent_count}")
             click.echo(f"   - Relationships: {rel_count}")
 
-            # 3. Sample queries
-            click.echo("\n3. Sample queries:")
+            # 3. Discover actual labels in DB
+            click.echo("\n3. Discovering schema...")
+            label_result = session.run("""
+                MATCH (n)
+                RETURN labels(n) as labels, count(n) as count
+                ORDER BY count DESC
+            """)
+            labels = [r.data() for r in label_result]
+            click.echo("   Entity labels in database:")
+            for r in labels[:10]:
+                click.echo(f"     {r['labels']}: {r['count']}")
 
-            # Find foods good for diabetes
-            click.echo("\n   Foods good for diabetes:")
+            # 4. Sample entities (generic)
+            click.echo("\n4. Sample entities:")
             result = session.run("""
-                MATCH (f:Food)-[r:Benefit_Food|Diet_Disease|Food_Disease]->(d:Disease)
-                WHERE toLower(d.name) CONTAINS 'diabetes'
-                RETURN f.name as food, type(r) as benefit
+                MATCH (n)
+                RETURN n.name as name, labels(n) as labels
+                LIMIT 8
+            """)
+            for r in result:
+                click.echo(f"   - {r['name']} ({r['labels']})")
+
+            # 5. Sample relationships (generic)
+            click.echo("\n5. Sample relationships:")
+            result = session.run("""
+                MATCH (h)-[r]->(t)
+                RETURN h.name as head, type(r) as rel, t.name as tail
+                LIMIT 8
+            """)
+            for r in result:
+                click.echo(f"   - {r['head']} -[{r['rel']}]-> {r['tail']}")
+
+            # 6. Search for entities containing 'diabetes' or similar
+            click.echo("\n6. Searching for diabetes-related entities:")
+            result = session.run("""
+                MATCH (n)
+                WHERE toLower(n.name) CONTAINS 'diabetes' OR toLower(n.name) CONTAINS 'blood sugar'
+                RETURN n.name as name, labels(n) as labels
                 LIMIT 5
             """)
+            found = False
             for r in result:
-                click.echo(f"   - {r['food']}: {r['benefit']}")
+                click.echo(f"   - {r['name']} ({r['labels']})")
+                found = True
+            if not found:
+                click.echo("   (none found with exact match)")
 
-            # Find nutrients in foods
-            click.echo("\n   Nutrients mentioned:")
+            # 7. Search for food-related entities
+            click.echo("\n7. Searching for food-related entities:")
             result = session.run("""
-                MATCH (n:Nutrient) RETURN n.name as name LIMIT 5
+                MATCH (n)
+                WHERE toLower(n.name) CONTAINS 'apple' OR toLower(n.name) CONTAINS 'rice'
+                       OR toLower(n.name) CONTAINS 'vegetable' OR toLower(n.name) CONTAINS 'chicken'
+                RETURN n.name as name, labels(n) as labels
+                LIMIT 5
             """)
+            found = False
             for r in result:
-                click.echo(f"   - {r['name']}")
+                click.echo(f"   - {r['name']} ({r['labels']})")
+                found = True
+            if not found:
+                click.echo("   (none found with exact match)")
 
             click.secho("\n   ✓ Demo completed!", fg="green")
 
     except Exception as e:
         click.secho(f"  ✗ Demo failed: {e}", fg="red")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 # ================= Register Commands =================
