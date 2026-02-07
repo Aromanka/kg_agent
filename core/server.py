@@ -79,7 +79,7 @@ def search_kg(keywords):
                 CALL db.index.fulltext.queryNodes("search_index", $word) YIELD node, score
                 WHERE score > 0.6
                 MATCH (node)-[r]-(m)
-                RETURN node.name as h, r.type as rel_type, m.name as t, r.amount as a, r.unit as u
+                RETURN node.name as h, type(r) as rel_type, m.name as t, r.amount as a, r.unit as u
                 LIMIT 15
                 """
                 res = session.run(query, word=f"{word}~")

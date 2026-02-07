@@ -166,8 +166,8 @@ def search(keyword):
             # Also search relationships
             rel_query = """
             MATCH ()-[r]->()
-            WHERE toLower(r.type) CONTAINS toLower($keyword)
-            RETURN r.type as type, count(r) as count
+            WHERE toLower(type(r)) CONTAINS toLower($keyword)
+            RETURN type(r) as type, count(r) as count
             ORDER BY count DESC
             """
             rel_result = session.run(rel_query, keyword=keyword)
@@ -249,7 +249,7 @@ def demo():
             result = session.run("""
                 MATCH (f:Food)-[r:Benefit_Food|Diet_Disease|Food_Disease]->(d:Disease)
                 WHERE toLower(d.name) CONTAINS 'diabetes'
-                RETURN f.name as food, r.type as benefit
+                RETURN f.name as food, type(r) as benefit
                 LIMIT 5
             """)
             for r in result:

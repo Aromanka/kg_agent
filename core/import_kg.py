@@ -249,7 +249,7 @@ def show_stats(session):
     print("  关系类型分布:")
     result = session.run("""
         MATCH ()-[r]->()
-        RETURN r.type as type, count(r) as count
+        RETURN type(r) as type, count(r) as count
         ORDER BY count DESC
     """)
     for record in result:

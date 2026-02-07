@@ -30,7 +30,7 @@ class KnowledgeGraphQuery:
         query = """
         MATCH (n)-[r:Food_Diet]->(m)
         WHERE toLower(n.name) CONTAINS toLower($condition) OR toLower($condition) CONTAINS toLower(n.name)
-        RETURN n.name as entity, r.type as relation, m.name as diet_recommendation
+        RETURN n.name as entity, type(r) as relation, m.name as diet_recommendation
         """
         return self.client.query(query, {"condition": condition})
 
