@@ -7,12 +7,36 @@ from pydantic import BaseModel, Field
 from enum import Enum
 
 
+# ================= Enums & Constants =================
+
 class MealType(str, Enum):
     """Types of meals in a day"""
     BREAKFAST = "breakfast"
     LUNCH = "lunch"
     DINNER = "dinner"
     SNACKS = "snacks"
+
+
+# Allowed portion units for diet generation (must match Prompt)
+ALLOWED_UNITS = Literal["gram", "ml", "piece", "slice", "cup", "bowl", "spoon"]
+
+
+# ================= Base Food Models (for LLM → Parser pipeline) =================
+
+class BaseFoodItem(BaseModel):
+    """LLM output: Base food item with standardized units for parser expansion"""
+    food_name: str = Field(..., description="Name of the food dish")
+    portion_number: float = Field(..., description="Numeric quantity (e.g., 100, 1.5)")
+    portion_unit: ALLOWED_UNITS = Field(..., description="Unit: gram, ml, piece, slice, cup, bowl, or spoon")
+    calories_per_unit: float = Field(..., description="Calories per single unit (e.g., per gram or per piece)")
+
+
+class RawDietPlan(BaseModel):
+    """LLM output: Raw diet plan containing base food items"""
+    items: List[BaseFoodItem] = Field(..., description="List of food items in this meal")
+
+
+# ================= Existing Models (for downstream processing) =================
 
 
 class FoodItem(BaseModel):
