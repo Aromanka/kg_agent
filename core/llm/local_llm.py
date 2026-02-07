@@ -213,8 +213,19 @@ class LocalLLM:
 
     def _messages_to_text(self, messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
         """Convert message dicts to format expected by local model"""
-        # Local Qwen3-VL model expects the same format as API
-        return messages
+        # Qwen3-VL apply_chat_template expects content as list of blocks
+        converted = []
+        for msg in messages:
+            content = msg.get("content", "")
+            if isinstance(content, str):
+                # Wrap string content in list format
+                converted.append({
+                    "role": msg.get("role", "user"),
+                    "content": [{"type": "text", "text": content}]
+                })
+            else:
+                converted.append(msg)
+        return converted
 
 
 # Global instance
