@@ -95,32 +95,32 @@ class DietPlanParser:
         unit = item.portion_unit
         original_num = item.portion_number
 
-        # Support both formats
-        if hasattr(item, 'total_calories') and item.total_calories and item.total_calories > 0:
-            # New format: LLM outputs total_calories for the whole portion
+        # Trust total_calories field as the base (LLM should output correct values)
+        if hasattr(item, 'total_calories') and item.total_calories is not None:
             original_total = item.total_calories
-        elif hasattr(item, 'calories_per_unit') and item.calories_per_unit:
-            # Old format: calculate total from calories_per_unit
+        elif hasattr(item, 'calories_per_unit') and item.calories_per_unit is not None:
+            # Legacy format: calculate total from per-unit
             original_total = item.calories_per_unit * original_num
         else:
             original_total = 0
 
+        # Calculate calories_per_unit for reference
+        calories_per_unit = original_total / original_num if original_num > 0 else 0
+
         # Calculate scaled portion number
         scaled_num = self._calculate_scaled_number(original_num, unit, scale_factor)
 
-        # Calculate total calories: scale proportionally to portion change
+        # Scale total calories proportionally to portion change
         if original_num > 0:
             total_calories = round(original_total * (scaled_num / original_num), 1)
-            calories_per_unit = round(original_total / original_num, 2)
         else:
             total_calories = original_total
-            calories_per_unit = original_total
 
         return {
             "food_name": item.food_name,
             "portion_number": scaled_num,
             "portion_unit": unit,
-            "calories_per_unit": calories_per_unit,
+            "calories_per_unit": round(calories_per_unit, 2),
             "total_calories": total_calories
         }
 

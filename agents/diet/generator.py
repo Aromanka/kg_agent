@@ -52,18 +52,23 @@ Output MUST be a valid JSON list of objects. Each object is a food item with the
 - "food_name": string (Name of the food, e.g., "Grilled Salmon")
 - "portion_number": number (Numeric quantity, e.g., 150, 1.5)
 - "portion_unit": string (MUST be one of: {UNIT_LIST_STR} - "spoon" is for teaspoons, NOT "teaspoon")
-- "total_calories": number (Total calories for THIS portion size. E.g., for 150g salmon, output ~200)
+- "total_calories": number (TOTAL calories for the ENTIRE portion. E.g., 150g salmon = ~200 kcal total, 1 bowl rice = ~250 kcal total)
 
 ## Rules
 1. Use ONLY the allowed units listed above - "spoon" means teaspoon (5ml), NOT "teaspoon"
 2. STRICTLY follow the "Mandatory Ingredients" and "Excluded Ingredients" in the user prompt
-3. Estimate "total_calories" realistically:
-   - Vegetables are low calorie (~0.2-0.5 kcal/g)
-   - Oils and fats are high calorie (~9 kcal/g)
-   - Proteins and carbs are moderate (~4 kcal/g)
-4. Output food items for ONE meal type as a JSON LIST
-5. Do NOT wrap in extra keys like "meal_plan" or "items"
-6. Do NOT output markdown code blocks
+3. "total_calories" must be the TOTAL calories for the whole portion, NOT per unit
+4. Realistic calorie references:
+   - 100g meat/fish: ~150-200 kcal total
+   - 100g vegetables: ~20-50 kcal total
+   - 100g carbs (rice/potato): ~130-150 kcal total
+   - 1 bowl (300g): ~200-300 kcal total
+   - 1 piece fruit: ~50-100 kcal total
+   - 5ml oil: ~45 kcal total
+5. CRITICAL: If you output 120g Tempeh, total_calories should be ~200-250, NOT 14000
+6. Output food items for ONE meal type as a JSON LIST
+7. Do NOT wrap in extra keys like "meal_plan" or "items"
+8. Do NOT output markdown code blocks
 
 ## Example Output:
 [
