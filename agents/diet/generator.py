@@ -416,4 +416,5 @@ if __name__ == "__main__":
     print(f"Generated {len(candidates)} diet candidates")
     for c in candidates:
         print(f"- ID: {c.id}, Calories: {c.total_calories}, Deviation: {c.calories_deviation}%")
+        print(c)
 
