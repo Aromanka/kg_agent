@@ -25,13 +25,12 @@ from docx import Document
 # ================= Configuration Loading =================
 config = get_config()
 API_MODEL = config.get("api_model", {})
-DEEPSEEK_API_KEY = API_MODEL.get("api_key", config.get("deepseek", {}).get("api_key", ""))
-DEEPSEEK_BASE_URL = API_MODEL.get("base_url", config.get("deepseek", {}).get("base_url", ""))
-MODEL_NAME = API_MODEL.get("model", config.get("deepseek", {}).get("model", "deepseek-chat"))
-LOCAL_MODEL_PATH = config.get("local_model_path")
-# Determine LLM mode (use api_model by default, fallback to local only if configured)
-USE_LOCAL = should_use_local() if HAS_UNIFIED_LLM and LOCAL_MODEL_PATH else False
-print(f"[INFO] KG Builder LLM mode: {'local' if USE_LOCAL else 'api'}")
+DEEPSEEK_API_KEY = API_MODEL.get("api_key", "")
+DEEPSEEK_BASE_URL = API_MODEL.get("base_url", "")
+MODEL_NAME = API_MODEL.get("model", "deepseek-chat")
+# Always use API model (no local model fallback)
+USE_LOCAL = False
+print(f"[INFO] KG Builder LLM mode: api")
 print(f"[INFO] API Model: {MODEL_NAME} @ {DEEPSEEK_BASE_URL}")
 # ================= Core Configuration Area =================
 # Knowledge Graph Type Configuration
@@ -185,10 +184,10 @@ def split_text(text, chunk_size=CHUNK_SIZE, overlap=OVERLAP):
     return chunks
 
 
-def extract_triplets_with_llm(text_chunk, schema_prompt):
+def extract_quads_with_llm(text_chunk, schema_prompt):
     """
-    Extract triplets using LLM (API or local) with JSON Object response format.
-    Prioritizes "triplets" key from the response.
+    Extract quads using LLM (API mode) with JSON Object response format.
+    Prioritizes "quads" key from the response.
     Args:
         text_chunk: Text to extract from
         schema_prompt: Schema prompt to use (DIET or EXER)
@@ -200,35 +199,30 @@ def extract_triplets_with_llm(text_chunk, schema_prompt):
         {"role": "user", "content": prompt}
     ]
     try:
-        if USE_LOCAL and HAS_UNIFIED_LLM:
-            # Use unified LLM (local mode)
-            result = get_unified_llm().chat_with_json(
-                messages=messages,
-                temperature=0.1
-            )
-            data = result if isinstance(result, dict) else {}
-        else:
-            # Use API mode
-            from openai import OpenAI
-            client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
-            response = client.chat.completions.create(
-                model=MODEL_NAME,
-                messages=messages,
-                temperature=0.1,
-                stream=False,
-                response_format={'type': 'json_object'}
-            )
-            content = response.choices[0].message.content.strip()
-            data = json.loads(content)
-        # Priority 1: Look for "triplets" key (required by new prompt)
+        # Use API mode
+        from openai import OpenAI
+        client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=messages,
+            temperature=0.1,
+            stream=False,
+            response_format={'type': 'json_object'}
+        )
+        content = response.choices[0].message.content.strip()
+        data = json.loads(content)
+        # Priority 1: Look for "quads" key (required by new prompt)
         if isinstance(data, dict):
+            if "quads" in data and isinstance(data["quads"], list):
+                return data["quads"]
+            # Priority 2: Look for "triplets" key (backwards compatibility)
             if "triplets" in data and isinstance(data["triplets"], list):
                 return data["triplets"]
-            # Priority 2: Look for any list value as fallback
+            # Priority 3: Look for any list value as fallback
             for val in data.values():
                 if isinstance(val, list):
                     return val
-        # Priority 3: Direct list response
+        # Priority 4: Direct list response
         elif isinstance(data, list):
             return data
         return []
@@ -258,7 +252,7 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
     if not os.path.exists(input_dir):
         os.makedirs(input_dir)
         print(f"[{kg_name} KG] Please create {input_dir} and put files in it")
-        return {"status": "skipped", "reason": "input_dir_not_found", "triplets": 0}
+        return {"status": "skipped", "reason": "input_dir_not_found", "quads": 0}
     # Generate output folder for this run
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     current_output_dir = os.path.join(OUTPUT_BASE_DIR, f"{kg_type.capitalize()}_{timestamp}")
@@ -272,7 +266,7 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
         glob.glob(os.path.join(input_dir, "*.xlsx"))
     if not files:
         print(f"⚠️ [{kg_name} KG] '{input_dir}' folder is empty, no files found.")
-        return {"status": "skipped", "reason": "no_files", "triplets": 0}
+        return {"status": "skipped", "reason": "no_files", "quads": 0}
     # Load checkpoint CSV to skip already processed files
     checkpoint_csv_path = os.path.join(OUTPUT_BASE_DIR, f"{kg_type}_processed_files.csv")
     processed_files_checkpoint = set()
@@ -292,8 +286,8 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
     print(f"🔍 [{kg_name} KG] Found {len(files)} new files to process...")
     if not files:
         print(f"✅ [{kg_name} KG] All files have been processed. Nothing to do.")
-        return {"status": "skipped", "reason": "all_files_processed", "triplets": 0}
-    all_triplets = []
+        return {"status": "skipped", "reason": "all_files_processed", "quads": 0}
+    all_quads = []
     seen_hashes = set()
     processed_files_log = []
     start_time = time.time()
@@ -320,15 +314,17 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
         cleaned_content = clean_text(content)
         chunks = split_text_by_headers(cleaned_content)
         for chunk in tqdm(chunks, desc=f"Parsing {file_name[:10]}", leave=False):
-            triplets = extract_triplets_with_llm(chunk, schema_prompt)
-            for t in triplets:
+            quads = extract_quads_with_llm(chunk, schema_prompt)
+            for t in quads:
                 if "head" in t and "relation" in t and "tail" in t:
                     if t['relation'] in valid_rels:
-                        t_hash = f"{t['head']}_{t['relation']}_{t['tail']}"
+                        # Include context in hash for deduplication
+                        context = t.get('context', 'General')
+                        t_hash = f"{t['head']}_{t['relation']}_{t['tail']}_{context}"
                         if t_hash not in seen_hashes:
                             seen_hashes.add(t_hash)
                             t["source"] = file_name
-                            all_triplets.append(t)
+                            all_quads.append(t)
                 time.sleep(0.1)
         # Mark file as successfully processed and update checkpoint immediately
         files_processed_this_run.append({
@@ -348,19 +344,19 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
             print(f"⚠️ Failed to update checkpoint for {file_name}: {e}")
     # Save results
     duration = time.time() - start_time
-    output_json_path = os.path.join(current_output_dir, f"{kg_type}_triplets.json")
-    output_csv_path = os.path.join(current_output_dir, f"{kg_type}_triplets.csv")
+    output_json_path = os.path.join(current_output_dir, f"{kg_type}_quads.json")
+    output_csv_path = os.path.join(current_output_dir, f"{kg_type}_quads.csv")
     log_path = os.path.join(current_output_dir, "process_log.txt")
     print("-" * 40)
     print(f"✅ [{kg_name} KG] Extraction complete! Time: {duration:.2f} seconds")
-    print(f"🕸️ Obtained {len(all_triplets)} unique triplets.")
+    print(f"🕸️ Obtained {len(all_quads)} unique quads.")
     # Save JSON
     with open(output_json_path, 'w', encoding='utf-8') as f:
-        json.dump(all_triplets, f, indent=4, ensure_ascii=False)
+        json.dump(all_quads, f, indent=4, ensure_ascii=False)
     # Save CSV
-    df = pd.DataFrame(all_triplets)
+    df = pd.DataFrame(all_quads)
     if not df.empty:
-        cols = ["head", "relation", "tail", "source"]
+        cols = ["head", "relation", "tail", "context", "source"]
         existing = [c for c in cols if c in df.columns]
         df = df[existing]
         df.to_csv(output_csv_path, index=False, encoding='utf_8_sig')
@@ -369,7 +365,7 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
         f.write(f"Run time: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"Knowledge graph type: {kg_name}\n")
         f.write(f"Time consumed: {duration:.2f} seconds\n")
-        f.write(f"Number of extracted triplets: {len(all_triplets)}\n")
+        f.write(f"Number of extracted quads: {len(all_quads)}\n")
         f.write(f"Input directory: {input_dir}\n")
         f.write("\nList of processed files:\n")
         for fname in processed_files_log:
@@ -379,7 +375,7 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
         "status": "success",
         "kg_type": kg_type,
         "kg_name": kg_name,
-        "triplets": len(all_triplets),
+        "quads": len(all_quads),
         "duration": duration,
         "output_dir": current_output_dir
     }
@@ -413,7 +409,7 @@ Default behavior:
     print(f"📋 Types: {', '.join(kg_types_to_build)}")
     print("=" * 50)
     total_stats = {
-        "total_triplets": 0,
+        "total_quads": 0,
         "total_duration": 0,
         "results": []
     }
@@ -422,7 +418,7 @@ Default behavior:
             print()
             stats = build_knowledge_graph(kg_type, KG_CONFIGS[kg_type])
             total_stats["results"].append(stats)
-            total_stats["total_triplets"] += stats.get("triplets", 0)
+            total_stats["total_quads"] += stats.get("quads", 0)
             total_stats["total_duration"] += stats.get("duration", 0)
         else:
             print(f"⚠️ Unknown knowledge graph type: {kg_type}")
@@ -431,13 +427,13 @@ Default behavior:
     print("=" * 50)
     print("📊 Knowledge graph build summary")
     print("=" * 50)
-    print(f"Total triplets count: {total_stats['total_triplets']}")
+    print(f"Total quads count: {total_stats['total_quads']}")
     print(f"Total time: {total_stats['total_duration']:.2f} seconds")
     print()
     # Display status for each KG
     for stats in total_stats["results"]:
         status = "✅" if stats.get("status") == "success" else "⚠️"
-        print(f" {status} {stats.get('kg_name', 'Unknown')} KG: {stats.get('triplets', 0)} triplets")
+        print(f" {status} {stats.get('kg_name', 'Unknown')} KG: {stats.get('quads', 0)} quads")
     print()
     print("📌 File locations:")
     for stats in total_stats["results"]:

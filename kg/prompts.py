@@ -5,34 +5,51 @@ Revised to include Demographic Targeting, Composition, and Strict JSON Formattin
 
 
 DIET_KG_EXTRACT_SCHEMA_PROMPT = """
-You are a world-class expert in Nutritional Epidemiology and Knowledge Graph construction. Your task is to perform **EXHAUSTIVE extraction** of all entities and relationships related to diet, nutrition, and public health from the provided text.
+You are an advanced Knowledge Graph Engineer specialized in Nutritional Epidemiology and Biomedical Information Extraction.
+Your goal is to extract structured knowledge from diet and nutrition text with **clinical precision**.
 
-## ⚠️ Critical Instructions (System Logic)
-1.  **Strict JSON Format**: The output must be a valid JSON object containing a single key "triplets".
-2.  **Population Specificity**: You must distinguish between general advice and advice for **specific demographics** (e.g., "Pregnant Women", "Infants", "Hypertensive Patients"). Do not generalize specific advice.
-3.  **Atomic Fact Decomposition**: If a sentence contains complex or compound information (e.g., "Eating 200g of vegetables daily reduces cancer risk"), you must break it down into separate atomic triplets (Intake Amount, Benefit, etc.).
-4.  **Entity Normalization**:
-    * **Values**: Combine numbers and units tightly (e.g., "200g", "400IU").
-    * **Names**: Use canonical/standardized names (e.g., use "Metformin" instead of "the drug", use "Ascorbic Acid" or "Vitamin C" consistently if ambiguous).
-    * **Resolution**: Resolve pronouns (it, they) to the specific noun they refer to in the text.
+## 🧠 Cognitive Process (Chain of Thought)
+Before generating JSON, you must identify:
+1.  **Core Entities**: Identify distinct food, nutrient, and health entities.
+2.  **Resolution**: Resolve "it", "they", "this" to their actual nouns.
+3.  **Conditions**: Identify IF/THEN conditions (e.g., "only if pregnant", "during antibiotic course").
+4.  **Filtering**: Discard anecdotal evidence, metaphors, or unproven claims labeled as myths.
 
-## 🔗 Schema Definition
-Strictly use only the following 12 relation types. Do not invent new relations.
+## 🔗 Schema: The "Quad" Structure
+Output a JSON object with a key "quads". Each item must contain 4 fields:
+1.  **Head**: The subject entity (Standardized).
+2.  **Relation**: The predicate (from the allowed list below).
+3.  **Tail**: The object entity (Standardized).
+4.  **Context**: (String) Any condition, timing, or constraint. If none, use "General".
 
-| Relation Type | Definition | Allowed Head Entity | Allowed Tail Entity | Example |
-| :--- | :--- | :--- | :--- | :--- |
-| **Target_Recommendation** | Recommended for a specific population (inclusive of healthy groups). | Demographic/Group | Food/Nutrient/Diet | Pregnant Women -> Folic Acid |
-| **Target_Avoid** | Contraindicated, restricted, or to be avoided by a group. | Demographic/Group | Food/Nutrient/Diet | Hypertensive Patients -> High Sodium Foods |
-| **Disease_Management** | Diet/Food used to manage, treat, or prevent a specific disease. | Food/Nutrient/Diet | Disease/Symptom | Low Carb Diet -> Type 2 Diabetes |
-| **Nutrient_Content** | Nutritional composition of a food source. | Food | Nutrient/Compound | Salmon -> Omega-3 Fatty Acids |
-| **Has_Benefit** | Specific positive health outcome or physiological benefit. | Food/Nutrient | Benefit/Outcome | Dietary Fiber -> Improved Digestion |
-| **Has_Risk** | Risk, side effect, or negative health outcome. | Food/Nutrient | Risk/Disease | Trans Fats -> Cardiovascular Disease |
-| **Recommended_Intake** | The specific amount recommended. | Food/Nutrient | Value + Unit | Vegetables -> 400g/day |
-| **Recommended_Freq** | The specific frequency recommended. | Food/Nutrient | Frequency String | Fish -> 2 times/week |
-| **Max_Limit** | Upper limit or restriction threshold. | Food/Nutrient | Value + Unit | Red Meat -> 70g/day |
-| **Preparation_Method** | Recommended cooking or preparation technique. | Food | Method/Action | Chicken -> Skinless |
-| **Interaction** | Biological interaction between substances (synergy or inhibition). | Entity A | Entity B | Vitamin C -> Iron Absorption |
-| **Substitute_With** | A recommended replacement for a specific food item. | Original Food | Substitute Food | Butter -> Olive Oil |
+## 📋 Allowed Relations
+| Relation | Usage |
+| :--- | :--- |
+| **Indicated_For** | Recommended for a specific population (Head=Demographic, Tail=Food/Nutrient). |
+| **Contraindicated_For** | Contraindicated, restricted, or to be avoided (Head=Demographic, Tail=Food/Nutrient). |
+| **Has_Mechanism** | Physiological effect (e.g., "Increases insulin sensitivity"). |
+| **Contains_Component** | Nutritional composition (Head=Food, Tail=Nutrient/Compound). |
+| **Synergy_With** | Positive interaction - X helps Y (Head=Entity A, Tail=Entity B). |
+| **Antagonism_With** | Negative interaction - X blocks Y (Head=Entity A, Tail=Entity B). |
+| **Dosing_Guideline** | Specific amount/frequency/duration (Head=Food/Nutrient, Tail=Value+Unit). |
+| **Has_Benefit** | Specific positive health outcome (Head=Food/Nutrient, Tail=Benefit/Outcome). |
+| **Has_Risk** | Risk or negative health outcome (Head=Food/Nutrient, Tail=Risk/Disease). |
+| **Disease_Management** | Diet used to manage, treat, or prevent (Head=Food/Nutrient, Tail=Disease/Symptom). |
+| **Preparation_Method** | Recommended cooking or preparation (Head=Food, Tail=Method/Action). |
+
+## 🛡️ Robustness Rules
+1.  **No Hallucination**: Extract ONLY what is explicitly written. Do not add external knowledge.
+    * *Bad*: "Apples contain Vitamin C" if text only says "Apples are good for you"
+    * *Good*: "Apples are good for you" -> (Apples, Has_Benefit, General health, General)
+2.  **Normalization**:
+    * Map vague terms to clinical terms (e.g., "Heart attack" -> "Myocardial Infarction", "High blood pressure" -> "Hypertension").
+    * Group synonyms (e.g., use "Ascorbic Acid" or "Vitamin C" consistently).
+    * Combine numbers and units tightly (e.g., "200g", "400IU").
+3.  **Context is King**:
+    * Text: "Eat carbs if you just ran."
+    * Bad: (Carbs, Has_Benefit, Energy, "General")
+    * Good: (Carbs, Has_Benefit, Energy recovery, "Post-exercise only")
+4.  **Population Specificity**: Distinguish between general advice and specific demographics. Do not generalize specific advice.
 
 ## 📝 Few-Shot Examples
 
@@ -43,14 +60,14 @@ Strictly use only the following 12 relation types. Do not invent new relations.
 **Output**:
 ```json
 {
-  "triplets": [
-    {"head": "Toddlers >1 year", "relation": "Target_Recommendation", "tail": "Whole Milk"},
-    {"head": "Adults", "relation": "Target_Avoid", "tail": "Red Meat"},
-    {"head": "Red Meat", "relation": "Max_Limit", "tail": "70g/day"},
-    {"head": "Processed Meats", "relation": "Substitute_With", "tail": "Legumes"},
-    {"head": "Processed Meats", "relation": "Substitute_With", "tail": "Fish"},
-    {"head": "Legumes", "relation": "Has_Benefit", "tail": "Lower heart disease risk"},
-    {"head": "Fish", "relation": "Has_Benefit", "tail": "Lower heart disease risk"}
+  "quads": [
+    {"head": "Toddlers >1 year", "relation": "Indicated_For", "tail": "Whole Milk", "context": "Daily intake"},
+    {"head": "Adults", "relation": "Contraindicated_For", "tail": "Red Meat", "context": "General"},
+    {"head": "Red Meat", "relation": "Dosing_Guideline", "tail": "70g/day", "context": "Daily maximum"},
+    {"head": "Processed Meats", "relation": "Antagonism_With", "tail": "Legumes", "context": "For heart health"},
+    {"head": "Processed Meats", "relation": "Antagonism_With", "tail": "Fish", "context": "For heart health"},
+    {"head": "Legumes", "relation": "Has_Benefit", "tail": "Lower heart disease risk", "context": "General"},
+    {"head": "Fish", "relation": "Has_Benefit", "tail": "Lower heart disease risk", "context": "General"}
   ]
 }
 
@@ -65,12 +82,12 @@ Strictly use only the following 12 relation types. Do not invent new relations.
 
 ```json
 {
-  "triplets": [
-    {"head": "Oranges", "relation": "Nutrient_Content", "tail": "Vitamin C"},
-    {"head": "Vitamin C", "relation": "Has_Benefit", "tail": "Iron absorption"},
-    {"head": "Vitamin C", "relation": "Interaction", "tail": "Iron"},
-    {"head": "People on antibiotics", "relation": "Target_Avoid", "tail": "Acidic fruits"},
-    {"head": "Oranges", "relation": "Target_Avoid", "tail": "People on antibiotics"}
+  "quads": [
+    {"head": "Oranges", "relation": "Contains_Component", "tail": "Vitamin C", "context": "General"},
+    {"head": "Vitamin C", "relation": "Has_Mechanism", "tail": "Iron absorption", "context": "General"},
+    {"head": "Vitamin C", "relation": "Synergy_With", "tail": "Iron", "context": "Synergistic effect"},
+    {"head": "People on antibiotics", "relation": "Contraindicated_For", "tail": "Acidic fruits", "context": "During antibiotic course"},
+    {"head": "Oranges", "relation": "Contraindicated_For", "tail": "People on antibiotics", "context": "During antibiotic course"}
   ]
 }
 
@@ -80,58 +97,79 @@ Strictly use only the following 12 relation types. Do not invent new relations.
 
 1. Output **ONLY** the JSON object.
 2. Do not use Markdown code blocks (like ```json). Just the raw JSON string.
-3. If no relevant entities are found, return `{"triplets": []}`.
+3. If no relevant entities are found, return `{"quads": []}`.
 4. Ensure all JSON syntax is valid (quotes, commas, brackets).
+5. Every quad MUST include the "context" field.
+
+## 🚀 Execution
+
+Analyze the text provided below and output the valid JSON object.
 """
 
 
 DIET_VALID_RELS = [
-"Target_Recommendation",
-"Target_Avoid",
-"Disease_Management",
-"Nutrient_Content",
+# Core unified relations (from ROBUST_HEALTH_KG_PROMPT)
+"Indicated_For",
+"Contraindicated_For",
+"Has_Mechanism",
+"Contains_Component",
+"Synergy_With",
+"Antagonism_With",
+"Dosing_Guideline",
+# Domain-specific relations (preserved for precision)
 "Has_Benefit",
 "Has_Risk",
-"Recommended_Intake",
-"Recommended_Freq",
-"Max_Limit",
-"Preparation_Method",
-"Interaction",
-"Substitute_With"
+"Disease_Management",
+"Preparation_Method"
 ]
 
 
 EXER_KG_EXTRACT_SCHEMA_PROMPT = """
-You are a world-class expert in Kinesiology, Sports Science, and Public Health Knowledge Graph construction. Your task is to perform **EXHAUSTIVE extraction** of all entities and relationships related to exercise, fitness modalities, and health outcomes from the provided text.
+You are an advanced Knowledge Graph Engineer specialized in Kinesiology, Sports Science, and Biomedical Information Extraction.
+Your goal is to extract structured knowledge from exercise and fitness text with **clinical precision**.
 
-## ⚠️ Critical Instructions (System Logic)
-1.  **Strict JSON Format**: The output must be a valid JSON object containing a single key "triplets".
-2.  **Population vs. Condition**: You must distinguish between recommendations for specific **Demographics** (e.g., "Pregnant Women", "Children", "Seniors") and **Medical Conditions** (e.g., "Arthritis Patients").
-3.  **Atomic Fact Decomposition**: Complex sentences must be broken down.
-    * *Input*: "Running for 30 mins daily improves cardiovascular health."
-    * *Output*: Two triplets -> 1. (Running, Recommended_Duration, 30min/day), 2. (Running, Has_Benefit, Cardiovascular health).
-4.  **Entity Normalization**:
-    * **Standardize Names**: Use canonical terms (e.g., use "Aerobic Exercise" instead of "cardio", use "Quadriceps" instead of "thigh front muscles" if specific).
-    * **Values**: tightly couple numbers and units (e.g., "30min", "3sets").
-5.  **Implicit Subject Resolution**: In imperative sentences (e.g., "Keep your back straight"), link the technique to the specific exercise mentioned in the context.
+## 🧠 Cognitive Process (Chain of Thought)
+Before generating JSON, you must identify:
+1.  **Core Entities**: Identify distinct exercise, muscle, and health entities.
+2.  **Resolution**: Resolve "it", "they", "this" to their actual nouns.
+3.  **Conditions**: Identify IF/THEN conditions (e.g., "only if pregnant", "post-injury", "post-exercise").
+4.  **Filtering**: Discard anecdotal evidence, metaphors, or unproven claims labeled as myths.
 
-## 🔗 Schema Definition
-Strictly use only the following 12 relation types.
+## 🔗 Schema: The "Quad" Structure
+Output a JSON object with a key "quads". Each item must contain 4 fields:
+1.  **Head**: The subject entity (Standardized).
+2.  **Relation**: The predicate (from the allowed list below).
+3.  **Tail**: The object entity (Standardized).
+4.  **Context**: (String) Any condition, timing, or constraint. If none, use "General".
 
-| Relation Type | Definition | Allowed Head Entity | Allowed Tail Entity | Example |
-| :--- | :--- | :--- | :--- | :--- |
-| **Target_Recommendation** | Recommended for a specific population (inclusive of healthy groups). | Demographic/Group | Exercise/Activity | Pregnant Women -> Swimming |
-| **Target_Avoid** | Contraindicated, restricted, or to be avoided by a group. | Demographic/Group | Exercise/Activity | Arthritis Patients -> High Impact Cardio |
-| **Disease_Management** | Exercise used to manage, treat, or prevent a specific disease. | Exercise/Activity | Disease/Symptom | Yoga -> Anxiety Disorders |
-| **Targets_Muscle** | Anatomical focus of the exercise. | Exercise | Muscle/Body Part | Squats -> Glutes |
-| **Has_Benefit** | Specific positive health outcome or physiological adaptation. | Exercise/Activity | Benefit/Outcome | Aerobic Exercise -> Improved VO2 Max |
-| **Has_Risk** | Risk, injury potential, or negative side effect. | Exercise/Activity | Risk/Injury | Deadlifts -> Lower Back Injury |
-| **Recommended_Duration** | Recommended time duration per session. | Exercise/Activity | Value + Unit | Walking -> 30min/session |
-| **Recommended_Freq** | Recommended frequency (how often). | Exercise/Activity | Frequency String | Strength Training -> 3x/week |
-| **Max_Limit** | Upper limit or safety threshold. | Exercise/Activity | Value + Unit | Running -> 60min/day |
-| **Technique_Method** | Specific form cues, execution style, or biomechanical instructions. | Exercise | Technique/Action | Push-ups -> Core Engaged |
-| **Interaction** | Relationship between activities (Synergy, Warm-up, Cool-down). | Entity A | Entity B | Stretching -> Recovery |
-| **Substitute_With** | A recommended alternative exercise. | Original Exercise | Substitute Exercise | Running -> Elliptical |
+## 📋 Allowed Relations
+| Relation | Usage |
+| :--- | :--- |
+| **Indicated_For** | Recommended for a specific population (Head=Demographic, Tail=Exercise/Activity). |
+| **Contraindicated_For** | Contraindicated, restricted, or to be avoided (Head=Demographic, Tail=Exercise/Activity). |
+| **Disease_Management** | Exercise used to manage, treat, or prevent (Head=Exercise/Activity, Tail=Disease/Symptom). |
+| **Targets_Entity** | Anatomical focus or target of the exercise (Head=Exercise, Tail=Muscle/Body Part). |
+| **Has_Benefit** | Specific positive health outcome (Head=Exercise/Activity, Tail=Benefit/Outcome). |
+| **Has_Risk** | Risk or negative health outcome (Head=Exercise/Activity, Tail=Risk/Injury). |
+| **Dosing_Guideline** | Specific amount/frequency/duration (Head=Exercise/Activity, Tail=Value+Unit). |
+| **Has_Mechanism** | Physiological effect (e.g., "Increases insulin sensitivity"). |
+| **Synergy_With** | Positive interaction - X helps Y (Head=Entity A, Tail=Entity B). |
+| **Antagonism_With** | Negative interaction - X blocks Y (Head=Entity A, Tail=Entity B). |
+| **Technique_Method** | Specific form cues or biomechanical instructions (Head=Exercise, Tail=Technique/Action). |
+
+## 🛡️ Robustness Rules
+1.  **No Hallucination**: Extract ONLY what is explicitly written. Do not add external knowledge.
+    * *Bad*: "Running increases VO2 max by 15%" if text only says "Running improves cardiovascular health"
+    * *Good*: "Running improves cardiovascular health" -> (Running, Has_Benefit, Cardiovascular health, General)
+2.  **Normalization**:
+    * Map vague terms to clinical terms (e.g., "cardio" -> "Aerobic Exercise", "leg day" -> "Lower Body Training").
+    * Group synonyms (e.g., use "Quadriceps" for "quads", "Aerobic Exercise" for "cardio").
+    * Combine numbers and units tightly (e.g., "30min", "3sets").
+3.  **Context is King**:
+    * Text: "Do squats only if your knees are healthy."
+    * Bad: (Squats, Targets_Entity, Glutes, "General")
+    * Good: (Squats, Targets_Entity, Glutes, "Only with healthy knees")
+4.  **Population vs. Condition**: Distinguish between demographics (Children, Seniors) and medical conditions (Arthritis Patients). Do not conflate them.
 
 ## 📝 Few-Shot Examples
 
@@ -142,14 +180,14 @@ Strictly use only the following 12 relation types.
 **Output**:
 ```json
 {
-  "triplets": [
-    {"head": "Toddlers >1 year", "relation": "Target_Recommendation", "tail": "Outdoor Play"},
-    {"head": "Adults", "relation": "Target_Avoid", "tail": "High-intensity training"},
-    {"head": "High-intensity training", "relation": "Max_Limit", "tail": "60min/day"},
-    {"head": "Running", "relation": "Substitute_With", "tail": "Swimming"},
-    {"head": "Running", "relation": "Substitute_With", "tail": "Yoga"},
-    {"head": "Swimming", "relation": "Has_Benefit", "tail": "Lower risk of joint injury"},
-    {"head": "Yoga", "relation": "Has_Benefit", "tail": "Lower risk of joint injury"}
+  "quads": [
+    {"head": "Toddlers >1 year", "relation": "Indicated_For", "tail": "Outdoor Play", "context": "Daily activity"},
+    {"head": "Adults", "relation": "Contraindicated_For", "tail": "High-intensity training", "context": "General"},
+    {"head": "High-intensity training", "relation": "Dosing_Guideline", "tail": "60min/day", "context": "Daily maximum"},
+    {"head": "Running", "relation": "Antagonism_With", "tail": "Swimming", "context": "For joint protection"},
+    {"head": "Running", "relation": "Antagonism_With", "tail": "Yoga", "context": "For joint protection"},
+    {"head": "Swimming", "relation": "Has_Benefit", "tail": "Lower risk of joint injury", "context": "General"},
+    {"head": "Yoga", "relation": "Has_Benefit", "tail": "Lower risk of joint injury", "context": "General"}
   ]
 }
 
@@ -164,12 +202,12 @@ Strictly use only the following 12 relation types.
 
 ```json
 {
-  "triplets": [
-    {"head": "Squats", "relation": "Targets_Muscle", "tail": "Leg muscles"},
-    {"head": "Squats", "relation": "Has_Benefit", "tail": "Increase lower body strength"},
-    {"head": "Squats", "relation": "Technique_Method", "tail": "Keep core tight"},
-    {"head": "People with knee injury", "relation": "Target_Avoid", "tail": "Strenuous lower body movements"},
-    {"head": "Squats", "relation": "Target_Avoid", "tail": "People with knee injury"}
+  "quads": [
+    {"head": "Squats", "relation": "Targets_Entity", "tail": "Leg muscles", "context": "Primary focus"},
+    {"head": "Squats", "relation": "Has_Benefit", "tail": "Increase lower body strength", "context": "General"},
+    {"head": "Squats", "relation": "Technique_Method", "tail": "Keep core tight", "context": "During movement"},
+    {"head": "People with knee injury", "relation": "Contraindicated_For", "tail": "Strenuous lower body movements", "context": "Due to knee injury"},
+    {"head": "Squats", "relation": "Contraindicated_For", "tail": "People with knee injury", "context": "Contraindicated"}
   ]
 }
 
@@ -179,24 +217,31 @@ Strictly use only the following 12 relation types.
 
 1. Output **ONLY** the JSON object.
 2. Do not use Markdown code blocks (like ```json). Just the raw JSON string.
-3. If no relevant entities are found, return `{"triplets": []}`.
-4. Ensure all JSON syntax is valid.
+3. If no relevant entities are found, return `{"quads": []}`.
+4. Ensure all JSON syntax is valid (quotes, commas, brackets).
+5. Every quad MUST include the "context" field.
+
+## 🚀 Execution
+
+Analyze the text provided below and output the valid JSON object.
 """
 
 
 EXER_VALID_RELS = [
-"Target_Recommendation",
-"Target_Avoid",
-"Disease_Management",
-"Targets_Muscle",
+# Core unified relations (from ROBUST_HEALTH_KG_PROMPT)
+"Indicated_For",
+"Contraindicated_For",
+"Has_Mechanism",
+"Contains_Component",
+"Synergy_With",
+"Antagonism_With",
+"Dosing_Guideline",
+# Domain-specific relations (preserved for precision)
 "Has_Benefit",
 "Has_Risk",
-"Recommended_Duration",
-"Recommended_Freq",
-"Max_Limit",
-"Technique_Method",
-"Interaction",
-"Substitute_With"
+"Disease_Management",
+"Targets_Entity",
+"Technique_Method"
 ]
 
 
@@ -280,4 +325,3 @@ Output a JSON object with a key "quads". Each item must contain 4 fields:
 
 Analyze the text provided below and output the valid JSON object.
 """
-

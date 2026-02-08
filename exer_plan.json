@@ -1,0 +1,727 @@
+{
+  "all_plans": [
+    {
+      "id": 1,
+      "title": "Summer Afternoon Weight Loss Plan (Lite)",
+      "meal_timing": "after_lunch",
+      "sessions": {
+        "afternoon": {
+          "time_of_day": "afternoon",
+          "exercises": [
+            {
+              "name": "Outdoor Cycling",
+              "exercise_type": "cardio",
+              "duration_minutes": 18,
+              "intensity": "low",
+              "calories_burned": 162,
+              "equipment": [
+                "bicycle",
+                "helmet"
+              ],
+              "target_muscles": [
+                "quadriceps",
+                "hamstrings",
+                "glutes",
+                "calves",
+                "cardio"
+              ],
+              "instructions": [
+                "Cycle at a steady, conversational pace on a flat route",
+                "Maintain a consistent cadence",
+                "Enjoy the clear weather"
+              ],
+              "reason": "Primary cardio exercise; effective for calorie burn and suitable for diabetes management in pleasant summer conditions.",
+              "safety_notes": [
+                "Check blood sugar before and after exercise",
+                "Stay well-hydrated in the 25°C heat",
+                "Wear sunscreen"
+              ]
+            },
+            {
+              "name": "Bulgarian Split Squats",
+              "exercise_type": "strength",
+              "duration_minutes": 7,
+              "intensity": "low",
+              "calories_burned": 49,
+              "equipment": [
+                "bodyweight",
+                "optional: chair or bench for rear foot"
+              ],
+              "target_muscles": [
+                "quadriceps",
+                "glutes",
+                "hamstrings",
+                "core"
+              ],
+              "instructions": [
+                "Stand facing away from a bench",
+                "Place the top of one foot on the bench behind you",
+                "Lower your hips until your front thigh is parallel to the floor",
+                "Keep your torso upright",
+                "Perform equal reps on both legs"
+              ],
+              "reason": "Primary strength exercise; builds lower body muscle to boost metabolism, using only bodyweight for safety.",
+              "safety_notes": [
+                "Focus on balance and control, not speed",
+                "Ensure the supporting surface is stable",
+                "Stop if you feel knee pain"
+              ]
+            },
+            {
+              "name": "Child's Pose",
+              "exercise_type": "flexibility",
+              "duration_minutes": 5,
+              "intensity": "low",
+              "calories_burned": 15,
+              "equipment": [
+                "yoga mat"
+              ],
+              "target_muscles": [
+                "lower back",
+                "hips",
+                "ankles",
+                "shoulders"
+              ],
+              "instructions": [
+                "Kneel on the floor, touch your big toes together, and sit on your heels",
+                "Separate your knees about hip-width",
+                "Exhale and lay your torso down between your thighs",
+                "Rest your forehead on the mat and extend your arms forward or alongside your body",
+                "Hold and breathe deeply"
+              ],
+              "reason": "Flexibility element; provides a gentle stretch and cool-down, promoting relaxation and recovery.",
+              "safety_notes": [
+                "Avoid if you have knee injuries",
+                "Breathe deeply to enhance the stretch",
+                "Modify by placing a pillow under your torso if needed"
+              ]
+            }
+          ],
+          "total_duration_minutes": 30,
+          "total_calories_burned": 226,
+          "overall_intensity": "low"
+        }
+      },
+      "total_duration_minutes": 30,
+      "total_calories_burned": 226,
+      "progression": null,
+      "reasoning": "This plan prioritizes outdoor activity (cycling) in the clear summer weather for enjoyable cardio. It combines moderate-intensity cycling for primary calorie burn with bodyweight strength training (Bulgarian Split Squats) to build metabolism-boosting muscle, adhering to diabetes safety guidelines. The session concludes with a flexibility exercise (Child's Pose) for cool-down. The total calorie burn is slightly below the 400 kcal target to prioritize safety and moderate intensity for an intermediate user with diabetes, focusing on sustainable, balanced training.",
+      "safety_notes": [
+        "Check blood glucose levels before and after the session",
+        "Avoid exercise during peak insulin activity (typically 1-3 hours after meals)",
+        "Carry a fast-acting carbohydrate source during the workout",
+        "Stay hydrated, especially in warm weather",
+        "Listen to your body and reduce intensity if feeling dizzy or unwell"
+      ],
+      "_variant": "Lite",
+      "_base_id": 1,
+      "_assessment": {
+        "score": 100,
+        "is_safe": true,
+        "status": "passed",
+        "risk_level": "low",
+        "risk_factors": [],
+        "safety_checks": [
+          {
+            "check_name": "daily_duration",
+            "passed": true,
+            "message": "Duration 51min is appropriate",
+            "severity": null
+          }
+        ],
+        "recommendations": [
+          "Start gradually and listen to your body",
+          "Stop immediately if you experience pain or discomfort",
+          "Stay hydrated before, during, and after exercise",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [],
+        "assessed_at": "2026-02-08T20:00:57.814224"
+      }
+    },
+    {
+      "id": 1,
+      "title": "Summer Afternoon Weight Loss Plan (Standard)",
+      "meal_timing": "after_lunch",
+      "sessions": {
+        "afternoon": {
+          "time_of_day": "afternoon",
+          "exercises": [
+            {
+              "name": "Outdoor Cycling",
+              "exercise_type": "cardio",
+              "duration_minutes": 25,
+              "intensity": "moderate",
+              "calories_burned": 225,
+              "equipment": [
+                "bicycle",
+                "helmet"
+              ],
+              "target_muscles": [
+                "quadriceps",
+                "hamstrings",
+                "glutes",
+                "calves",
+                "cardio"
+              ],
+              "instructions": [
+                "Cycle at a steady, conversational pace on a flat route",
+                "Maintain a consistent cadence",
+                "Enjoy the clear weather"
+              ],
+              "reason": "Primary cardio exercise; effective for calorie burn and suitable for diabetes management in pleasant summer conditions.",
+              "safety_notes": [
+                "Check blood sugar before and after exercise",
+                "Stay well-hydrated in the 25°C heat",
+                "Wear sunscreen"
+              ]
+            },
+            {
+              "name": "Bulgarian Split Squats",
+              "exercise_type": "strength",
+              "duration_minutes": 10,
+              "intensity": "moderate",
+              "calories_burned": 70,
+              "equipment": [
+                "bodyweight",
+                "optional: chair or bench for rear foot"
+              ],
+              "target_muscles": [
+                "quadriceps",
+                "glutes",
+                "hamstrings",
+                "core"
+              ],
+              "instructions": [
+                "Stand facing away from a bench",
+                "Place the top of one foot on the bench behind you",
+                "Lower your hips until your front thigh is parallel to the floor",
+                "Keep your torso upright",
+                "Perform equal reps on both legs"
+              ],
+              "reason": "Primary strength exercise; builds lower body muscle to boost metabolism, using only bodyweight for safety.",
+              "safety_notes": [
+                "Focus on balance and control, not speed",
+                "Ensure the supporting surface is stable",
+                "Stop if you feel knee pain"
+              ]
+            },
+            {
+              "name": "Child's Pose",
+              "exercise_type": "flexibility",
+              "duration_minutes": 5,
+              "intensity": "low",
+              "calories_burned": 15,
+              "equipment": [
+                "yoga mat"
+              ],
+              "target_muscles": [
+                "lower back",
+                "hips",
+                "ankles",
+                "shoulders"
+              ],
+              "instructions": [
+                "Kneel on the floor, touch your big toes together, and sit on your heels",
+                "Separate your knees about hip-width",
+                "Exhale and lay your torso down between your thighs",
+                "Rest your forehead on the mat and extend your arms forward or alongside your body",
+                "Hold and breathe deeply"
+              ],
+              "reason": "Flexibility element; provides a gentle stretch and cool-down, promoting relaxation and recovery.",
+              "safety_notes": [
+                "Avoid if you have knee injuries",
+                "Breathe deeply to enhance the stretch",
+                "Modify by placing a pillow under your torso if needed"
+              ]
+            }
+          ],
+          "total_duration_minutes": 40,
+          "total_calories_burned": 310,
+          "overall_intensity": "moderate"
+        }
+      },
+      "total_duration_minutes": 40,
+      "total_calories_burned": 310,
+      "progression": null,
+      "reasoning": "This plan prioritizes outdoor activity (cycling) in the clear summer weather for enjoyable cardio. It combines moderate-intensity cycling for primary calorie burn with bodyweight strength training (Bulgarian Split Squats) to build metabolism-boosting muscle, adhering to diabetes safety guidelines. The session concludes with a flexibility exercise (Child's Pose) for cool-down. The total calorie burn is slightly below the 400 kcal target to prioritize safety and moderate intensity for an intermediate user with diabetes, focusing on sustainable, balanced training.",
+      "safety_notes": [
+        "Check blood glucose levels before and after the session",
+        "Avoid exercise during peak insulin activity (typically 1-3 hours after meals)",
+        "Carry a fast-acting carbohydrate source during the workout",
+        "Stay hydrated, especially in warm weather",
+        "Listen to your body and reduce intensity if feeling dizzy or unwell"
+      ],
+      "_variant": "Standard",
+      "_base_id": 1,
+      "_assessment": {
+        "score": 100,
+        "is_safe": true,
+        "status": "passed",
+        "risk_level": "low",
+        "risk_factors": [],
+        "safety_checks": [
+          {
+            "check_name": "daily_duration",
+            "passed": true,
+            "message": "Duration 51min is appropriate",
+            "severity": null
+          }
+        ],
+        "recommendations": [
+          "Start gradually and listen to your body",
+          "Stop immediately if you experience pain or discomfort",
+          "Stay hydrated before, during, and after exercise",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [],
+        "assessed_at": "2026-02-08T20:00:57.814224"
+      }
+    },
+    {
+      "id": 1,
+      "title": "Summer Afternoon Weight Loss Plan (Plus)",
+      "meal_timing": "after_lunch",
+      "sessions": {
+        "afternoon": {
+          "time_of_day": "afternoon",
+          "exercises": [
+            {
+              "name": "Outdoor Cycling",
+              "exercise_type": "cardio",
+              "duration_minutes": 32,
+              "intensity": "high",
+              "calories_burned": 288,
+              "equipment": [
+                "bicycle",
+                "helmet"
+              ],
+              "target_muscles": [
+                "quadriceps",
+                "hamstrings",
+                "glutes",
+                "calves",
+                "cardio"
+              ],
+              "instructions": [
+                "Cycle at a steady, conversational pace on a flat route",
+                "Maintain a consistent cadence",
+                "Enjoy the clear weather"
+              ],
+              "reason": "Primary cardio exercise; effective for calorie burn and suitable for diabetes management in pleasant summer conditions.",
+              "safety_notes": [
+                "Check blood sugar before and after exercise",
+                "Stay well-hydrated in the 25°C heat",
+                "Wear sunscreen"
+              ]
+            },
+            {
+              "name": "Bulgarian Split Squats",
+              "exercise_type": "strength",
+              "duration_minutes": 13,
+              "intensity": "high",
+              "calories_burned": 91,
+              "equipment": [
+                "bodyweight",
+                "optional: chair or bench for rear foot"
+              ],
+              "target_muscles": [
+                "quadriceps",
+                "glutes",
+                "hamstrings",
+                "core"
+              ],
+              "instructions": [
+                "Stand facing away from a bench",
+                "Place the top of one foot on the bench behind you",
+                "Lower your hips until your front thigh is parallel to the floor",
+                "Keep your torso upright",
+                "Perform equal reps on both legs"
+              ],
+              "reason": "Primary strength exercise; builds lower body muscle to boost metabolism, using only bodyweight for safety.",
+              "safety_notes": [
+                "Focus on balance and control, not speed",
+                "Ensure the supporting surface is stable",
+                "Stop if you feel knee pain"
+              ]
+            },
+            {
+              "name": "Child's Pose",
+              "exercise_type": "flexibility",
+              "duration_minutes": 6,
+              "intensity": "moderate",
+              "calories_burned": 18,
+              "equipment": [
+                "yoga mat"
+              ],
+              "target_muscles": [
+                "lower back",
+                "hips",
+                "ankles",
+                "shoulders"
+              ],
+              "instructions": [
+                "Kneel on the floor, touch your big toes together, and sit on your heels",
+                "Separate your knees about hip-width",
+                "Exhale and lay your torso down between your thighs",
+                "Rest your forehead on the mat and extend your arms forward or alongside your body",
+                "Hold and breathe deeply"
+              ],
+              "reason": "Flexibility element; provides a gentle stretch and cool-down, promoting relaxation and recovery.",
+              "safety_notes": [
+                "Avoid if you have knee injuries",
+                "Breathe deeply to enhance the stretch",
+                "Modify by placing a pillow under your torso if needed"
+              ]
+            }
+          ],
+          "total_duration_minutes": 51,
+          "total_calories_burned": 397,
+          "overall_intensity": "high"
+        }
+      },
+      "total_duration_minutes": 51,
+      "total_calories_burned": 397,
+      "progression": null,
+      "reasoning": "This plan prioritizes outdoor activity (cycling) in the clear summer weather for enjoyable cardio. It combines moderate-intensity cycling for primary calorie burn with bodyweight strength training (Bulgarian Split Squats) to build metabolism-boosting muscle, adhering to diabetes safety guidelines. The session concludes with a flexibility exercise (Child's Pose) for cool-down. The total calorie burn is slightly below the 400 kcal target to prioritize safety and moderate intensity for an intermediate user with diabetes, focusing on sustainable, balanced training.",
+      "safety_notes": [
+        "Check blood glucose levels before and after the session",
+        "Avoid exercise during peak insulin activity (typically 1-3 hours after meals)",
+        "Carry a fast-acting carbohydrate source during the workout",
+        "Stay hydrated, especially in warm weather",
+        "Listen to your body and reduce intensity if feeling dizzy or unwell"
+      ],
+      "_variant": "Plus",
+      "_base_id": 1,
+      "_assessment": {
+        "score": 100,
+        "is_safe": true,
+        "status": "passed",
+        "risk_level": "low",
+        "risk_factors": [],
+        "safety_checks": [
+          {
+            "check_name": "daily_duration",
+            "passed": true,
+            "message": "Duration 51min is appropriate",
+            "severity": null
+          }
+        ],
+        "recommendations": [
+          "Start gradually and listen to your body",
+          "Stop immediately if you experience pain or discomfort",
+          "Stay hydrated before, during, and after exercise",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [],
+        "assessed_at": "2026-02-08T20:00:57.814224"
+      }
+    }
+  ],
+  "top_plans": [
+    {
+      "id": 1,
+      "title": "Summer Afternoon Weight Loss Plan (Lite)",
+      "meal_timing": "after_lunch",
+      "sessions": {
+        "afternoon": {
+          "time_of_day": "afternoon",
+          "exercises": [
+            {
+              "name": "Outdoor Cycling",
+              "exercise_type": "cardio",
+              "duration_minutes": 18,
+              "intensity": "low",
+              "calories_burned": 162,
+              "equipment": [
+                "bicycle",
+                "helmet"
+              ],
+              "target_muscles": [
+                "quadriceps",
+                "hamstrings",
+                "glutes",
+                "calves",
+                "cardio"
+              ],
+              "instructions": [
+                "Cycle at a steady, conversational pace on a flat route",
+                "Maintain a consistent cadence",
+                "Enjoy the clear weather"
+              ],
+              "reason": "Primary cardio exercise; effective for calorie burn and suitable for diabetes management in pleasant summer conditions.",
+              "safety_notes": [
+                "Check blood sugar before and after exercise",
+                "Stay well-hydrated in the 25°C heat",
+                "Wear sunscreen"
+              ]
+            },
+            {
+              "name": "Bulgarian Split Squats",
+              "exercise_type": "strength",
+              "duration_minutes": 7,
+              "intensity": "low",
+              "calories_burned": 49,
+              "equipment": [
+                "bodyweight",
+                "optional: chair or bench for rear foot"
+              ],
+              "target_muscles": [
+                "quadriceps",
+                "glutes",
+                "hamstrings",
+                "core"
+              ],
+              "instructions": [
+                "Stand facing away from a bench",
+                "Place the top of one foot on the bench behind you",
+                "Lower your hips until your front thigh is parallel to the floor",
+                "Keep your torso upright",
+                "Perform equal reps on both legs"
+              ],
+              "reason": "Primary strength exercise; builds lower body muscle to boost metabolism, using only bodyweight for safety.",
+              "safety_notes": [
+                "Focus on balance and control, not speed",
+                "Ensure the supporting surface is stable",
+                "Stop if you feel knee pain"
+              ]
+            },
+            {
+              "name": "Child's Pose",
+              "exercise_type": "flexibility",
+              "duration_minutes": 5,
+              "intensity": "low",
+              "calories_burned": 15,
+              "equipment": [
+                "yoga mat"
+              ],
+              "target_muscles": [
+                "lower back",
+                "hips",
+                "ankles",
+                "shoulders"
+              ],
+              "instructions": [
+                "Kneel on the floor, touch your big toes together, and sit on your heels",
+                "Separate your knees about hip-width",
+                "Exhale and lay your torso down between your thighs",
+                "Rest your forehead on the mat and extend your arms forward or alongside your body",
+                "Hold and breathe deeply"
+              ],
+              "reason": "Flexibility element; provides a gentle stretch and cool-down, promoting relaxation and recovery.",
+              "safety_notes": [
+                "Avoid if you have knee injuries",
+                "Breathe deeply to enhance the stretch",
+                "Modify by placing a pillow under your torso if needed"
+              ]
+            }
+          ],
+          "total_duration_minutes": 30,
+          "total_calories_burned": 226,
+          "overall_intensity": "low"
+        }
+      },
+      "total_duration_minutes": 30,
+      "total_calories_burned": 226,
+      "progression": null,
+      "reasoning": "This plan prioritizes outdoor activity (cycling) in the clear summer weather for enjoyable cardio. It combines moderate-intensity cycling for primary calorie burn with bodyweight strength training (Bulgarian Split Squats) to build metabolism-boosting muscle, adhering to diabetes safety guidelines. The session concludes with a flexibility exercise (Child's Pose) for cool-down. The total calorie burn is slightly below the 400 kcal target to prioritize safety and moderate intensity for an intermediate user with diabetes, focusing on sustainable, balanced training.",
+      "safety_notes": [
+        "Check blood glucose levels before and after the session",
+        "Avoid exercise during peak insulin activity (typically 1-3 hours after meals)",
+        "Carry a fast-acting carbohydrate source during the workout",
+        "Stay hydrated, especially in warm weather",
+        "Listen to your body and reduce intensity if feeling dizzy or unwell"
+      ],
+      "_variant": "Lite",
+      "_base_id": 1,
+      "_assessment": {
+        "score": 100,
+        "is_safe": true,
+        "status": "passed",
+        "risk_level": "low",
+        "risk_factors": [],
+        "safety_checks": [
+          {
+            "check_name": "daily_duration",
+            "passed": true,
+            "message": "Duration 51min is appropriate",
+            "severity": null
+          }
+        ],
+        "recommendations": [
+          "Start gradually and listen to your body",
+          "Stop immediately if you experience pain or discomfort",
+          "Stay hydrated before, during, and after exercise",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [],
+        "assessed_at": "2026-02-08T20:00:57.814224"
+      }
+    },
+    {
+      "id": 1,
+      "title": "Summer Afternoon Weight Loss Plan (Standard)",
+      "meal_timing": "after_lunch",
+      "sessions": {
+        "afternoon": {
+          "time_of_day": "afternoon",
+          "exercises": [
+            {
+              "name": "Outdoor Cycling",
+              "exercise_type": "cardio",
+              "duration_minutes": 25,
+              "intensity": "moderate",
+              "calories_burned": 225,
+              "equipment": [
+                "bicycle",
+                "helmet"
+              ],
+              "target_muscles": [
+                "quadriceps",
+                "hamstrings",
+                "glutes",
+                "calves",
+                "cardio"
+              ],
+              "instructions": [
+                "Cycle at a steady, conversational pace on a flat route",
+                "Maintain a consistent cadence",
+                "Enjoy the clear weather"
+              ],
+              "reason": "Primary cardio exercise; effective for calorie burn and suitable for diabetes management in pleasant summer conditions.",
+              "safety_notes": [
+                "Check blood sugar before and after exercise",
+                "Stay well-hydrated in the 25°C heat",
+                "Wear sunscreen"
+              ]
+            },
+            {
+              "name": "Bulgarian Split Squats",
+              "exercise_type": "strength",
+              "duration_minutes": 10,
+              "intensity": "moderate",
+              "calories_burned": 70,
+              "equipment": [
+                "bodyweight",
+                "optional: chair or bench for rear foot"
+              ],
+              "target_muscles": [
+                "quadriceps",
+                "glutes",
+                "hamstrings",
+                "core"
+              ],
+              "instructions": [
+                "Stand facing away from a bench",
+                "Place the top of one foot on the bench behind you",
+                "Lower your hips until your front thigh is parallel to the floor",
+                "Keep your torso upright",
+                "Perform equal reps on both legs"
+              ],
+              "reason": "Primary strength exercise; builds lower body muscle to boost metabolism, using only bodyweight for safety.",
+              "safety_notes": [
+                "Focus on balance and control, not speed",
+                "Ensure the supporting surface is stable",
+                "Stop if you feel knee pain"
+              ]
+            },
+            {
+              "name": "Child's Pose",
+              "exercise_type": "flexibility",
+              "duration_minutes": 5,
+              "intensity": "low",
+              "calories_burned": 15,
+              "equipment": [
+                "yoga mat"
+              ],
+              "target_muscles": [
+                "lower back",
+                "hips",
+                "ankles",
+                "shoulders"
+              ],
+              "instructions": [
+                "Kneel on the floor, touch your big toes together, and sit on your heels",
+                "Separate your knees about hip-width",
+                "Exhale and lay your torso down between your thighs",
+                "Rest your forehead on the mat and extend your arms forward or alongside your body",
+                "Hold and breathe deeply"
+              ],
+              "reason": "Flexibility element; provides a gentle stretch and cool-down, promoting relaxation and recovery.",
+              "safety_notes": [
+                "Avoid if you have knee injuries",
+                "Breathe deeply to enhance the stretch",
+                "Modify by placing a pillow under your torso if needed"
+              ]
+            }
+          ],
+          "total_duration_minutes": 40,
+          "total_calories_burned": 310,
+          "overall_intensity": "moderate"
+        }
+      },
+      "total_duration_minutes": 40,
+      "total_calories_burned": 310,
+      "progression": null,
+      "reasoning": "This plan prioritizes outdoor activity (cycling) in the clear summer weather for enjoyable cardio. It combines moderate-intensity cycling for primary calorie burn with bodyweight strength training (Bulgarian Split Squats) to build metabolism-boosting muscle, adhering to diabetes safety guidelines. The session concludes with a flexibility exercise (Child's Pose) for cool-down. The total calorie burn is slightly below the 400 kcal target to prioritize safety and moderate intensity for an intermediate user with diabetes, focusing on sustainable, balanced training.",
+      "safety_notes": [
+        "Check blood glucose levels before and after the session",
+        "Avoid exercise during peak insulin activity (typically 1-3 hours after meals)",
+        "Carry a fast-acting carbohydrate source during the workout",
+        "Stay hydrated, especially in warm weather",
+        "Listen to your body and reduce intensity if feeling dizzy or unwell"
+      ],
+      "_variant": "Standard",
+      "_base_id": 1,
+      "_assessment": {
+        "score": 100,
+        "is_safe": true,
+        "status": "passed",
+        "risk_level": "low",
+        "risk_factors": [],
+        "safety_checks": [
+          {
+            "check_name": "daily_duration",
+            "passed": true,
+            "message": "Duration 51min is appropriate",
+            "severity": null
+          }
+        ],
+        "recommendations": [
+          "Start gradually and listen to your body",
+          "Stop immediately if you experience pain or discomfort",
+          "Stay hydrated before, during, and after exercise",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [],
+        "assessed_at": "2026-02-08T20:00:57.814224"
+      }
+    }
+  ],
+  "assessments": {
+    "1": {
+      "score": 100,
+      "is_safe": true,
+      "status": "passed",
+      "risk_level": "low",
+      "risk_factors": [],
+      "safety_checks": [
+        {
+          "check_name": "daily_duration",
+          "passed": true,
+          "message": "Duration 51min is appropriate",
+          "severity": null
+        }
+      ],
+      "recommendations": [
+        "Start gradually and listen to your body",
+        "Stop immediately if you experience pain or discomfort",
+        "Stay hydrated before, during, and after exercise",
+        "Consult healthcare provider before starting due to: diabetes"
+      ],
+      "warnings": [],
+      "assessed_at": "2026-02-08T20:00:57.814224"
+    }
+  },
+  "generated_at": "2026-02-08T20:00:57.815243"
+}

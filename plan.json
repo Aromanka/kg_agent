@@ -1,0 +1,1726 @@
+{
+  "all_plans": [
+    {
+      "id": 2,
+      "meal_type": "lunch",
+      "variant": "Standard",
+      "items": [
+        {
+          "food": "Pan-Fried Tempeh",
+          "portion": "150.0gram",
+          "calories": 240,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cooked Bulgur",
+          "portion": "1.0bowl",
+          "calories": 220,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Steamed Spinach",
+          "portion": "150.0gram",
+          "calories": 35,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Avocado Slices",
+          "portion": "50.0gram",
+          "calories": 80,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cucumber and Tomato Salad",
+          "portion": "1.0bowl",
+          "calories": 50,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Olive Oil (for cooking and dressing)",
+          "portion": "10.0ml",
+          "calories": 90,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Lemon Juice",
+          "portion": "15.0ml",
+          "calories": 5,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 720,
+      "target_calories": 729,
+      "calories_deviation": -1.2,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Standard",
+        "Style: Simple & Quick, Strategy: protein_focus"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 715 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 715 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:09.048083"
+      }
+    },
+    {
+      "id": 3,
+      "meal_type": "lunch",
+      "variant": "Plus",
+      "items": [
+        {
+          "food": "Pan-Fried Tempeh",
+          "portion": "180.0gram",
+          "calories": 288,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cooked Bulgur",
+          "portion": "1.5bowl",
+          "calories": 330,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Steamed Spinach",
+          "portion": "180.0gram",
+          "calories": 42,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Avocado Slices",
+          "portion": "60.0gram",
+          "calories": 96,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cucumber and Tomato Salad",
+          "portion": "1.5bowl",
+          "calories": 75,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Olive Oil (for cooking and dressing)",
+          "portion": "12.0ml",
+          "calories": 108,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Lemon Juice",
+          "portion": "18.0ml",
+          "calories": 6,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 945,
+      "target_calories": 729,
+      "calories_deviation": 29.6,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Plus",
+        "Style: Simple & Quick, Strategy: protein_focus",
+        "Calorie deviation: 29.6%"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 965 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 965 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:31.119522"
+      }
+    },
+    {
+      "id": 1,
+      "meal_type": "lunch",
+      "variant": "Lite",
+      "items": [
+        {
+          "food": "Pan-Fried Tempeh",
+          "portion": "120.0gram",
+          "calories": 192,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cooked Bulgur",
+          "portion": "0.5bowl",
+          "calories": 110,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Steamed Spinach",
+          "portion": "120.0gram",
+          "calories": 28,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Avocado Slices",
+          "portion": "40.0gram",
+          "calories": 64,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cucumber and Tomato Salad",
+          "portion": "0.5bowl",
+          "calories": 25,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Olive Oil (for cooking and dressing)",
+          "portion": "8.0ml",
+          "calories": 72,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Lemon Juice",
+          "portion": "12.0ml",
+          "calories": 4,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 495,
+      "target_calories": 729,
+      "calories_deviation": -32.1,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Lite",
+        "Style: Simple & Quick, Strategy: protein_focus",
+        "Calorie deviation: -32.1%"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 465 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 465 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:53.155445"
+      }
+    },
+    {
+      "id": 2,
+      "meal_type": "lunch",
+      "variant": "Standard",
+      "items": [
+        {
+          "food": "Stir-fried Shrimp with Garlic",
+          "portion": "120.0gram",
+          "calories": 120,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Steamed Wild Rice",
+          "portion": "1.0bowl",
+          "calories": 220,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Sautéed Bok Choy",
+          "portion": "200.0gram",
+          "calories": 40,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Scrambled Egg with Spring Onion",
+          "portion": "2.0piece",
+          "calories": 180,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Pan-fried Firm Tofu",
+          "portion": "100.0gram",
+          "calories": 145,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cooking Oil (for stir-fry and frying)",
+          "portion": "10.0ml",
+          "calories": 90,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 795,
+      "target_calories": 729,
+      "calories_deviation": 9.1,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Standard",
+        "Style: Local Home-style, Strategy: fiber_rich"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 715 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 715 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:09.048083"
+      }
+    },
+    {
+      "id": 1,
+      "meal_type": "lunch",
+      "variant": "Lite",
+      "items": [
+        {
+          "food": "Stir-fried Shrimp with Garlic",
+          "portion": "96.0gram",
+          "calories": 96,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Steamed Wild Rice",
+          "portion": "0.5bowl",
+          "calories": 110,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Sautéed Bok Choy",
+          "portion": "160.0gram",
+          "calories": 32,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Scrambled Egg with Spring Onion",
+          "portion": "1.5piece",
+          "calories": 135,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Pan-fried Firm Tofu",
+          "portion": "80.0gram",
+          "calories": 116,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cooking Oil (for stir-fry and frying)",
+          "portion": "8.0ml",
+          "calories": 72,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 561,
+      "target_calories": 729,
+      "calories_deviation": -23.0,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Lite",
+        "Style: Local Home-style, Strategy: fiber_rich",
+        "Calorie deviation: -23.0%"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 465 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 465 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:53.155445"
+      }
+    },
+    {
+      "id": 3,
+      "meal_type": "lunch",
+      "variant": "Plus",
+      "items": [
+        {
+          "food": "Stir-fried Shrimp with Garlic",
+          "portion": "144.0gram",
+          "calories": 144,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Steamed Wild Rice",
+          "portion": "1.5bowl",
+          "calories": 330,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Sautéed Bok Choy",
+          "portion": "240.0gram",
+          "calories": 48,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Scrambled Egg with Spring Onion",
+          "portion": "2.5piece",
+          "calories": 225,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Pan-fried Firm Tofu",
+          "portion": "120.0gram",
+          "calories": 174,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cooking Oil (for stir-fry and frying)",
+          "portion": "12.0ml",
+          "calories": 108,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 1029,
+      "target_calories": 729,
+      "calories_deviation": 41.2,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Plus",
+        "Style: Local Home-style, Strategy: fiber_rich",
+        "Calorie deviation: 41.2%"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 965 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 965 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:31.119522"
+      }
+    },
+    {
+      "id": 2,
+      "meal_type": "lunch",
+      "variant": "Standard",
+      "items": [
+        {
+          "food": "Lean Beef Steak (pan-seared)",
+          "portion": "120.0gram",
+          "calories": 200,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Polenta (cooked, soft)",
+          "portion": "1.0bowl",
+          "calories": 220,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Sautéed Bell Peppers (with herbs)",
+          "portion": "150.0gram",
+          "calories": 45,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Mixed Leafy Greens Salad",
+          "portion": "1.0bowl",
+          "calories": 30,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Olive Oil (for cooking and dressing)",
+          "portion": "10.0ml",
+          "calories": 90,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Apple (fresh)",
+          "portion": "1.0piece",
+          "calories": 95,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Plain Yogurt (unsweetened)",
+          "portion": "100.0gram",
+          "calories": 59,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 739,
+      "target_calories": 729,
+      "calories_deviation": 1.4,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Standard",
+        "Style: Local Home-style, Strategy: balanced",
+        "Excluded: Chicken Breast, Brown Rice"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 715 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 715 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:09.048083"
+      }
+    },
+    {
+      "id": 1,
+      "meal_type": "lunch",
+      "variant": "Lite",
+      "items": [
+        {
+          "food": "Lean Beef Steak (pan-seared)",
+          "portion": "96.0gram",
+          "calories": 160,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Polenta (cooked, soft)",
+          "portion": "0.5bowl",
+          "calories": 110,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Sautéed Bell Peppers (with herbs)",
+          "portion": "120.0gram",
+          "calories": 36,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Mixed Leafy Greens Salad",
+          "portion": "0.5bowl",
+          "calories": 15,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Olive Oil (for cooking and dressing)",
+          "portion": "8.0ml",
+          "calories": 72,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Apple (fresh)",
+          "portion": "0.5piece",
+          "calories": 48,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Plain Yogurt (unsweetened)",
+          "portion": "80.0gram",
+          "calories": 47,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 488,
+      "target_calories": 729,
+      "calories_deviation": -33.1,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Lite",
+        "Style: Local Home-style, Strategy: balanced",
+        "Excluded: Chicken Breast, Brown Rice",
+        "Calorie deviation: -33.1%"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 465 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 465 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:53.155445"
+      }
+    },
+    {
+      "id": 3,
+      "meal_type": "lunch",
+      "variant": "Plus",
+      "items": [
+        {
+          "food": "Lean Beef Steak (pan-seared)",
+          "portion": "144.0gram",
+          "calories": 240,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Polenta (cooked, soft)",
+          "portion": "1.5bowl",
+          "calories": 330,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Sautéed Bell Peppers (with herbs)",
+          "portion": "180.0gram",
+          "calories": 54,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Mixed Leafy Greens Salad",
+          "portion": "1.5bowl",
+          "calories": 45,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Olive Oil (for cooking and dressing)",
+          "portion": "12.0ml",
+          "calories": 108,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Apple (fresh)",
+          "portion": "1.5piece",
+          "calories": 142,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Plain Yogurt (unsweetened)",
+          "portion": "120.0gram",
+          "calories": 71,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 990,
+      "target_calories": 729,
+      "calories_deviation": 35.8,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Plus",
+        "Style: Local Home-style, Strategy: balanced",
+        "Excluded: Chicken Breast, Brown Rice",
+        "Calorie deviation: 35.8%"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 965 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 965 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:31.119522"
+      }
+    },
+    {
+      "id": 2,
+      "meal_type": "lunch",
+      "variant": "Standard",
+      "items": [
+        {
+          "food": "Pan-Seared Duck Breast (skinless)",
+          "portion": "120.0gram",
+          "calories": 240,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Steamed Barley",
+          "portion": "1.0bowl",
+          "calories": 220,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Stir-Fried Zucchini with Garlic",
+          "portion": "150.0gram",
+          "calories": 45,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Miso Soup with Wakame and Tofu",
+          "portion": "1.0bowl",
+          "calories": 70,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Seasoned Cucumber Salad (rice vinegar, sesame seeds)",
+          "portion": "100.0gram",
+          "calories": 30,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Sesame Oil for cooking",
+          "portion": "5.0ml",
+          "calories": 45,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Fresh Orange Segments",
+          "portion": "1.0piece",
+          "calories": 65,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 715,
+      "target_calories": 729,
+      "calories_deviation": -1.9,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Standard",
+        "Style: Asian, Strategy: variety",
+        "Excluded: Brown Rice, Chicken Breast"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 715 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 715 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:09.048083"
+      }
+    },
+    {
+      "id": 3,
+      "meal_type": "lunch",
+      "variant": "Plus",
+      "items": [
+        {
+          "food": "Pan-Seared Duck Breast (skinless)",
+          "portion": "144.0gram",
+          "calories": 288,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Steamed Barley",
+          "portion": "1.5bowl",
+          "calories": 330,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Stir-Fried Zucchini with Garlic",
+          "portion": "180.0gram",
+          "calories": 54,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Miso Soup with Wakame and Tofu",
+          "portion": "1.5bowl",
+          "calories": 105,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Seasoned Cucumber Salad (rice vinegar, sesame seeds)",
+          "portion": "120.0gram",
+          "calories": 36,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Sesame Oil for cooking",
+          "portion": "6.0ml",
+          "calories": 54,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Fresh Orange Segments",
+          "portion": "1.5piece",
+          "calories": 98,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 965,
+      "target_calories": 729,
+      "calories_deviation": 32.4,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Plus",
+        "Style: Asian, Strategy: variety",
+        "Excluded: Brown Rice, Chicken Breast",
+        "Calorie deviation: 32.4%"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 965 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 965 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:31.119522"
+      }
+    },
+    {
+      "id": 1,
+      "meal_type": "lunch",
+      "variant": "Lite",
+      "items": [
+        {
+          "food": "Pan-Seared Duck Breast (skinless)",
+          "portion": "96.0gram",
+          "calories": 192,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Steamed Barley",
+          "portion": "0.5bowl",
+          "calories": 110,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Stir-Fried Zucchini with Garlic",
+          "portion": "120.0gram",
+          "calories": 36,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Miso Soup with Wakame and Tofu",
+          "portion": "0.5bowl",
+          "calories": 35,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Seasoned Cucumber Salad (rice vinegar, sesame seeds)",
+          "portion": "80.0gram",
+          "calories": 24,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Sesame Oil for cooking",
+          "portion": "4.0ml",
+          "calories": 36,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Fresh Orange Segments",
+          "portion": "0.5piece",
+          "calories": 32,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 465,
+      "target_calories": 729,
+      "calories_deviation": -36.2,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Lite",
+        "Style: Asian, Strategy: variety",
+        "Excluded: Brown Rice, Chicken Breast",
+        "Calorie deviation: -36.2%"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 465 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 465 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:53.155445"
+      }
+    }
+  ],
+  "top_plans": [
+    {
+      "id": 2,
+      "meal_type": "lunch",
+      "variant": "Standard",
+      "items": [
+        {
+          "food": "Pan-Fried Tempeh",
+          "portion": "150.0gram",
+          "calories": 240,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cooked Bulgur",
+          "portion": "1.0bowl",
+          "calories": 220,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Steamed Spinach",
+          "portion": "150.0gram",
+          "calories": 35,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Avocado Slices",
+          "portion": "50.0gram",
+          "calories": 80,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cucumber and Tomato Salad",
+          "portion": "1.0bowl",
+          "calories": 50,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Olive Oil (for cooking and dressing)",
+          "portion": "10.0ml",
+          "calories": 90,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Lemon Juice",
+          "portion": "15.0ml",
+          "calories": 5,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 720,
+      "target_calories": 729,
+      "calories_deviation": -1.2,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Standard",
+        "Style: Simple & Quick, Strategy: protein_focus"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 715 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 715 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:09.048083"
+      }
+    },
+    {
+      "id": 3,
+      "meal_type": "lunch",
+      "variant": "Plus",
+      "items": [
+        {
+          "food": "Pan-Fried Tempeh",
+          "portion": "180.0gram",
+          "calories": 288,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cooked Bulgur",
+          "portion": "1.5bowl",
+          "calories": 330,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Steamed Spinach",
+          "portion": "180.0gram",
+          "calories": 42,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Avocado Slices",
+          "portion": "60.0gram",
+          "calories": 96,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cucumber and Tomato Salad",
+          "portion": "1.5bowl",
+          "calories": 75,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Olive Oil (for cooking and dressing)",
+          "portion": "12.0ml",
+          "calories": 108,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Lemon Juice",
+          "portion": "18.0ml",
+          "calories": 6,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 945,
+      "target_calories": 729,
+      "calories_deviation": 29.6,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Plus",
+        "Style: Simple & Quick, Strategy: protein_focus",
+        "Calorie deviation: 29.6%"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 965 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 965 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:31.119522"
+      }
+    },
+    {
+      "id": 1,
+      "meal_type": "lunch",
+      "variant": "Lite",
+      "items": [
+        {
+          "food": "Pan-Fried Tempeh",
+          "portion": "120.0gram",
+          "calories": 192,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cooked Bulgur",
+          "portion": "0.5bowl",
+          "calories": 110,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Steamed Spinach",
+          "portion": "120.0gram",
+          "calories": 28,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Avocado Slices",
+          "portion": "40.0gram",
+          "calories": 64,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cucumber and Tomato Salad",
+          "portion": "0.5bowl",
+          "calories": 25,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Olive Oil (for cooking and dressing)",
+          "portion": "8.0ml",
+          "calories": 72,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Lemon Juice",
+          "portion": "12.0ml",
+          "calories": 4,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 495,
+      "target_calories": 729,
+      "calories_deviation": -32.1,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Lite",
+        "Style: Simple & Quick, Strategy: protein_focus",
+        "Calorie deviation: -32.1%"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 465 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 465 is dangerously low"
+        ],
+        "assessed_at": "2026-02-08T17:49:53.155445"
+      }
+    }
+  ],
+  "assessments": {
+    "2": {
+      "score": 0,
+      "is_safe": false,
+      "status": "failed",
+      "risk_level": "very_high",
+      "risk_factors": [
+        {
+          "factor": "extremely_low_calories",
+          "category": "nutritional",
+          "severity": "high",
+          "description": "Total calories 715 is dangerously low",
+          "recommendation": "Consult a dietitian for safe calorie targets"
+        }
+      ],
+      "safety_checks": [
+        {
+          "check_name": "min_calories",
+          "passed": false,
+          "message": "Daily calories too low",
+          "severity": "high"
+        }
+      ],
+      "recommendations": [
+        "Consult a dietitian for safe calorie targets",
+        "Consult healthcare provider before starting due to: diabetes"
+      ],
+      "warnings": [
+        "Total calories 715 is dangerously low"
+      ],
+      "assessed_at": "2026-02-08T17:49:09.048083"
+    },
+    "3": {
+      "score": 0,
+      "is_safe": false,
+      "status": "failed",
+      "risk_level": "very_high",
+      "risk_factors": [
+        {
+          "factor": "extremely_low_calories",
+          "category": "nutritional",
+          "severity": "high",
+          "description": "Total calories 965 is dangerously low",
+          "recommendation": "Consult a dietitian for safe calorie targets"
+        }
+      ],
+      "safety_checks": [
+        {
+          "check_name": "min_calories",
+          "passed": false,
+          "message": "Daily calories too low",
+          "severity": "high"
+        }
+      ],
+      "recommendations": [
+        "Consult a dietitian for safe calorie targets",
+        "Consult healthcare provider before starting due to: diabetes"
+      ],
+      "warnings": [
+        "Total calories 965 is dangerously low"
+      ],
+      "assessed_at": "2026-02-08T17:49:31.119522"
+    },
+    "1": {
+      "score": 0,
+      "is_safe": false,
+      "status": "failed",
+      "risk_level": "very_high",
+      "risk_factors": [
+        {
+          "factor": "extremely_low_calories",
+          "category": "nutritional",
+          "severity": "high",
+          "description": "Total calories 465 is dangerously low",
+          "recommendation": "Consult a dietitian for safe calorie targets"
+        }
+      ],
+      "safety_checks": [
+        {
+          "check_name": "min_calories",
+          "passed": false,
+          "message": "Daily calories too low",
+          "severity": "high"
+        }
+      ],
+      "recommendations": [
+        "Consult a dietitian for safe calorie targets",
+        "Consult healthcare provider before starting due to: diabetes"
+      ],
+      "warnings": [
+        "Total calories 465 is dangerously low"
+      ],
+      "assessed_at": "2026-02-08T17:49:53.155445"
+    }
+  },
+  "generated_at": "2026-02-08T17:49:53.156454"
+}

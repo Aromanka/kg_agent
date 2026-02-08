@@ -61,6 +61,7 @@ class ExercisePipeline:
         environment: Dict[str, Any] = None,
         user_requirement: Dict[str, Any] = None,
         num_base_plans: int = 3,
+        num_var_plans: int = 3,
         temperature: float = 0.7,
         top_p: float = 0.92,
         top_k: int = 50,
@@ -101,12 +102,15 @@ class ExercisePipeline:
             environment=env,
             user_requirement=req,
             num_candidates=num_base_plans,
+            num_var=num_var_plans,
             meal_timing=meal_timing
         )
 
         # Flatten variants into a single list
         all_plans_list = []
+        print(f"[DEBUG] all_variants = {all_variants}")
         for base_id, variants in all_variants.items():
+            print(f"[DEBUG] base_id={base_id}, variants={variants}")
             for variant_name, plan in variants.items():
                 plan_dict = plan.model_dump()
                 plan_dict["_variant"] = variant_name
@@ -229,6 +233,7 @@ def run_exercise_pipeline(
     environment: Dict[str, Any] = None,
     user_requirement: Dict[str, Any] = None,
     num_base_plans: int = 3,
+    num_var_plans: int = 3,
     temperature: float = 0.7,
     top_p: float = 0.92,
     top_k: int = 50,
@@ -245,6 +250,7 @@ def run_exercise_pipeline(
         environment: Environmental context
         user_requirement: User goals
         num_base_plans: Number of LLM-generated base plans
+        num_var_plans: Number of intensity variants per base plan (Lite/Standard/Plus)
         temperature: LLM temperature (0.0-1.0)
         top_p: LLM top_p for nucleus sampling (0.0-1.0)
         top_k: LLM top_k for top-k sampling
@@ -261,6 +267,7 @@ def run_exercise_pipeline(
         environment=environment,
         user_requirement=user_requirement,
         num_base_plans=num_base_plans,
+        num_var_plans=num_var_plans,
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
@@ -280,6 +287,7 @@ def run_exercise_pipeline(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--bn', type=int, default=3, help='base plan num')
+    parser.add_argument('--vn', type=int, default=3, help='variation plan num')
     parser.add_argument('--topk', type=int, default=3, help='top k selection')
     parser.add_argument('--meal_timing', type=str, default="before_breakfast", help='meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".')
     args = parser.parse_args()
@@ -301,6 +309,7 @@ if __name__ == "__main__":
             "intensity": "moderate"
         },
         "num_base_plans": args.bn,
+        "num_var_plans": args.vn,
         "temperature": 0.7,
         "top_k_selection": args.topk,
         "output_path": "exer_plan.json",

@@ -707,6 +707,7 @@ def generate_exercise_variants(
     environment: Dict[str, Any] = {},
     user_requirement: Dict[str, Any] = {},
     num_candidates: int = 3,
+    num_var: int = 3,
     meal_timing: str = ""
 ) -> Dict[str, List[ExercisePlan]]:
     """
@@ -734,9 +735,19 @@ def generate_exercise_variants(
     # Expand each candidate into variants
     parser = ExercisePlanParser()
     result = {}
+    print(f"num_var = {num_var}")
+    if num_var == 1:
+        var = ["Lite"]
+    elif num_var == 2:
+        var = ["Lite", "Standard"]
+    elif num_var == 3:
+        var = ["Lite", "Standard", "Plus"]
+    else:
+        # Default to all 3 variants for any other num_var value
+        var = ["Lite", "Standard", "Plus"]
 
     for base_plan in base_candidates:
-        variants = parser.expand_plan(base_plan)
+        variants = parser.expand_plan(base_plan, variants=var)
         result[base_plan.id] = variants
 
     return result
