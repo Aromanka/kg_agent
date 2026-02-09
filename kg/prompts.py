@@ -381,8 +381,8 @@ EXERCISE_QUERY_ENTITIES = ["health", "exercise", "activity"]
 available_strategies = ["balanced", "protein_focus", "variety", "low_carb", "fiber_rich"]
 available_cuisines = ["Mediterranean", "Asian", "Western", "Fusion", "Local Home-style", "Simple & Quick"]
 
-# Allowed portion units for diet generation
-UNIT_LIST = ["gram", "kg", "ml", "liter", "cup", "bowl", "piece", "slice", "spoon", "tablespoon", "pinch"]
+# Allowed portion units for diet generation (must match BaseFoodItem.ALLOWED_UNITS)
+UNIT_LIST = ["gram", "ml", "piece", "slice", "cup", "bowl", "spoon"]
 UNIT_LIST_STR = ", ".join(f'"{u}"' for u in UNIT_LIST)
 
 
