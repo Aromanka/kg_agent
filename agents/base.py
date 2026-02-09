@@ -597,7 +597,7 @@ class ExerciseAgentMixin:
                         "condition": entity
                     })
             except Exception as e:
-                print(f"[WARN] Failed to query condition {condition}: {e}")
+                print(f"[WARN] Failed to query: {e}")
 
         return results
 
@@ -811,17 +811,6 @@ class ExerciseAgentMixin:
         exercise_type: str,
         conditions: List[str] = None
     ) -> List[Dict[str, Any]]:
-        """
-        Query exercises by type with condition filtering.
-
-        Args:
-            exercise_type: Type of exercise (cardio, strength, flexibility, etc.)
-            conditions: User's medical conditions to filter
-
-        Returns:
-            List of exercise objects
-        """
-        # Expanded exercise library by type
         exercise_library = {
             "cardio": [
                 {"name": "Brisk Walking", "intensity_levels": ["low", "moderate"], "cal_per_min": {"low": 4, "moderate": 5}},

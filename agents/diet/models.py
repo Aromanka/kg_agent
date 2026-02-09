@@ -47,7 +47,7 @@ class RawDietPlan(BaseModel):
 class FoodItem(BaseModel):
     """A single food item in a meal"""
     food: str = Field(..., description="Name of the food dish")
-    portion: str = Field(..., description="Portion size (e.g., '100g', '1碗', '2片')")
+    portion: str = Field(..., description="Portion size (e.g., '100g', '1bowl', '2piece')")
     calories: int = Field(..., description="Estimated calories per serving")
     protein: float = Field(..., description="Protein content in grams")
     carbs: float = Field(..., description="Carbohydrate content in grams")
