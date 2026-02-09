@@ -13,6 +13,16 @@ from config_loader import get_config
 from kg.prompts import DIETARY_QUERY_ENTITIES, EXERCISE_QUERY_ENTITIES
 
 
+        # Stop words to filter out from query
+stop_words = {
+    "i", "want", "a", "the", "with", "and", "or", "for", "to",
+    "my", "me", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "do", "does", "did", "will", "would",
+    "could", "should", "may", "might", "must", "shall", "can",
+    "this", "that", "these", "those", "it", "they", "them", "their",
+    "on", "in", "at", "by", "from", "as", "of", "an", "like"
+}
+
 # ================= Configuration =================
 
 class UserMetadata(BaseModel):
@@ -242,15 +252,6 @@ class DietAgentMixin:
             - entity_risks: List of risks for matched entities
             - entity_conflicts: List of conflicts/contraindications for matched entities
         """
-        # Stop words to filter out from query
-        stop_words = {
-            "i", "want", "a", "the", "with", "and", "or", "for", "to",
-            "my", "me", "is", "are", "was", "were", "be", "been", "being",
-            "have", "has", "had", "do", "does", "did", "will", "would",
-            "could", "should", "may", "might", "must", "shall", "can",
-            "this", "that", "these", "those", "it", "they", "them", "their",
-            "on", "in", "at", "by", "from", "as", "of", "an", "like"
-        }
 
         results = {
             "matched_entities": [],
@@ -552,15 +553,6 @@ class ExerciseAgentMixin:
             - duration_recommendations: List of recommended duration for matched entities
             - frequency_recommendations: List of recommended frequency for matched entities
         """
-        # Stop words to filter out from query
-        stop_words = {
-            "i", "want", "a", "the", "with", "and", "or", "for", "to",
-            "my", "me", "is", "are", "was", "were", "be", "been", "being",
-            "have", "has", "had", "do", "does", "did", "will", "would",
-            "could", "should", "may", "might", "must", "shall", "can",
-            "this", "that", "these", "those", "it", "they", "them", "their",
-            "on", "in", "at", "by", "from", "as", "of", "an", "like"
-        }
 
         results = {
             "matched_entities": [],

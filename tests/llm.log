@@ -1,1314 +1,4 @@
->>> model <deepseek-chat> generated at <2026-02-09T15:22:27.079448>:
-- query:
-role=system
-You are a professional nutritionist. Generate BASE meal plans with standardized portions.
-
-## Output Format
-Output MUST be a valid JSON list of objects. Each object is a food item with these fields:
-- "food_name": string (Name of the food, e.g., "Grilled Salmon")
-- "portion_number": number (Numeric quantity, e.g., 150, 1.5)
-- "portion_unit": string (MUST be one of: ["gram", "ml", "piece", "slice", "cup", "bowl", "spoon"] - "spoon" is for teaspoons, NOT "teaspoon")
-- "total_calories": number (TOTAL calories for the ENTIRE portion. E.g., 150g salmon = ~200 kcal total, 1 bowl rice = ~250 kcal total)
-
-## Rules
-1. Use ONLY the allowed units listed above - "spoon" means teaspoon (5ml), NOT "teaspoon"
-2. STRICTLY follow the "Mandatory Ingredients" and "Excluded Ingredients" in the user prompt
-3. "total_calories" must be the TOTAL calories for the whole portion, NOT per unit
-4. Realistic calorie references:
-   - 100g meat/fish: ~150-200 kcal total
-   - 100g vegetables: ~20-50 kcal total
-   - 100g carbs (rice/potato): ~130-150 kcal total
-   - 1 bowl (300g): ~200-300 kcal total
-   - 1 piece fruit: ~50-100 kcal total
-   - 5ml oil: ~45 kcal total
-5. CRITICAL: If you output 120g Tempeh, total_calories should be ~200-250, NOT 14000
-6. Output food items for ONE meal type as a JSON LIST
-7. Do NOT wrap in extra keys like "meal_plan" or "items"
-8. Do NOT output markdown code blocks
-
-## Example Output:
-[
-  {
-    "food_name": "Pan-Seared White Fish",
-    "portion_number": 150,
-    "portion_unit": "gram",
-    "total_calories": 180
-  },
-  {
-    "food_name": "Whole Grain Bowl",
-    "portion_number": 1,
-    "portion_unit": "bowl",
-    "total_calories": 250
-  },
-  {
-    "food_name": "Olive Oil",
-    "portion_number": 5,
-    "portion_unit": "ml",
-    "total_calories": 45
-  },
-  {
-    "food_name": "Mixed Greens",
-    "portion_number": 1,
-    "portion_unit": "bowl",
-    "total_calories": 25
-  }
-]
-
-## Task
-Generate a single meal's base food items suitable for the user's profile.
-The output will be expanded by a parser into Lite/Standard/Plus portions.
-role=user
-## Profile
-Age: 35
-Gender: male
-Conditions: diabetes
-Restrictions: low_sodium
-
-## Target
-Goal: maintenance
-Lunch: 904 kcal (max)
-
-## KG Guidelines
-Health-related quality of life Has_Benefit Exercise referral schemes under condition: health
-People with existing health conditions Indicated_For Exercise referral schemes under condition: health
-Positive health benefits Has_Benefit Physical activity under condition: health
-Prevents mental health problems Has_Benefit Physical activity under condition: health
-Poor mental health Has_Risk Physical inactivity under condition: health
-Food Pyramid Indicated_For Teenagers under condition: food
-Mental health problems Disease_Management Physical activity under condition: health
-Food Pyramid Indicated_For Overweight individuals under condition: food
-Other health benefits Has_Benefit Exercise referral schemes under condition: health
-Healthy balanced diet Has_Benefit Food Pyramid under condition: diet
-Improve health Has_Benefit Exercise referral schemes under condition: health
-Food Pyramid Indicated_For Children aged 5 and over under condition: food
-Mental health problems Disease_Management Exercise referral schemes under condition: health
-Positive health benefits Has_Benefit Exercise referral schemes under condition: health
-Health risk despite meeting physical activity recommendations Has_Risk Sedentary behavior under condition: health
-Well-balanced diet Has_Benefit Eatwell Guide under condition: diet
-Diet, sugar-free or no added sugar varieties Antagonism_With Sugary soft drinks under condition: diet
-Manages mental health problems Has_Benefit Physical activity under condition: health
-People with poor mental health Indicated_For Exercise referral schemes under condition: health
-Improve health outcomes Has_Benefit Exercise referral schemes under condition: health
-## Entity-Based KG Context
-- Matched Entities from KG: Wholemeal cereals and breads potatoes pasta and rice
-- Entity Benefits: Wholemeal cereals and breads potatoes pasta and rice has General population, Wholemeal cereals and breads potatoes pasta and rice has Energy provision, Strength and balance activities has Older people, Vegetables salad and fruit has General population
-- Entity Risks: 100% fruit and vegetable juices and smoothies may have Tooth decay, Time resources and conflicting priorities may have Affect ability to discuss/prescribe physical activity, Lack of practitioner confidence and knowledge may have Affect ability to discuss/prescribe physical activity
-
-## User Preference
-I want a Mediterranean pasta with salmon
-## Output Format
-JSON list of foods. Each item:
-- food_name: name
-- portion_number: number
-- portion_unit: gram/ml/piece/slice/cup/bowl/spoon
-- calories_per_unit: calories per single unit
-
-## Example (~904 kcal)
-[
-  {"food_name": "X", "portion_number": 100, "portion_unit": "gram", "calories_per_unit": 3.5},
-  {"food_name": "Y", "portion_number": 2, "portion_unit": "piece", "calories_per_unit": 78}
-]
-
-## Task
-Generate lunch foods totaling ~904 kcal. List only JSON.
-
-### Optimization Strategy: BALANCED
-Focus on balanced nutrition across all macros.
-
-### Culinary Style: Fusion
-PLEASE strictly follow this style. Use ingredients and cooking methods typical for Fusion cuisine.
-- response:
-[
-  {
-    "food_name": "Whole Wheat Pasta",
-    "portion_number": 100,
-    "portion_unit": "gram",
-    "total_calories": 130
-  },
-  {
-    "food_name": "Grilled Salmon Fillet",
-    "portion_number": 150,
-    "portion_unit": "gram",
-    "total_calories": 300
-  },
-  {
-    "food_name": "Cherry Tomatoes",
-    "portion_number": 150,
-    "portion_unit": "gram",
-    "total_calories": 30
-  },
-  {
-    "food_name": "Kalamata Olives",
-    "portion_number": 30,
-    "portion_unit": "gram",
-    "total_calories": 80
-  },
-  {
-    "food_name": "Baby Spinach",
-    "portion_number": 100,
-    "portion_unit": "gram",
-    "total_calories": 23
-  },
-  {
-    "food_name": "Extra Virgin Olive Oil",
-    "portion_number": 15,
-    "portion_unit": "ml",
-    "total_calories": 135
-  },
-  {
-    "food_name": "Fresh Lemon Juice",
-    "portion_number": 15,
-    "portion_unit": "ml",
-    "total_calories": 4
-  },
-  {
-    "food_name": "Fresh Basil",
-    "portion_number": 10,
-    "portion_unit": "gram",
-    "total_calories": 2
-  },
-  {
-    "food_name": "Crumbled Feta Cheese (Low Sodium)",
-    "portion_number": 40,
-    "portion_unit": "gram",
-    "total_calories": 110
-  },
-  {
-    "food_name": "Toasted Pine Nuts",
-    "portion_number": 10,
-    "portion_unit": "gram",
-    "total_calories": 70
-  }
-]
-- duration <14084.849> ms
->>> model <deepseek-chat> generated at <2026-02-09T15:22:54.150506>:
-- query:
-role=system
-You are a safety assessment expert. Return only valid JSON.role=user
-Analyze the following diet plan for safety issues.
-
-## User Profile
-- Age: 35
-- Conditions: diabetes
-- Fitness Level: intermediate
-
-## Environment
-{'weather': {'condition': 'clear', 'temperature_c': 25}, 'time_context': {'season': 'summer'}}
-
-## Knowledge Graph Context
-## Relevant Knowledge Graph Relationships
-- Diet, sugar-free or no added sugar varieties --[Antagonism_With]--> Sugary soft drinks
-- Poor mental health --[Has_Risk]--> Physical inactivity
-- Mental health conditions --[Disease_Management]--> Brief advice on physical activity
-- Mental health problems --[Disease_Management]--> Exercise referral schemes
-- Mental health problems --[Disease_Management]--> Physical activity
-- Health risk despite meeting physical activity recommendations --[Has_Risk]--> Sedentary behavior
-
-## Plan
-{
-  "id": 1,
-  "meal_type": "lunch",
-  "variant": "Lite",
-  "items": [
-    {
-      "food": "Whole Wheat Pasta",
-      "portion": "80.0gram",
-      "calories": 104,
-      "protein": 0.0,
-      "carbs": 0.0,
-      "fat": 0.0,
-      "fiber": null
-    },
-    {
-      "food": "Grilled Salmon Fillet",
-      "portion": "120.0gram",
-      "calories": 240,
-      "protein": 0.0,
-      "carbs": 0.0,
-      "fat": 0.0,
-      "fiber": null
-    },
-    {
-      "food": "Cherry Tomatoes",
-      "portion": "120.0gram",
-      "calories": 24,
-      "protein": 0.0,
-      "carbs": 0.0,
-      "fat": 0.0,
-      "fiber": null
-    },
-    {
-      "food": "Kalamata Olives",
-      "portion": "24.0gram",
-      "calories": 64,
-      "protein": 0.0,
-      "carbs": 0.0,
-      "fat": 0.0,
-      "fiber": null
-    },
-    {
-      "food": "Baby Spinach",
-      "portion": "80.0gram",
-      "calories": 18,
-      "protein": 0.0,
-      "carbs": 0.0,
-      "fat": 0.0,
-      "fiber": null
-    },
-    {
-      "food": "Extra Virgin Olive Oil",
-      "portion": "12.0ml",
-      "calories": 108,
-      "protein": 0.0,
-      "carbs": 0.0,
-      "fat": 0.0,
-      "fiber": null
-    },
-    {
-      "food": "Fresh Lemon Juice",
-      "portion": "12.0ml",
-      "calories": 3,
-      "protein": 0.0,
-      "carbs": 0.0,
-      "fat": 0.0,
-      "fiber": null
-    },
-    {
-      "food": "Fresh Basil",
-      "portion": "8.0gram",
-      "calories": 2,
-      "protein": 0.0,
-      "carbs": 0.0,
-      "fat": 0.0,
-      "fiber": null
-    },
-    {
-      "food": "Crumbled Feta Cheese (Low Sodium)",
-      "portion": "32.0gram",
-      "calories": 88,
-      "protein": 0.0,
-      "carbs": 0.0,
-      "fat": 0.0,
-      "fiber": null
-    },
-    {
-      "food": "Toasted Pine Nuts",
-      "portion": "8.0gram",
-      "calories": 56,
-      "protein": 0.0,
-      "carbs": 0.0,
-      "fat": 0.0,
-      "fiber": null
-    }
-  ],
-  "total_calories": 707,
-  "target_calories": 904,
-  "calories_deviation": -21.8,
-  "safety_notes": [
-    "Meal: lunch",
-    "Variant: Lite",
-    "Style: Fusion, Strategy: balanced",
-    "Calorie deviation: -21.8%"
-  ]
-}
-
-## Task
-Identify any safety concerns that rule-based checks might miss:
-1. Hidden contraindications
-2. Unrealistic progression
-3. Nutrient deficiencies
-4. Overtraining signs
-5. Environmental mismatches
-6. Conflicts with user's medical conditions
-
-Use the Knowledge Graph context to identify potential risks, contraindications, and interactions.
-
-Return JSON with:
-- "risk_factors": array of {factor, description, severity}
-- "checks": array of {check_name, passed, message}
-- response:
-```json
-{
-    "risk_factors": [
-        {
-            "factor": "Carbohydrate Management for Diabetes",
-            "description": "Whole wheat pasta (80g) provides significant carbohydrates that require careful monitoring for blood glucose control in diabetes. The meal lacks explicit carbohydrate counting data (carbs shown as 0.0 for all items, which appears to be missing data), making it difficult to assess glycemic impact. The combination of pasta, tomatoes, and olives could result in a moderate to high carbohydrate load.",
-            "severity": "medium"
-        },
-        {
-            "factor": "Sodium Content in Processed Items",
-            "description": "Kalamata olives and low-sodium feta cheese still contain sodium, which can be concerning for individuals with diabetes who often have increased risk of hypertension. The 'low sodium' label doesn't eliminate this concern, especially with multiple salty components.",
-            "severity": "low"
-        },
-        {
-            "factor": "Fat Content and Portion Sizes",
-            "description": "Salmon, olive oil, olives, pine nuts, and feta cheese collectively contribute substantial fats. While these are generally healthy fats, the total fat content (approximately 40+ grams estimated) combined with carbohydrates could affect postprandial lipid profiles in diabetes.",
-            "severity": "low"
-        },
-        {
-            "factor": "Missing Nutritional Data Accuracy",
-            "description": "All macronutrients (protein, carbs, fat) are listed as 0.0 for every item, which is biologically impossible and indicates missing or incorrect data. This prevents accurate assessment of carbohydrate counting for diabetes management, protein adequacy, and overall macronutrient balance.",
-            "severity": "high"
-        },
-        {
-            "factor": "Caloric Deficit Context",
-            "description": "21.8% calorie deficit for lunch could lead to excessive daily deficit when combined with other meals, potentially causing hypoglycemia in diabetes management, especially if medication or insulin doses aren't adjusted.",
-            "severity": "medium"
-        }
-    ],
-    "checks": [
-        {
-            "check_name": "Diabetes-Specific Carbohydrate Assessment",
-            "passed": false,
-            "message": "Failed: Missing carbohydrate data prevents proper diabetes meal planning. Whole wheat pasta portion (80g) typically contains ~50g carbs, which requires monitoring and possible insulin adjustment."
-        },
-        {
-            "check_name": "Nutritional Data Completeness",
-            "passed": false,
-            "message": "Failed: All macronutrients shown as 0.0 indicates data integrity issue. Cannot assess protein adequacy (important for satiety and glucose stability) or accurate carb counting."
-        },
-        {
-            "check_name": "Meal Timing and Season Compatibility",
-            "passed": true,
-            "message": "Passed: Summer-appropriate light meal with hydrating vegetables (tomatoes, spinach) and healthy fats suitable for warm weather (25°C)."
-        },
-        {
-            "check_name": "Food Interactions with Diabetes Medications",
-            "passed": true,
-            "message": "Passed: No obvious contraindications with common diabetes medications. Omega-3 from salmon may have anti-inflammatory benefits."
-        },
-        {
-            "check_name": "Knowledge Graph Context Application",
-            "passed": false,
-            "message": "Failed: Knowledge Graph relationships about sugar-free alternatives vs sugary drinks and sedentary behavior risks aren't directly applicable, but highlight missing consideration of beverage pairing and post-meal activity recommendations for glucose management."
-        },
-        {
-            "check_name": "Fiber Content Assessment",
-            "passed": false,
-            "message": "Failed: Fiber data is null for all items. Whole wheat pasta and vegetables should provide fiber beneficial for glycemic control, but cannot verify adequacy."
-        }
-    ]
-}
-```
-- duration <27037.716> ms
->>> model <deepseek-chat> generated at <2026-02-09T15:24:57.330569>:
-- query:
-role=system
-You are a professional exercise prescription AI. Your task to generate personalized exercise plans based on user health data.
-
-## Guidelines
-
-### Exercise Types
-- CARDIO: Running, swimming, cycling, rowing, jumping rope
-- STRENGTH: Weight lifting, bodyweight exercises, resistance bands
-- FLEXIBILITY: Stretching, yoga, Pilates
-- BALANCE: Balance training, tai chi
-- HIIT: High-intensity interval training
-
-### Intensity Levels
-- LOW: Gentle movement, warm-up level (RPE 1-3)
-- MODERATE: Sustainable effort, conversation possible (RPE 4-6)
-- HIGH: Challenging, breathing heavily (RPE 7-8)
-- VERY_HIGH: Maximum effort, short bursts only (RPE 9-10)
-
-### Calories per Minute (MET-based estimates)
-- Walking (moderate): 4-5 kcal/min
-- Running: 10-12 kcal/min
-- Swimming: 8-10 kcal/min
-- Cycling: 6-10 kcal/min
-- Strength training: 5-8 kcal/min
-- Yoga: 2-4 kcal/min
-- HIIT: 12-15 kcal/min
-
-### Safety Rules
-1. For beginners: Start with LOW intensity, 15-20 min sessions
-2. For intermediate: MODERATE intensity, 30-45 min sessions
-3. For advanced: HIGH intensity, 45-60 min sessions
-4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
-5. Joint problems: Prioritize LOW-impact exercises (swimming, cycling)
-6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
-7. Always include warm-up and cool-down
-
-## Output Format
-Return a valid JSON object matching the provided schema. STRICTLY follow:
-- "calories_burned": TOTAL calories for this exercise (NOT per minute)
-- Use lowercase for all enum values: "cardio", "strength", "low", "moderate", etc.
-- "duration_minutes": Integer (not fractional)
-
-## Example Output:
-{
-  "id": 1,
-  "title": "Morning Cardio Plan",
-  "meal_timing": "after_breakfast",
-  "sessions": {
-    "morning": {
-      "time_of_day": "morning",
-      "exercises": [
-        {
-          "name": "Brisk Walking",
-          "exercise_type": "cardio",
-          "duration_minutes": 30,
-          "intensity": "low",
-          "calories_burned": 135,
-          "equipment": [],
-          "target_muscles": ["legs", "cardio"],
-          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
-          "reason": "Low-impact cardio suitable for beginners",
-          "safety_notes": ["Stay hydrated", "Warm up first"]
-        }
-      ],
-      "total_duration_minutes": 30,
-      "total_calories_burned": 135,
-      "overall_intensity": "low"
-    }
-  },
-  "total_duration_minutes": 30,
-  "total_calories_burned": 135,
-  "reasoning": "This plan combines low-impact cardio with strength training",
-  "safety_notes": ["Consult physician before starting", "Listen to your body"]
-}
-
-IMPORTANT:
-- calories_burned should be realistic totals (e.g., 30 min walking = ~135 kcal, NOT 4-5 kcal).
-- meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".
-- Generate only ONE session per day (single morning/afternoon/evening block).
-role=user
-## User Profile
-
-**Age**: 35
-**Gender**: male
-**Weight**: 70kg
-**Fitness Level**: intermediate
-**Medical Conditions**: diabetes
-
-## Goal
-**Primary Goal**: maintenance
-**Preferred Intensity**: moderate
-**Target Daily Calories Burn**: 150 kcal
-**Target Duration**: 36 minutes per session
-**Weekly Frequency**: 3 sessions per week
-
-## Environment Context
-**Weather**: {'condition': 'clear', 'temperature_c': 25}
-**Season**: summer
-
-
-## Knowledge Graph Context
-
-## User Preference
-I want to do some exercise about back muscles in the gym.
-
-## Task
-Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
-Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
-Generate ONLY ONE session per day (single morning/afternoon/evening block).
-
-Example format:
-{{
-  "id": 1,
-  "title": "Morning Cardio Plan",
-  "meal_timing": "after_breakfast",
-  "sessions": {{
-    "morning": {{
-      "time_of_day": "morning",
-      "exercises": [
-        {{
-          "name": "Brisk Walking",
-          "exercise_type": "cardio",
-          "duration_minutes": 30,
-          "intensity": "low",
-          "calories_burned": 135,
-          "equipment": [],
-          "target_muscles": ["legs", "cardio"],
-          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
-          "reason": "Low-impact cardio suitable for beginners",
-          "safety_notes": ["Stay hydrated", "Warm up first"]
-        }}
-      ],
-      "total_duration_minutes": 30,
-      "total_calories_burned": 135,
-      "overall_intensity": "low"
-    }}
-  }},
-  "total_duration_minutes": 30,
-  "total_calories_burned": 135,
-  "reasoning": "This plan combines low-impact cardio with strength training",
-  "safety_notes": ["Consult physician before starting", "Listen to your body"]
-}}
-
-## EXERCISE CONSTRAINTS
-- MEAL TIMING: Before Breakfast
-- PRIMARY CARDIO: Rowing Machine
-- PRIMARY STRENGTH: Face Pulls
-- FLEXIBILITY ELEMENT: Deep Breathing
-
-### Strategy: BALANCED
-Focus on mix of cardio, strength, and flexibility.
-- response:
-{
-  "id": 1,
-  "title": "Gym Back & Cardio Maintenance",
-  "meal_timing": "before_breakfast",
-  "sessions": {
-    "morning": {
-      "time_of_day": "morning",
-      "exercises": [
-        {
-          "name": "Warm-up Light Cardio",
-          "exercise_type": "cardio",
-          "duration_minutes": 5,
-          "intensity": "low",
-          "calories_burned": 25,
-          "equipment": ["treadmill", "stationary bike"],
-          "target_muscles": ["legs", "cardio"],
-          "instructions": ["Walk on treadmill or cycle at a very easy pace", "Focus on increasing blood flow and heart rate gradually"],
-          "reason": "Essential warm-up to prepare the body and joints for exercise, especially important before breakfast",
-          "safety_notes": ["Monitor blood glucose levels as you begin", "Stop if you feel lightheaded"]
-        },
-        {
-          "name": "Rowing Machine",
-          "exercise_type": "cardio",
-          "duration_minutes": 15,
-          "intensity": "moderate",
-          "calories_burned": 150,
-          "equipment": ["rowing machine"],
-          "target_muscles": ["back", "legs", "shoulders", "cardio"],
-          "instructions": ["Maintain a steady, rhythmic pace", "Focus on proper form: push with legs, then lean back, then pull arms", "Aim for a pace where you can speak in short sentences"],
-          "reason": "Excellent full-body cardio that directly targets the back muscles as requested. Suitable for moderate intensity and indoor gym use.",
-          "safety_notes": ["Keep back straight, avoid rounding", "Ensure foot straps are secure", "Stay hydrated"]
-        },
-        {
-          "name": "Face Pulls",
-          "exercise_type": "strength",
-          "duration_minutes": 10,
-          "intensity": "moderate",
-          "calories_burned": 65,
-          "equipment": ["cable machine", "rope attachment"],
-          "target_muscles": ["upper back", "rear deltoids", "rotator cuff"],
-          "instructions": ["Set cable to upper chest height", "Grab rope with neutral grip (palms facing each other)", "Step back to create tension", "Pull rope towards your face, separating hands to sides of head", "Squeeze shoulder blades together at peak contraction", "Control the return"],
-          "reason": "Primary strength exercise targeting the posterior chain of the upper back and shoulders, crucial for posture and shoulder health.",
-          "safety_notes": ["Use a light to moderate weight to focus on form", "Do not use momentum; move slowly and controlled", "Avoid shrugging shoulders"]
-        },
-        {
-          "name": "Deep Breathing & Cool-down Stretch",
-          "exercise_type": "flexibility",
-          "duration_minutes": 6,
-          "intensity": "low",
-          "calories_burned": 18,
-          "equipment": ["yoga mat"],
-          "target_muscles": ["core", "respiratory", "full body"],
-          "instructions": ["Sit or lie comfortably", "Inhale deeply through nose for 4 seconds, expanding diaphragm", "Hold breath for 2 seconds", "Exhale slowly through mouth for 6 seconds", "Repeat for 3 minutes", "Follow with gentle stretches for back, chest, and legs"],
-          "reason": "Incorporates the required flexibility element (Deep Breathing) to promote relaxation, aid recovery, and help regulate stress and blood glucose levels. Serves as the session cool-down.",
-          "safety_notes": ["Focus on calm, even breaths", "Stop if you feel dizzy", "Stretch only to a point of mild tension"]
-        }
-      ],
-      "total_duration_minutes": 36,
-      "total_calories_burned": 258,
-      "overall_intensity": "moderate"
-    }
-  },
-  "total_duration_minutes": 36,
-  "total_calories_burned": 258,
-  "reasoning": "This plan is designed for an intermediate male with diabetes, focusing on maintenance with a requested back workout. It follows a BALANCED strategy, starting with a warm-up, then the primary cardio (Rowing Machine) for full-body calorie burn and back engagement, followed by the primary strength (Face Pulls) for targeted upper back development. It concludes with the required flexibility element (Deep Breathing) for cool-down and metabolic regulation. The total duration meets the target (36 min), and the calorie burn exceeds the 150 kcal target to account for the strength component, while maintaining a moderate overall intensity suitable for the user's level and condition. Exercising before breakfast requires careful monitoring for a diabetic user, hence the emphasis on warm-up, hydration, and glucose checks.",
-  "safety_notes": ["Check blood glucose levels before, during (if needed), and after exercise", "Have a fast-acting carbohydrate source (e.g., glucose tablets) readily available", "Stay well-hydrated, especially in summer temperatures", "If you experience hypoglycemia symptoms (shaking, sweating, confusion), stop exercise and treat immediately", "Focus on proper form over heavy weight to prevent injury"]
-}
-- duration <37500.274> ms
->>> model <deepseek-chat> generated at <2026-02-09T15:25:22.174158>:
-- query:
-role=system
-You are a safety assessment expert. Return only valid JSON.role=user
-Analyze the following exercise plan for safety issues.
-
-## User Profile
-- Age: 35
-- Conditions: diabetes
-- Fitness Level: intermediate
-
-## Environment
-{'weather': {'condition': 'clear', 'temperature_c': 25}, 'time_context': {'season': 'summer'}}
-
-## Knowledge Graph Context
-No relevant KG data found.
-
-## Plan
-{
-  "id": 1,
-  "title": "Gym Back & Cardio Maintenance (Lite)",
-  "meal_timing": "before_breakfast",
-  "sessions": {
-    "morning": {
-      "time_of_day": "morning",
-      "exercises": [
-        {
-          "name": "Warm-up Light Cardio",
-          "exercise_type": "cardio",
-          "duration_minutes": 5,
-          "intensity": "low",
-          "calories_burned": 25,
-          "equipment": [
-            "treadmill",
-            "stationary bike"
-          ],
-          "target_muscles": [
-            "legs",
-            "cardio"
-          ],
-          "instructions": [
-            "Walk on treadmill or cycle at a very easy pace",
-            "Focus on increasing blood flow and heart rate gradually"
-          ],
-          "reason": "Essential warm-up to prepare the body and joints for exercise, especially important before breakfast",
-          "safety_notes": [
-            "Monitor blood glucose levels as you begin",
-            "Stop if you feel lightheaded"
-          ]
-        },
-        {
-          "name": "Rowing Machine",
-          "exercise_type": "cardio",
-          "duration_minutes": 10,
-          "intensity": "low",
-          "calories_burned": 100,
-          "equipment": [
-            "rowing machine"
-          ],
-          "target_muscles": [
-            "back",
-            "legs",
-            "shoulders",
-            "cardio"
-          ],
-          "instructions": [
-            "Maintain a steady, rhythmic pace",
-            "Focus on proper form: push with legs, then lean back, then pull arms",
-            "Aim for a pace where you can speak in short sentences"
-          ],
-          "reason": "Excellent full-body cardio that directly targets the back muscles as requested. Suitable for moderate intensity and indoor gym use.",
-          "safety_notes": [
-            "Keep back straight, avoid rounding",
-            "Ensure foot straps are secure",
-            "Stay hydrated"
-          ]
-        },
-        {
-          "name": "Face Pulls",
-          "exercise_type": "strength",
-          "duration_minutes": 7,
-          "intensity": "low",
-          "calories_burned": 46,
-          "equipment": [
-            "cable machine",
-            "rope attachment"
-          ],
-          "target_muscles": [
-            "upper back",
-            "rear deltoids",
-            "rotator cuff"
-          ],
-          "instructions": [
-            "Set cable to upper chest height",
-            "Grab rope with neutral grip (palms facing each other)",
-            "Step back to create tension",
-            "Pull rope towards your face, separating hands to sides of head",
-            "Squeeze shoulder blades together at peak contraction",
-            "Control the return"
-          ],
-          "reason": "Primary strength exercise targeting the posterior chain of the upper back and shoulders, crucial for posture and shoulder health.",
-          "safety_notes": [
-            "Use a light to moderate weight to focus on form",
-            "Do not use momentum; move slowly and controlled",
-            "Avoid shrugging shoulders"
-          ]
-        },
-        {
-          "name": "Deep Breathing & Cool-down Stretch",
-          "exercise_type": "flexibility",
-          "duration_minutes": 5,
-          "intensity": "low",
-          "calories_burned": 15,
-          "equipment": [
-            "yoga mat"
-          ],
-          "target_muscles": [
-            "core",
-            "respiratory",
-            "full body"
-          ],
-          "instructions": [
-            "Sit or lie comfortably",
-            "Inhale deeply through nose for 4 seconds, expanding diaphragm",
-            "Hold breath for 2 seconds",
-            "Exhale slowly through mouth for 6 seconds",
-            "Repeat for 3 minutes",
-            "Follow with gentle stretches for back, chest, and legs"
-          ],
-          "reason": "Incorporates the required flexibility element (Deep Breathing) to promote relaxation, aid recovery, and help regulate stress and blood glucose levels. Serves as the session cool-down.",
-          "safety_notes": [
-            "Focus on calm, even breaths",
-            "Stop if you feel dizzy",
-            "Stretch only to a point of mild tension"
-          ]
-        }
-      ],
-      "total_duration_minutes": 27,
-      "total_calories_burned": 186,
-      "overall_intensity": "low"
-    }
-  },
-  "total_duration_minutes": 27,
-  "total_calories_burned": 186,
-  "progression": null,
-  "reasoning": "This plan is designed for an intermediate male with diabetes, focusing on maintenance with a requested back workout. It follows a BALANCED strategy, starting with a warm-up, then the primary cardio (Rowing Machine) for full-body calorie burn and back engagement, followed by the primary strength (Face Pulls) for targeted upper back development. It concludes with the required flexibility element (Deep Breathing) for cool-down and metabolic regulation. The total duration meets the target (36 min), and the calorie burn exceeds the 150 kcal target to account for the strength component, while maintaining a moderate overall intensity suitable for the user's level and condition. Exercising before breakfast requires careful monitoring for a diabetic user, hence the emphasis on warm-up, hydration, and glucose checks.",
-  "safety_notes": [
-    "Check blood glucose levels before, during (if needed), and after exercise",
-    "Have a fast-acting carbohydrate source (e.g., glucose tablets) readily available",
-    "Stay well-hydrated, especially in summer temperatures",
-    "If you experience hypoglycemia symptoms (shaking, sweating, confusion), stop exercise and treat immediately",
-    "Focus on proper form over heavy weight to prevent injury"
-  ],
-  "_variant": "Lite",
-  "_base_id": 1
-}
-
-## Task
-Identify any safety concerns that rule-based checks might miss:
-1. Hidden contraindications
-2. Unrealistic progression
-3. Nutrient deficiencies
-4. Overtraining signs
-5. Environmental mismatches
-6. Conflicts with user's medical conditions
-
-Use the Knowledge Graph context to identify potential risks, contraindications, and interactions.
-
-Return JSON with:
-- "risk_factors": array of {factor, description, severity}
-- "checks": array of {check_name, passed, message}
-- response:
-```json
-{
-    "risk_factors": [
-        {
-            "factor": "Hypoglycemia risk during fasted exercise",
-            "description": "Exercising before breakfast with diabetes significantly increases hypoglycemia risk, especially for intermediate fitness levels where insulin sensitivity may be enhanced. The 27-minute session with 186 kcal burn could trigger dangerous blood glucose drops even with 'low' intensity.",
-            "severity": "high"
-        },
-        {
-            "factor": "Inadequate pre-exercise fueling for diabetes",
-            "description": "No guidance on carbohydrate intake or insulin adjustment before fasted exercise. For a 35-year-old with diabetes, even light cardio can cause unpredictable glucose responses without proper nutritional preparation.",
-            "severity": "high"
-        },
-        {
-            "factor": "Post-exercise hypoglycemia timing",
-            "description": "The cool-down includes deep breathing which may mask hypoglycemia symptoms. Blood glucose can continue dropping for 6-24 hours after exercise, creating delayed risk not addressed in safety notes.",
-            "severity": "medium"
-        },
-        {
-            "factor": "Temperature regulation in diabetes",
-            "description": "25°C summer temperature combined with indoor gym exercise may impair thermoregulation. Diabetes can affect sweat response and cardiovascular adaptation to heat, increasing dehydration and heat illness risk despite 'low' intensity.",
-            "severity": "medium"
-        },
-        {
-            "factor": "Unmonitored blood pressure response",
-            "description": "Rowing machine and face pulls can cause significant blood pressure spikes. Diabetes increases cardiovascular disease risk, and blood pressure monitoring during strength components is not addressed.",
-            "severity": "medium"
-        },
-        {
-            "factor": "Foot safety oversight",
-            "description": "No mention of foot inspection before/after exercise. Diabetes increases risk of neuropathy and foot injuries, particularly with equipment like rowing machines that apply pressure to feet.",
-            "severity": "medium"
-        }
-    ],
-    "checks": [
-        {
-            "check_name": "Exercise timing relative to meals",
-            "passed": false,
-            "message": "FAILED: Fasted exercise before breakfast is contraindicated for diabetes without specific medical guidance and carbohydrate management plan."
-        },
-        {
-            "check_name": "Intensity progression appropriateness",
-            "passed": true,
-            "message": "PASSED: Low intensity progression is appropriate for intermediate level with diabetes, though duration may need adjustment based on glucose response."
-        },
-        {
-            "check_name": "Environmental temperature compatibility",
-            "passed": false,
-            "message": "FAILED: 25°C indoor exercise requires specific hydration and cooling strategies for diabetes that are not adequately addressed."
-        },
-        {
-            "check_name": "Medical condition exercise compatibility",
-            "passed": false,
-            "message": "FAILED: Diabetes-specific risks (hypoglycemia timing, foot care, blood pressure) are insufficiently addressed in the safety protocol."
-        },
-        {
-            "check_name": "Equipment safety for condition",
-            "passed": true,
-            "message": "PASSED: Gym equipment selection is generally safe, though foot straps on rowing machine require careful attention for potential neuropathy."
-        },
-        {
-            "check_name": "Recovery and nutrient considerations",
-            "passed": false,
-            "message": "FAILED: No guidance on post-exercise carbohydrate/protein intake to prevent delayed hypoglycemia and support recovery with diabetes."
-        }
-    ]
-}
-```
-- duration <24819.593> ms
->>> model <deepseek-chat> generated at <2026-02-09T15:43:31.569910>:
-- query:
-role=system
-You are a professional exercise prescription AI. Your task to generate personalized exercise plans based on user health data.
-
-## Guidelines
-
-### Exercise Types
-- CARDIO: Running, swimming, cycling, rowing, jumping rope
-- STRENGTH: Weight lifting, bodyweight exercises, resistance bands
-- FLEXIBILITY: Stretching, yoga, Pilates
-- BALANCE: Balance training, tai chi
-- HIIT: High-intensity interval training
-
-### Intensity Levels
-- LOW: Gentle movement, warm-up level (RPE 1-3)
-- MODERATE: Sustainable effort, conversation possible (RPE 4-6)
-- HIGH: Challenging, breathing heavily (RPE 7-8)
-- VERY_HIGH: Maximum effort, short bursts only (RPE 9-10)
-
-### Calories per Minute (MET-based estimates)
-- Walking (moderate): 4-5 kcal/min
-- Running: 10-12 kcal/min
-- Swimming: 8-10 kcal/min
-- Cycling: 6-10 kcal/min
-- Strength training: 5-8 kcal/min
-- Yoga: 2-4 kcal/min
-- HIIT: 12-15 kcal/min
-
-### Safety Rules
-1. For beginners: Start with LOW intensity, 15-20 min sessions
-2. For intermediate: MODERATE intensity, 30-45 min sessions
-3. For advanced: HIGH intensity, 45-60 min sessions
-4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
-5. Joint problems: Prioritize LOW-impact exercises (swimming, cycling)
-6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
-7. Always include warm-up and cool-down
-
-## Output Format
-Return a valid JSON object matching the provided schema. STRICTLY follow:
-- "calories_burned": TOTAL calories for this exercise (NOT per minute)
-- Use lowercase for all enum values: "cardio", "strength", "low", "moderate", etc.
-- "duration_minutes": Integer (not fractional)
-
-## Example Output:
-{
-  "id": 1,
-  "title": "Morning Cardio Plan",
-  "meal_timing": "after_breakfast",
-  "sessions": {
-    "morning": {
-      "time_of_day": "morning",
-      "exercises": [
-        {
-          "name": "Brisk Walking",
-          "exercise_type": "cardio",
-          "duration_minutes": 30,
-          "intensity": "low",
-          "calories_burned": 135,
-          "equipment": [],
-          "target_muscles": ["legs", "cardio"],
-          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
-          "reason": "Low-impact cardio suitable for beginners",
-          "safety_notes": ["Stay hydrated", "Warm up first"]
-        }
-      ],
-      "total_duration_minutes": 30,
-      "total_calories_burned": 135,
-      "overall_intensity": "low"
-    }
-  },
-  "total_duration_minutes": 30,
-  "total_calories_burned": 135,
-  "reasoning": "This plan combines low-impact cardio with strength training",
-  "safety_notes": ["Consult physician before starting", "Listen to your body"]
-}
-
-IMPORTANT:
-- calories_burned should be realistic totals (e.g., 30 min walking = ~135 kcal, NOT 4-5 kcal).
-- meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".
-- Generate only ONE session per day (single morning/afternoon/evening block).
-role=user
-## User Profile
-
-**Age**: 35
-**Gender**: male
-**Weight**: 70kg
-**Fitness Level**: intermediate
-**Medical Conditions**: diabetes
-
-## Requirements
-**Target Intensity**: moderate
-**Target Daily Calories Burn**: 150 kcal
-**Target Duration**: 30 minutes per session
-**Weekly Frequency**: 4 sessions per week
-
-## Environment Context
-**Weather**: {'condition': 'clear', 'temperature_c': 25}
-**Season**: summer
-
-
-## Knowledge Graph Context
-
-## User Preference
-I want to do some exercise about back muscles in the gym.
-
-## Task
-Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
-Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
-Generate ONLY ONE session per day (single morning/afternoon/evening block).
-
-Example format:
-{{
-  "id": 1,
-  "title": "Morning Cardio Plan",
-  "meal_timing": "after_breakfast",
-  "sessions": {{
-    "morning": {{
-      "time_of_day": "morning",
-      "exercises": [
-        {{
-          "name": "Brisk Walking",
-          "exercise_type": "cardio",
-          "duration_minutes": 30,
-          "intensity": "low",
-          "calories_burned": 135,
-          "equipment": [],
-          "target_muscles": ["legs", "cardio"],
-          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
-          "reason": "Low-impact cardio suitable for beginners",
-          "safety_notes": ["Stay hydrated", "Warm up first"]
-        }}
-      ],
-      "total_duration_minutes": 30,
-      "total_calories_burned": 135,
-      "overall_intensity": "low"
-    }}
-  }},
-  "total_duration_minutes": 30,
-  "total_calories_burned": 135,
-  "reasoning": "This plan combines low-impact cardio with strength training",
-  "safety_notes": ["Consult physician before starting", "Listen to your body"]
-}}
-
-## EXERCISE CONSTRAINTS
-- MEAL TIMING: Before Breakfast
-- PRIMARY CARDIO:  Dancing (Aerobic)
-- PRIMARY STRENGTH: Kettlebell Swings
-- FLEXIBILITY ELEMENT: Downward Dog
-- EQUIPMENT REQUIRED: Foam Roller
-- PRIORITIZE: Outdoor activities where possible
-
-### Strategy: BALANCED
-Focus on mix of cardio, strength, and flexibility.
-- response:
-{
-  "id": 1,
-  "title": "Summer Gym Back & Cardio Plan",
-  "meal_timing": "before_breakfast",
-  "sessions": {
-    "morning": {
-      "time_of_day": "morning",
-      "exercises": [
-        {
-          "name": "Foam Rolling (Back & Legs)",
-          "exercise_type": "flexibility",
-          "duration_minutes": 5,
-          "intensity": "low",
-          "calories_burned": 15,
-          "equipment": ["Foam Roller"],
-          "target_muscles": ["back", "legs"],
-          "instructions": ["Gently roll upper and lower back", "Roll hamstrings and calves for 30 seconds each"],
-          "reason": "Warm-up and release muscle tension before exercise",
-          "safety_notes": ["Avoid rolling directly on spine", "Control pressure, do not hold breath"]
-        },
-        {
-          "name": "Kettlebell Swings",
-          "exercise_type": "strength",
-          "duration_minutes": 12,
-          "intensity": "moderate",
-          "calories_burned": 84,
-          "equipment": ["Kettlebell"],
-          "target_muscles": ["back", "glutes", "hamstrings", "shoulders"],
-          "instructions": ["Stand with feet shoulder-width apart, kettlebell on floor", "Hinge at hips, grab kettlebell with both hands", "Drive hips forward explosively to swing kettlebell to chest height", "Let it swing back between legs with control", "Aim for 3 sets of 12-15 reps with rest"],
-          "reason": "Primary strength exercise targeting posterior chain and back muscles as requested",
-          "safety_notes": ["Keep back straight, avoid rounding", "Use hips for power, not arms", "Choose appropriate weight (e.g., 12-16kg for intermediate)", "Monitor blood sugar before and after"]
-        },
-        {
-          "name": "Dancing (Aerobic)",
-          "exercise_type": "cardio",
-          "duration_minutes": 10,
-          "intensity": "moderate",
-          "calories_burned": 80,
-          "equipment": [],
-          "target_muscles": ["legs", "cardio"],
-          "instructions": ["Follow a simple aerobic dance routine or freestyle to upbeat music", "Focus on continuous movement, light footwork, and arm motions"],
-          "reason": "Primary cardio element; enjoyable and effective for calorie burn in moderate intensity",
-          "safety_notes": ["Wear supportive shoes", "Stay hydrated, especially in summer heat", "Stop if feeling dizzy or lightheaded"]
-        },
-        {
-          "name": "Downward Dog",
-          "exercise_type": "flexibility",
-          "duration_minutes": 3,
-          "intensity": "low",
-          "calories_burned": 9,
-          "equipment": ["Yoga Mat"],
-          "target_muscles": ["back", "hamstrings", "shoulders", "calves"],
-          "instructions": ["Start on hands and knees", "Tuck toes, lift hips up and back to form an inverted V-shape", "Press heels toward floor, lengthen spine", "Hold for 30-45 seconds, repeat 2-3 times"],
-          "reason": "Primary flexibility element to stretch the entire back body and cool down",
-          "safety_notes": ["Bend knees if hamstrings are tight", "Avoid if you have high blood pressure or wrist issues"]
-        }
-      ],
-      "total_duration_minutes": 30,
-      "total_calories_burned": 188,
-      "overall_intensity": "moderate"
-    }
-  },
-  "total_duration_minutes": 30,
-  "total_calories_burned": 188,
-  "reasoning": "This balanced plan meets the user's gym preference for back muscles by prioritizing Kettlebell Swings. It integrates the required cardio (Dancing), flexibility (Downward Dog), and equipment (Foam Roller) in a single 30-minute morning session before breakfast. The moderate intensity and ~188 kcal burn align with the intermediate fitness level and target, while the structure includes a warm-up, strength, cardio, and cool-down for safety. Considerations for diabetes are noted, advising blood sugar monitoring.",
-  "safety_notes": ["User has diabetes: monitor blood glucose before, during, and after exercise, especially when fasted before breakfast.", "Carry a fast-acting carbohydrate source.", "Stay well-hydrated in 25°C summer weather.", "Use proper form for kettlebell swings to prevent back injury.", "Consult with a physician if this is a new routine."]
-}
-- duration <33097.208> ms
->>> model <deepseek-chat> generated at <2026-02-09T15:43:57.948106>:
-- query:
-role=system
-You are a safety assessment expert. Return only valid JSON.role=user
-Analyze the following exercise plan for safety issues.
-
-## User Profile
-- Age: 35
-- Conditions: diabetes
-- Fitness Level: intermediate
-
-## Environment
-{'weather': {'condition': 'clear', 'temperature_c': 25}, 'time_context': {'season': 'summer'}}
-
-## Knowledge Graph Context
-## Relevant Knowledge Graph Relationships
-- Back injury --[Has_Risk]--> Squats
-- People with back pain --[Contraindicated_For]--> Squats
-- Low back pain and sciatica in over 16s --[Disease_Management]--> Structured exercise programmes
-
-## Plan
-{
-  "id": 1,
-  "title": "Summer Gym Back & Cardio Plan (Lite)",
-  "meal_timing": "before_breakfast",
-  "sessions": {
-    "morning": {
-      "time_of_day": "morning",
-      "exercises": [
-        {
-          "name": "Foam Rolling (Back & Legs)",
-          "exercise_type": "flexibility",
-          "duration_minutes": 5,
-          "intensity": "low",
-          "calories_burned": 15,
-          "equipment": [
-            "Foam Roller"
-          ],
-          "target_muscles": [
-            "back",
-            "legs"
-          ],
-          "instructions": [
-            "Gently roll upper and lower back",
-            "Roll hamstrings and calves for 30 seconds each"
-          ],
-          "reason": "Warm-up and release muscle tension before exercise",
-          "safety_notes": [
-            "Avoid rolling directly on spine",
-            "Control pressure, do not hold breath"
-          ]
-        },
-        {
-          "name": "Kettlebell Swings",
-          "exercise_type": "strength",
-          "duration_minutes": 8,
-          "intensity": "low",
-          "calories_burned": 56,
-          "equipment": [
-            "Kettlebell"
-          ],
-          "target_muscles": [
-            "back",
-            "glutes",
-            "hamstrings",
-            "shoulders"
-          ],
-          "instructions": [
-            "Stand with feet shoulder-width apart, kettlebell on floor",
-            "Hinge at hips, grab kettlebell with both hands",
-            "Drive hips forward explosively to swing kettlebell to chest height",
-            "Let it swing back between legs with control",
-            "Aim for 3 sets of 12-15 reps with rest"
-          ],
-          "reason": "Primary strength exercise targeting posterior chain and back muscles as requested",
-          "safety_notes": [
-            "Keep back straight, avoid rounding",
-            "Use hips for power, not arms",
-            "Choose appropriate weight (e.g., 12-16kg for intermediate)",
-            "Monitor blood sugar before and after"
-          ]
-        },
-        {
-          "name": "Dancing (Aerobic)",
-          "exercise_type": "cardio",
-          "duration_minutes": 7,
-          "intensity": "low",
-          "calories_burned": 56,
-          "equipment": [],
-          "target_muscles": [
-            "legs",
-            "cardio"
-          ],
-          "instructions": [
-            "Follow a simple aerobic dance routine or freestyle to upbeat music",
-            "Focus on continuous movement, light footwork, and arm motions"
-          ],
-          "reason": "Primary cardio element; enjoyable and effective for calorie burn in moderate intensity",
-          "safety_notes": [
-            "Wear supportive shoes",
-            "Stay hydrated, especially in summer heat",
-            "Stop if feeling dizzy or lightheaded"
-          ]
-        },
-        {
-          "name": "Downward Dog",
-          "exercise_type": "flexibility",
-          "duration_minutes": 5,
-          "intensity": "low",
-          "calories_burned": 15,
-          "equipment": [
-            "Yoga Mat"
-          ],
-          "target_muscles": [
-            "back",
-            "hamstrings",
-            "shoulders",
-            "calves"
-          ],
-          "instructions": [
-            "Start on hands and knees",
-            "Tuck toes, lift hips up and back to form an inverted V-shape",
-            "Press heels toward floor, lengthen spine",
-            "Hold for 30-45 seconds, repeat 2-3 times"
-          ],
-          "reason": "Primary flexibility element to stretch the entire back body and cool down",
-          "safety_notes": [
-            "Bend knees if hamstrings are tight",
-            "Avoid if you have high blood pressure or wrist issues"
-          ]
-        }
-      ],
-      "total_duration_minutes": 25,
-      "total_calories_burned": 142,
-      "overall_intensity": "low"
-    }
-  },
-  "total_duration_minutes": 25,
-  "total_calories_burned": 142,
-  "progression": null,
-  "reasoning": "This balanced plan meets the user's gym preference for back muscles by prioritizing Kettlebell Swings. It integrates the required cardio (Dancing), flexibility (Downward Dog), and equipment (Foam Roller) in a single 30-minute morning session before breakfast. The moderate intensity and ~188 kcal burn align with the intermediate fitness level and target, while the structure includes a warm-up, strength, cardio, and cool-down for safety. Considerations for diabetes are noted, advising blood sugar monitoring.",
-  "safety_notes": [
-    "User has diabetes: monitor blood glucose before, during, and after exercise, especially when fasted before breakfast.",
-    "Carry a fast-acting carbohydrate source.",
-    "Stay well-hydrated in 25°C summer weather.",
-    "Use proper form for kettlebell swings to prevent back injury.",
-    "Consult with a physician if this is a new routine."
-  ],
-  "_variant": "Lite",
-  "_base_id": 1
-}
-
-## Task
-Identify any safety concerns that rule-based checks might miss:
-1. Hidden contraindications
-2. Unrealistic progression
-3. Nutrient deficiencies
-4. Overtraining signs
-5. Environmental mismatches
-6. Conflicts with user's medical conditions
-
-Use the Knowledge Graph context to identify potential risks, contraindications, and interactions.
-
-Return JSON with:
-- "risk_factors": array of {factor, description, severity}
-- "checks": array of {check_name, passed, message}
-- response:
-```json
-{
-    "risk_factors": [
-        {
-            "factor": "Back injury risk with kettlebell swings",
-            "description": "Knowledge graph indicates 'Back injury --[Has_Risk]--> Squats' and 'People with back pain --[Contraindicated_For]--> Squats'. Kettlebell swings involve similar hip hinge mechanics and spinal loading patterns to squats, potentially posing similar risks for individuals with back issues or predisposition to back injury.",
-            "severity": "medium"
-        },
-        {
-            "factor": "Fasted exercise with diabetes",
-            "description": "The plan specifies 'before_breakfast' meal timing. For a person with diabetes, exercising in a fasted state increases risk of hypoglycemia, especially with moderate-intensity activities like kettlebell swings and dancing. The safety notes mention monitoring but don't address the specific fasting risk.",
-            "severity": "high"
-        },
-        {
-            "factor": "Inadequate warm-up for explosive movement",
-            "description": "Only 5 minutes of foam rolling precedes kettlebell swings, which are explosive hip hinge movements. Foam rolling alone may not adequately prepare the posterior chain, core stabilizers, and cardiovascular system for explosive loading, increasing injury risk.",
-            "severity": "medium"
-        },
-        {
-            "factor": "Potential blood pressure concerns with downward dog",
-            "description": "The safety note mentions 'Avoid if you have high blood pressure', but no blood pressure screening is suggested for this 35-year-old with diabetes, who may have undiagnosed hypertension (common comorbidity). The inverted position could be problematic.",
-            "severity": "low"
-        },
-        {
-            "factor": "Summer heat and hydration management",
-            "description": "While hydration is mentioned, the plan doesn't account for potential heat stress during 25°C summer weather, especially for someone with diabetes who may have impaired thermoregulation and hydration needs. The dancing component could elevate core temperature significantly.",
-            "severity": "medium"
-        }
-    ],
-    "checks": [
-        {
-            "check_name": "Back injury contraindication check",
-            "passed": false,
-            "message": "Knowledge graph shows contraindication between back pain and squats. Kettlebell swings share similar biomechanical risks. Should verify user has no current back pain or history of back injury before including this exercise."
-        },
-        {
-            "check_name": "Diabetes and fasting compatibility",
-            "passed": false,
-            "message": "Exercising before breakfast with diabetes requires specific glucose management strategies beyond monitoring. Should consider pre-exercise carbohydrate intake or adjusting timing to post-meal."
-        },
-        {
-            "check_name": "Exercise progression appropriateness",
-            "passed": true,
-            "message": "Plan has no progression element (progression: null), which is appropriate for initial assessment but should be addressed in future iterations."
-        },
-        {
-            "check_name": "Environmental condition adaptation",
-            "passed": false,
-            "message": "Summer temperature of 25°C requires specific heat adaptation considerations for someone with diabetes. Plan mentions hydration but lacks specific heat management strategies."
-        },
-        {
-            "check_name": "Medical condition conflict assessment",
-            "passed": false,
-            "message": "Diabetes management during exercise is partially addressed, but the combination of fasting, potential back injury risk, and heat exposure creates multiple interacting risk factors that need coordinated management."
-        },
-        {
-            "check_name": "Knowledge graph contraindication application",
-            "passed": false,
-            "message": "Knowledge graph relationships about back injury and squats should be extended to similar exercises like kettlebell swings. The plan doesn't reflect this extended contraindication logic."
-        }
-    ]
-}
-```
-- duration <26354.922> ms
->>> model <deepseek-chat> generated at <2026-02-09T16:12:21.229589>:
+>>> model <deepseek-chat> generated at <2026-02-09T16:28:50.080952>:
 - query:
 role=system
 You are a professional exercise prescription AI. Your task to generate personalized exercise plans based on user health data.
@@ -1409,28 +99,28 @@ role=user
 **Season**: summer
 
 ## Knowledge Graph Context
-Practitioner's decision to discuss/prescribe physical activity Synergy_With Perceived patient characteristics under condition: activity
-Physical activity Disease_Management Depression under condition: activity
+Physical activity Has_Benefit Reduce stress under condition: activity
+Exercise referral schemes Has_Benefit Improve community engagement under condition: exercise
+Exercise referral schemes Has_Benefit Improve mental well-being under condition: exercise
+Physical activity Has_Benefit Positive effect on wellbeing and mood under condition: activity
 Other health benefits Has_Benefit Exercise referral schemes under condition: health
-Physical activity Has_Benefit Positive effect on wellbeing under condition: activity
-Exercise referral schemes Dosing_Guideline 12-week scheme under condition: exercise
-Exercise referral schemes Indicated_For People with risk factors for disease under condition: exercise
-Structured exercise programmes Disease_Management Chronic heart failure under condition: exercise
-Exercise referral schemes Synergy_With Walking under condition: exercise
-Exercise referral schemes Disease_Management Type 2 diabetes under condition: exercise
-Increasing activity levels Disease_Management Cancer under condition: activity
-Exercise referral schemes Has_Benefit Enhance sleep quality under condition: exercise
-Physical activity Disease_Management Obesity under condition: activity
-Exercise referral schemes Contraindicated_For Sedentary or inactive but otherwise healthy people under condition: exercise
-Physical activity Has_Benefit Improve life expectancy under condition: activity
-Exercise referral schemes Has_Benefit Improve cardiovascular health under condition: exercise
-Delivery of brief advice on physical activity Synergy_With Time spent on/available for counselling under condition: activity
-Increasing physical activity Has_Benefit Improve life expectancy under condition: activity
-Physical activity Disease_Management Osteoporosis under condition: activity
-Exercise referral schemes Synergy_With Cycling under condition: exercise
+Physical activity Has_Benefit Positive effect on mood under condition: activity
+Physical activity Has_Benefit Prevents coronary heart disease under condition: activity
 Exercise referral schemes Dosing_Guideline 1 year and beyond under condition: exercise
+Structured exercise programmes Disease_Management Chronic obstructive pulmonary disease under condition: exercise
+Exercise referral schemes Dosing_Guideline £217 incremental intervention cost under condition: exercise
+Physical activity Has_Benefit Manages coronary heart disease under condition: activity
+Exercise referral schemes Indicated_For People with raised blood pressure under condition: exercise
+Exercise referral schemes Has_Benefit Increase physical activity under condition: exercise
+Structured exercise programmes Indicated_For People with stroke under condition: exercise
+Exercise referral schemes Disease_Management Coronary heart disease under condition: exercise
+Exercise referral schemes Technique_Method Motivational interviewing under condition: exercise
+Increase physical activity levels Has_Benefit Exercise referral schemes under condition: activity
+Brief advice on physical activity Disease_Management Mental health conditions under condition: activity
+Manages mental health problems Has_Benefit Physical activity under condition: health
+Affect ability to discuss/prescribe physical activity Has_Risk Time resources and conflicting priorities under condition: activity
 ## Entity-Based KG Context
-- Matched Entities from KG: Structured exercise programmes, Back injury, People with back pain, Exercise referral schemes, Exercise referral interventions, Low back pain and sciatica in over 16s
+- Matched Entities from KG: Exercise referral interventions, Exercise referral schemes, Back injury, Low back pain and sciatica in over 16s, People with back pain, Structured exercise programmes
 - Exercise Benefits: Exercise referral schemes has Adults who are sedentary or at risk of chronic disease, Exercise referral schemes has Increase physical activity, Exercise referral schemes has Improve health outcomes, Exercise referral schemes has 12-week duration, Exercise referral schemes has 2 sessions per week
 - Target Muscles: Exercise referral schemes targets Adults who are sedentary or at risk of chronic disease, Exercise referral schemes targets Increase physical activity, Exercise referral schemes targets Improve health outcomes, Exercise referral schemes targets 12-week duration, Exercise referral schemes targets 2 sessions per week
 - Duration Recommendations: Exercise referral schemes: Adults who are sedentary or at risk of chronic disease, Exercise referral schemes: Increase physical activity, Exercise referral schemes: Improve health outcomes, Exercise referral schemes: 12-week duration, Exercise referral schemes: 2 sessions per week
@@ -1479,86 +169,82 @@ Example format:
 
 ## EXERCISE CONSTRAINTS
 - MEAL TIMING: Before Breakfast
-- PRIMARY CARDIO: Kettlebell Cardio
-- PRIMARY STRENGTH: Bench Press
-- FLEXIBILITY ELEMENT: Seated Forward Fold
-- PRIORITIZE: Outdoor activities where possible
-
-## EXCLUDED EXERCISES (DO NOT USE):
-- Basic Stretching, Jumping Jacks
+- PRIMARY CARDIO:  Dancing (Aerobic)
+- PRIMARY STRENGTH: Kettlebell Swings
+- FLEXIBILITY ELEMENT: Hip Flexor Stretch
 
 ### Strategy: BALANCED
 Focus on mix of cardio, strength, and flexibility.
 - response:
 {
   "id": 1,
-  "title": "Summer Back & Cardio Gym Plan",
+  "title": "Gym Back & Cardio Session",
   "meal_timing": "before_breakfast",
   "sessions": {
     "morning": {
       "time_of_day": "morning",
       "exercises": [
         {
-          "name": "Kettlebell Swings",
+          "name": "Light Warm-up Jog",
+          "exercise_type": "cardio",
+          "duration_minutes": 5,
+          "intensity": "low",
+          "calories_burned": 50,
+          "equipment": ["treadmill"],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Jog at a slow, comfortable pace on the treadmill", "Focus on increasing blood flow and heart rate gradually"],
+          "reason": "Low-intensity warm-up to prepare the body for exercise, important for managing blood glucose before breakfast",
+          "safety_notes": ["Monitor for any dizziness, especially given pre-meal timing", "Stop if you feel lightheaded"]
+        },
+        {
+          "name": "Dancing (Aerobic)",
           "exercise_type": "cardio",
           "duration_minutes": 10,
           "intensity": "moderate",
           "calories_burned": 100,
-          "equipment": ["kettlebell"],
-          "target_muscles": ["glutes", "hamstrings", "back", "core", "cardio"],
-          "instructions": ["Stand with feet shoulder-width apart, kettlebell on floor.", "Hinge at hips, grab kettlebell with both hands.", "Drive hips forward explosively to swing kettlebell to chest height.", "Let it swing back between legs, maintaining a flat back.", "Focus on hip hinge, not squatting."],
-          "reason": "Provides cardio and strengthens the posterior chain, including the back, as requested. Suitable for intermediate level and diabetes management.",
-          "safety_notes": ["Start with a light weight to master form.", "Keep core braced and back straight throughout.", "Avoid rounding the lower back on the downswing.", "Monitor blood glucose before and after exercise."]
+          "equipment": [],
+          "target_muscles": ["legs", "core", "cardio"],
+          "instructions": ["Follow along to an aerobic dance routine or music", "Maintain constant movement with full-body engagement", "Keep intensity at a level where you can talk but not sing"],
+          "reason": "Primary cardio component to meet calorie burn target and improve cardiovascular health, which benefits diabetes management",
+          "safety_notes": ["Ensure you have stable footing", "Stay hydrated with water sips"]
         },
         {
-          "name": "Bent-Over Dumbbell Rows",
+          "name": "Kettlebell Swings",
           "exercise_type": "strength",
           "duration_minutes": 10,
           "intensity": "moderate",
-          "calories_burned": 65,
-          "equipment": ["dumbbells", "bench"],
-          "target_muscles": ["lats", "rhomboids", "rear deltoids", "biceps"],
-          "instructions": ["Hold a dumbbell in each hand.", "Hinge at hips, knees slightly bent, back flat, torso nearly parallel to floor.", "Pull dumbbells up towards your ribs, squeezing shoulder blades together.", "Lower with control to the starting position.", "Perform for the allotted time."],
-          "reason": "A primary strength exercise targeting the major muscles of the upper and mid-back, aligning with user preference for back work in the gym.",
-          "safety_notes": ["Maintain a neutral spine; do not round your back.", "Choose a weight that allows for controlled, full-range motion.", "Engage core for stability."]
+          "calories_burned": 80,
+          "equipment": ["kettlebell"],
+          "target_muscles": ["glutes", "hamstrings", "lower back", "core"],
+          "instructions": ["Stand with feet shoulder-width apart, kettlebell on floor in front", "Hinge at hips, grab kettlebell with both hands", "Drive hips forward explosively to swing kettlebell to chest height", "Let it swing back between legs with control", "Perform for time, focusing on form over speed"],
+          "reason": "Primary strength exercise targeting the posterior chain and back muscles as requested, building functional strength",
+          "safety_notes": ["Maintain a neutral spine; do not round your back", "Start with a light weight to master the hip-hinge technique", "Keep movements controlled"]
         },
         {
-          "name": "Seated Forward Fold",
+          "name": "Hip Flexor Stretch",
           "exercise_type": "flexibility",
           "duration_minutes": 5,
           "intensity": "low",
           "calories_burned": 15,
-          "equipment": ["yoga mat"],
-          "target_muscles": ["hamstrings", "lower back", "calves"],
-          "instructions": ["Sit on the floor with legs extended straight in front.", "Inhale to lengthen spine, exhale to hinge forward from hips.", "Reach hands toward feet or shins.", "Hold the stretch, focusing on relaxing into it, not forcing."],
-          "reason": "Provides a dedicated flexibility element for the posterior chain and lower back, promoting recovery and mobility.",
-          "safety_notes": ["Stretch to a point of mild tension, not pain.", "Keep back as straight as possible; rounding is okay if due to tight hamstrings.", "Breathe deeply throughout the hold."]
-        },
-        {
-          "name": "Bird-Dog",
-          "exercise_type": "balance",
-          "duration_minutes": 5,
-          "intensity": "low",
-          "calories_burned": 20,
-          "equipment": ["yoga mat"],
-          "target_muscles": ["core", "lower back", "glutes", "shoulders"],
-          "instructions": ["Start on all fours, hands under shoulders, knees under hips.", "Engage core to keep spine neutral.", "Simultaneously extend right arm forward and left leg back, keeping both parallel to floor.", "Hold for 2-3 seconds, then return to start.", "Alternate sides."],
-          "reason": "Integrates core stability, balance, and low-back engagement in a safe, controlled manner, which is beneficial for overall back health.",
-          "safety_notes": ["Move slowly with control to maintain balance.", "Do not let hips or shoulders rotate; keep torso square to floor.", "Stop if you feel any strain in the lower back."]
+          "equipment": ["exercise mat"],
+          "target_muscles": ["hip flexors", "quadriceps"],
+          "instructions": ["Kneel on one knee on the mat, other foot forward with knee bent at 90 degrees", "Tuck pelvis slightly and gently lean forward until a stretch is felt in the front of the kneeling leg's hip", "Hold the stretch without bouncing", "Repeat on the other side"],
+          "reason": "Primary flexibility element to counteract sitting and the hip flexion from kettlebell swings, promoting lower back health",
+          "safety_notes": ["Do not overstretch", "Keep the front knee aligned over the ankle"]
         }
       ],
       "total_duration_minutes": 30,
-      "total_calories_burned": 200,
+      "total_calories_burned": 245,
       "overall_intensity": "moderate"
     }
   },
   "total_duration_minutes": 30,
-  "total_calories_burned": 200,
-  "reasoning": "This plan is designed for a 35-year-old intermediate male with diabetes, targeting a 30-minute, moderate-intensity session burning ~150-200 kcal. It prioritizes back muscle work in the gym as requested, using Kettlebell Swings for cardio and posterior chain strength, and Bent-Over Rows for targeted back strength. It includes flexibility (Seated Forward Fold) and balance (Bird-Dog) for a balanced approach, adhering to the 'BALANCED' strategy. The plan aligns with KG context on exercise referral benefits for chronic disease management (like diabetes) and structured programmes. Safety for diabetes is prioritized with moderate intensity and core/balance work to support joint health.",
-  "safety_notes": ["Check blood glucose levels before and after exercise. Have a fast-acting carbohydrate source available.", "Ensure proper hydration, especially in 25°C summer weather.", "Focus on exercise form over weight or speed to prevent injury.", "Warm-up is integrated into the first exercise (start swings slowly). Cool-down is included via stretching.", "If you feel dizzy, lightheaded, or experience unusual pain, stop immediately and rest."]
+  "total_calories_burned": 245,
+  "reasoning": "This balanced 30-minute gym plan is designed for an intermediate user with diabetes, exercising before breakfast. It integrates the required elements: Dancing (Aerobic) for primary cardio, Kettlebell Swings for primary strength (targeting back/glutes), and Hip Flexor Stretch for flexibility. The plan starts with a gentle warm-up to safely elevate heart rate. The total calorie burn (~245 kcal) exceeds the 150 kcal target, providing a solid workout while the moderate intensity aligns with user fitness level and diabetes management. The focus on posterior chain strength supports back health, as indicated by the KG context.",
+  "safety_notes": ["Check blood glucose levels before and after exercise due to diabetes", "Have a fast-acting carbohydrate source available in case of hypoglycemia", "Maintain proper form during strength exercises to protect the back", "Drink water throughout the session, especially in summer weather"]
 }
-- duration <42047.664> ms
->>> model <deepseek-chat> generated at <2026-02-09T16:12:45.431434>:
+- duration <34267.798> ms
+>>> model <deepseek-chat> generated at <2026-02-09T16:29:10.609055>:
 - query:
 role=system
 You are a safety assessment expert. Return only valid JSON.role=user
@@ -1573,151 +259,132 @@ Analyze the following exercise plan for safety issues.
 {'weather': {'condition': 'clear', 'temperature_c': 25}, 'time_context': {'season': 'summer'}}
 
 ## Knowledge Graph Context
-## Relevant Knowledge Graph Relationships
-- Low back pain and sciatica in over 16s --[Disease_Management]--> Structured exercise programmes
+No relevant KG data found.
 
 ## Plan
 {
   "id": 1,
-  "title": "Summer Back & Cardio Gym Plan (Lite)",
+  "title": "Gym Back & Cardio Session (Lite)",
   "meal_timing": "before_breakfast",
   "sessions": {
     "morning": {
       "time_of_day": "morning",
       "exercises": [
         {
-          "name": "Kettlebell Swings",
+          "name": "Light Warm-up Jog",
+          "exercise_type": "cardio",
+          "duration_minutes": 5,
+          "intensity": "low",
+          "calories_burned": 50,
+          "equipment": [
+            "treadmill"
+          ],
+          "target_muscles": [
+            "legs",
+            "cardio"
+          ],
+          "instructions": [
+            "Jog at a slow, comfortable pace on the treadmill",
+            "Focus on increasing blood flow and heart rate gradually"
+          ],
+          "reason": "Low-intensity warm-up to prepare the body for exercise, important for managing blood glucose before breakfast",
+          "safety_notes": [
+            "Monitor for any dizziness, especially given pre-meal timing",
+            "Stop if you feel lightheaded"
+          ]
+        },
+        {
+          "name": "Dancing (Aerobic)",
           "exercise_type": "cardio",
           "duration_minutes": 7,
           "intensity": "low",
           "calories_burned": 70,
+          "equipment": [],
+          "target_muscles": [
+            "legs",
+            "core",
+            "cardio"
+          ],
+          "instructions": [
+            "Follow along to an aerobic dance routine or music",
+            "Maintain constant movement with full-body engagement",
+            "Keep intensity at a level where you can talk but not sing"
+          ],
+          "reason": "Primary cardio component to meet calorie burn target and improve cardiovascular health, which benefits diabetes management",
+          "safety_notes": [
+            "Ensure you have stable footing",
+            "Stay hydrated with water sips"
+          ]
+        },
+        {
+          "name": "Kettlebell Swings",
+          "exercise_type": "strength",
+          "duration_minutes": 7,
+          "intensity": "low",
+          "calories_burned": 56,
           "equipment": [
             "kettlebell"
           ],
           "target_muscles": [
             "glutes",
             "hamstrings",
-            "back",
-            "core",
-            "cardio"
+            "lower back",
+            "core"
           ],
           "instructions": [
-            "Stand with feet shoulder-width apart, kettlebell on floor.",
-            "Hinge at hips, grab kettlebell with both hands.",
-            "Drive hips forward explosively to swing kettlebell to chest height.",
-            "Let it swing back between legs, maintaining a flat back.",
-            "Focus on hip hinge, not squatting."
+            "Stand with feet shoulder-width apart, kettlebell on floor in front",
+            "Hinge at hips, grab kettlebell with both hands",
+            "Drive hips forward explosively to swing kettlebell to chest height",
+            "Let it swing back between legs with control",
+            "Perform for time, focusing on form over speed"
           ],
-          "reason": "Provides cardio and strengthens the posterior chain, including the back, as requested. Suitable for intermediate level and diabetes management.",
+          "reason": "Primary strength exercise targeting the posterior chain and back muscles as requested, building functional strength",
           "safety_notes": [
-            "Start with a light weight to master form.",
-            "Keep core braced and back straight throughout.",
-            "Avoid rounding the lower back on the downswing.",
-            "Monitor blood glucose before and after exercise."
+            "Maintain a neutral spine; do not round your back",
+            "Start with a light weight to master the hip-hinge technique",
+            "Keep movements controlled"
           ]
         },
         {
-          "name": "Bent-Over Dumbbell Rows",
-          "exercise_type": "strength",
-          "duration_minutes": 7,
-          "intensity": "low",
-          "calories_burned": 46,
-          "equipment": [
-            "dumbbells",
-            "bench"
-          ],
-          "target_muscles": [
-            "lats",
-            "rhomboids",
-            "rear deltoids",
-            "biceps"
-          ],
-          "instructions": [
-            "Hold a dumbbell in each hand.",
-            "Hinge at hips, knees slightly bent, back flat, torso nearly parallel to floor.",
-            "Pull dumbbells up towards your ribs, squeezing shoulder blades together.",
-            "Lower with control to the starting position.",
-            "Perform for the allotted time."
-          ],
-          "reason": "A primary strength exercise targeting the major muscles of the upper and mid-back, aligning with user preference for back work in the gym.",
-          "safety_notes": [
-            "Maintain a neutral spine; do not round your back.",
-            "Choose a weight that allows for controlled, full-range motion.",
-            "Engage core for stability."
-          ]
-        },
-        {
-          "name": "Seated Forward Fold",
+          "name": "Hip Flexor Stretch",
           "exercise_type": "flexibility",
           "duration_minutes": 5,
           "intensity": "low",
           "calories_burned": 15,
           "equipment": [
-            "yoga mat"
+            "exercise mat"
           ],
           "target_muscles": [
-            "hamstrings",
-            "lower back",
-            "calves"
+            "hip flexors",
+            "quadriceps"
           ],
           "instructions": [
-            "Sit on the floor with legs extended straight in front.",
-            "Inhale to lengthen spine, exhale to hinge forward from hips.",
-            "Reach hands toward feet or shins.",
-            "Hold the stretch, focusing on relaxing into it, not forcing."
+            "Kneel on one knee on the mat, other foot forward with knee bent at 90 degrees",
+            "Tuck pelvis slightly and gently lean forward until a stretch is felt in the front of the kneeling leg's hip",
+            "Hold the stretch without bouncing",
+            "Repeat on the other side"
           ],
-          "reason": "Provides a dedicated flexibility element for the posterior chain and lower back, promoting recovery and mobility.",
+          "reason": "Primary flexibility element to counteract sitting and the hip flexion from kettlebell swings, promoting lower back health",
           "safety_notes": [
-            "Stretch to a point of mild tension, not pain.",
-            "Keep back as straight as possible; rounding is okay if due to tight hamstrings.",
-            "Breathe deeply throughout the hold."
-          ]
-        },
-        {
-          "name": "Bird-Dog",
-          "exercise_type": "balance",
-          "duration_minutes": 5,
-          "intensity": "low",
-          "calories_burned": 20,
-          "equipment": [
-            "yoga mat"
-          ],
-          "target_muscles": [
-            "core",
-            "lower back",
-            "glutes",
-            "shoulders"
-          ],
-          "instructions": [
-            "Start on all fours, hands under shoulders, knees under hips.",
-            "Engage core to keep spine neutral.",
-            "Simultaneously extend right arm forward and left leg back, keeping both parallel to floor.",
-            "Hold for 2-3 seconds, then return to start.",
-            "Alternate sides."
-          ],
-          "reason": "Integrates core stability, balance, and low-back engagement in a safe, controlled manner, which is beneficial for overall back health.",
-          "safety_notes": [
-            "Move slowly with control to maintain balance.",
-            "Do not let hips or shoulders rotate; keep torso square to floor.",
-            "Stop if you feel any strain in the lower back."
+            "Do not overstretch",
+            "Keep the front knee aligned over the ankle"
           ]
         }
       ],
       "total_duration_minutes": 24,
-      "total_calories_burned": 151,
+      "total_calories_burned": 191,
       "overall_intensity": "low"
     }
   },
   "total_duration_minutes": 24,
-  "total_calories_burned": 151,
+  "total_calories_burned": 191,
   "progression": null,
-  "reasoning": "This plan is designed for a 35-year-old intermediate male with diabetes, targeting a 30-minute, moderate-intensity session burning ~150-200 kcal. It prioritizes back muscle work in the gym as requested, using Kettlebell Swings for cardio and posterior chain strength, and Bent-Over Rows for targeted back strength. It includes flexibility (Seated Forward Fold) and balance (Bird-Dog) for a balanced approach, adhering to the 'BALANCED' strategy. The plan aligns with KG context on exercise referral benefits for chronic disease management (like diabetes) and structured programmes. Safety for diabetes is prioritized with moderate intensity and core/balance work to support joint health.",
+  "reasoning": "This balanced 30-minute gym plan is designed for an intermediate user with diabetes, exercising before breakfast. It integrates the required elements: Dancing (Aerobic) for primary cardio, Kettlebell Swings for primary strength (targeting back/glutes), and Hip Flexor Stretch for flexibility. The plan starts with a gentle warm-up to safely elevate heart rate. The total calorie burn (~245 kcal) exceeds the 150 kcal target, providing a solid workout while the moderate intensity aligns with user fitness level and diabetes management. The focus on posterior chain strength supports back health, as indicated by the KG context.",
   "safety_notes": [
-    "Check blood glucose levels before and after exercise. Have a fast-acting carbohydrate source available.",
-    "Ensure proper hydration, especially in 25°C summer weather.",
-    "Focus on exercise form over weight or speed to prevent injury.",
-    "Warm-up is integrated into the first exercise (start swings slowly). Cool-down is included via stretching.",
-    "If you feel dizzy, lightheaded, or experience unusual pain, stop immediately and rest."
+    "Check blood glucose levels before and after exercise due to diabetes",
+    "Have a fast-acting carbohydrate source available in case of hypoglycemia",
+    "Maintain proper form during strength exercises to protect the back",
+    "Drink water throughout the session, especially in summer weather"
   ],
   "_variant": "Lite",
   "_base_id": 1
@@ -1742,63 +409,295 @@ Return JSON with:
 {
     "risk_factors": [
         {
-            "factor": "Diabetes-related hypoglycemia risk",
-            "description": "Exercising before breakfast with diabetes increases hypoglycemia risk due to overnight fasting and potential insulin/medication effects. The 25°C temperature may accelerate glucose metabolism. While safety notes mention monitoring, the timing creates elevated risk.",
+            "factor": "Hypoglycemia risk with pre-breakfast exercise",
+            "description": "Exercising before breakfast with diabetes significantly increases hypoglycemia risk, especially with 24 minutes of activity. The plan includes cardio which can rapidly lower blood glucose levels when glycogen stores are depleted overnight.",
             "severity": "high"
         },
         {
-            "factor": "Back exercise selection with potential sciatica risk",
-            "description": "Knowledge Graph indicates structured exercise for low back pain/sciatica. Kettlebell swings and bent-over rows involve spinal loading and hip hinging that could aggravate existing or subclinical sciatica/nerve issues, especially with improper form.",
+            "factor": "Kettlebell swings with diabetes-related complications",
+            "description": "Diabetes can lead to peripheral neuropathy, retinopathy, and autonomic neuropathy. Kettlebell swings require good balance, grip strength, and proprioception - all potentially compromised by diabetes complications. The explosive hip hinge movement could be risky if neuropathy affects foot sensation or balance.",
             "severity": "medium"
         },
         {
-            "factor": "Inadequate warm-up for loaded movements",
-            "description": "Starting directly with kettlebell swings (explosive hip hinge) without dedicated warm-up increases injury risk to back, hamstrings, and shoulders. The plan mentions 'warm-up integrated' but provides no specific warm-up exercises.",
+            "factor": "Summer heat and hydration management",
+            "description": "25°C in summer with clear weather means potential dehydration risk, especially for someone with diabetes who may have impaired thermoregulation. The safety notes mention hydration but don't specify volume or frequency recommendations.",
             "severity": "medium"
         },
         {
-            "factor": "Environmental heat stress interaction with diabetes",
-            "description": "25°C summer weather increases dehydration risk and may affect blood glucose regulation. Diabetes can impair thermoregulation and hydration balance. The safety note mentions hydration but doesn't specify pre-hydration or acclimatization measures.",
+            "factor": "Post-exercise hypoglycemia timing",
+            "description": "The plan doesn't address the delayed hypoglycemia risk that can occur 6-24 hours after exercise, particularly problematic with morning workouts before the day's meals.",
             "severity": "medium"
-        },
-        {
-            "factor": "Potential overtraining of posterior chain",
-            "description": "All four exercises target posterior chain muscles (back, glutes, hamstrings) with no anterior or lateral balance work. This could create muscular imbalances over time, increasing injury risk despite low intensity.",
-            "severity": "low"
         }
     ],
     "checks": [
         {
-            "check_name": "Diabetes exercise timing safety",
+            "check_name": "Diabetes-specific pre-exercise assessment",
             "passed": false,
-            "message": "FAIL: Exercising before breakfast with diabetes requires specific precautions not adequately addressed. Should recommend checking glucose 30 min before, having carbs available, and considering post-breakfast timing."
+            "message": "Missing critical check: No requirement to assess blood glucose level before starting (should be >100 mg/dL for safe exercise with diabetes). No guidance on what to do if blood glucose is outside safe range."
         },
         {
-            "check_name": "Back exercise appropriateness",
-            "passed": true,
-            "message": "PASS: Exercises are generally appropriate for back strengthening with proper form. However, individual assessment for sciatica/nerve issues would be needed."
+            "check_name": "Foot protection assessment",
+            "passed": false,
+            "message": "No check for proper footwear or foot inspection before exercise. Diabetes increases risk of foot injuries that can lead to serious complications."
+        },
+        {
+            "check_name": "Medication timing consideration",
+            "passed": false,
+            "message": "No check for medication schedule (insulin or oral hypoglycemics). Exercising when insulin is peaking dramatically increases hypoglycemia risk."
         },
         {
             "check_name": "Environmental adaptation",
-            "passed": false,
-            "message": "FAIL: Insufficient guidance for summer heat adaptation. Should recommend exercising during cooler hours, monitoring for heat exhaustion symptoms, and specific hydration protocols."
-        },
-        {
-            "check_name": "Progression safety",
             "passed": true,
-            "message": "PASS: Progression is null/not specified, which is appropriate for initial assessment. No unrealistic progression demands."
+            "message": "Plan acknowledges summer conditions and recommends hydration, though could be more specific."
         },
         {
-            "check_name": "Warm-up adequacy",
-            "passed": false,
-            "message": "FAIL: No structured warm-up provided for explosive movements. Should include dynamic stretching and activation exercises before kettlebell swings."
+            "check_name": "Exercise intensity validation",
+            "passed": true,
+            "message": "Overall low intensity appropriate for intermediate fitness level with diabetes."
         },
         {
-            "check_name": "Muscular balance",
+            "check_name": "Post-exercise monitoring",
             "passed": false,
-            "message": "FAIL: Plan lacks anterior core or chest exercises, creating potential imbalance. Should include at least one pushing or anterior chain exercise."
+            "message": "No requirement for post-exercise blood glucose check or specific carbohydrate intake protocol after workout."
         }
     ]
 }
 ```
-- duration <24177.836> ms
+- duration <20506.606> ms
+>>> model <deepseek-chat> generated at <2026-02-09T16:33:42.429133>:
+- query:
+role=system
+You are a professional exercise prescription AI. Your task to generate personalized exercise plans based on user health data.
+
+## Guidelines
+
+### Exercise Types
+- CARDIO: Running, swimming, cycling, rowing, jumping rope
+- STRENGTH: Weight lifting, bodyweight exercises, resistance bands
+- FLEXIBILITY: Stretching, yoga, Pilates
+- BALANCE: Balance training, tai chi
+- HIIT: High-intensity interval training
+
+### Intensity Levels
+- LOW: Gentle movement, warm-up level (RPE 1-3)
+- MODERATE: Sustainable effort, conversation possible (RPE 4-6)
+- HIGH: Challenging, breathing heavily (RPE 7-8)
+- VERY_HIGH: Maximum effort, short bursts only (RPE 9-10)
+
+### Calories per Minute (MET-based estimates)
+- Walking (moderate): 4-5 kcal/min
+- Running: 10-12 kcal/min
+- Swimming: 8-10 kcal/min
+- Cycling: 6-10 kcal/min
+- Strength training: 5-8 kcal/min
+- Yoga: 2-4 kcal/min
+- HIIT: 12-15 kcal/min
+
+### Safety Rules
+1. For beginners: Start with LOW intensity, 15-20 min sessions
+2. For intermediate: MODERATE intensity, 30-45 min sessions
+3. For advanced: HIGH intensity, 45-60 min sessions
+4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
+5. Joint problems: Prioritize LOW-impact exercises (swimming, cycling)
+6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
+7. Always include warm-up and cool-down
+
+## Output Format
+Return a valid JSON object matching the provided schema. STRICTLY follow:
+- "calories_burned": TOTAL calories for this exercise (NOT per minute)
+- Use lowercase for all enum values: "cardio", "strength", "low", "moderate", etc.
+- "duration_minutes": Integer (not fractional)
+
+## Example Output:
+{
+  "id": 1,
+  "title": "Morning Cardio Plan",
+  "meal_timing": "after_breakfast",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Brisk Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 135,
+          "equipment": [],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+          "reason": "Low-impact cardio suitable for beginners",
+          "safety_notes": ["Stay hydrated", "Warm up first"]
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 135,
+      "overall_intensity": "low"
+    }
+  },
+  "total_duration_minutes": 30,
+  "total_calories_burned": 135,
+  "reasoning": "This plan combines low-impact cardio with strength training",
+  "safety_notes": ["Consult physician before starting", "Listen to your body"]
+}
+
+IMPORTANT:
+- calories_burned should be realistic totals (e.g., 30 min walking = ~135 kcal, NOT 4-5 kcal).
+- meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".
+- Generate only ONE session per day (single morning/afternoon/evening block).
+role=user
+## User Profile
+
+**Age**: 35
+**Gender**: male
+**Weight**: 70kg
+**Fitness Level**: intermediate
+**Medical Conditions**: diabetes
+
+## Requirements
+**Target Intensity**: moderate
+**Target Daily Calories Burn**: 150 kcal
+**Target Duration**: 30 minutes per session
+**Weekly Frequency**: 4 sessions per week
+
+## Environment Context
+**Weather**: {'condition': 'clear', 'temperature_c': 25}
+**Season**: summer
+
+## Knowledge Graph Context
+Health benefits Has_Benefit Sedentary or inactive people under condition: health
+Structured exercise programmes Disease_Management Depression in adults under condition: exercise
+Barrier to discussing/prescribing physical activity Has_Risk Lack of provision of print materials, incentives, or support resources under condition: activity
+Physical activity Has_Benefit Manages type 2 diabetes under condition: activity
+Increasing physical activity Has_Benefit Improve life expectancy under condition: activity
+Exercise referral schemes Has_Benefit Improve cardiovascular health under condition: exercise
+Structured exercise programmes Disease_Management Low back pain and sciatica in over 16s under condition: exercise
+Increasing activity levels Disease_Management Musculoskeletal disorders under condition: activity
+Physical activity Has_Benefit Prevents some cancers under condition: activity
+Physical activity Has_Benefit Prevents mental health problems under condition: activity
+Exercise referral schemes Disease_Management Musculoskeletal conditions under condition: exercise
+Exercise referral schemes Indicated_For People from Black and minority ethnic groups under condition: exercise
+Physical activity Has_Benefit Improve self-perception under condition: activity
+Increase self-reported physical activity levels Has_Benefit Brief physical activity advice under condition: activity
+Structured exercise programmes Indicated_For People with stroke under condition: exercise
+Exercise referral schemes Indicated_For People with raised blood pressure under condition: exercise
+Overcome barriers to delivery/uptake of brief physical activity advice Has_Benefit Provision of incentives under condition: activity
+Exercise referral schemes Indicated_For People with risk factors for disease under condition: exercise
+Exercise referral schemes Has_Benefit Providing means of getting involved with community under condition: exercise
+Barrier to delivery of brief advice on physical activity Has_Risk Perceived lack of adequate financial incentive under condition: activity
+## Entity-Based KG Context
+- Matched Entities from KG: People with back pain, Low back pain and sciatica in over 16s, Structured exercise programmes, Back injury, Exercise referral schemes, Exercise referral interventions
+- Exercise Benefits: Exercise referral schemes has Adults who are sedentary or at risk of chronic disease, Exercise referral schemes has Increase physical activity, Exercise referral schemes has Improve health outcomes, Exercise referral schemes has 12-week duration, Exercise referral schemes has 2 sessions per week
+- Target Muscles: Exercise referral schemes targets Adults who are sedentary or at risk of chronic disease, Exercise referral schemes targets Increase physical activity, Exercise referral schemes targets Improve health outcomes, Exercise referral schemes targets 12-week duration, Exercise referral schemes targets 2 sessions per week
+- Duration Recommendations: Exercise referral schemes: Adults who are sedentary or at risk of chronic disease, Exercise referral schemes: Increase physical activity, Exercise referral schemes: Improve health outcomes, Exercise referral schemes: 12-week duration, Exercise referral schemes: 2 sessions per week
+- Frequency Recommendations: Exercise referral schemes: Adults who are sedentary or at risk of chronic disease, Exercise referral schemes: Increase physical activity, Exercise referral schemes: Improve health outcomes, Exercise referral schemes: 12-week duration, Exercise referral schemes: 2 sessions per week
+
+## User Preference
+"I want to do some exercise about back muscles in the gym."
+
+## Task
+Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
+Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
+Generate ONLY ONE session per day (single morning/afternoon/evening block).
+
+Example format:
+{{
+  "id": 1,
+  "title": "Morning Cardio Plan",
+  "meal_timing": "after_breakfast",
+  "sessions": {{
+    "morning": {{
+      "time_of_day": "morning",
+      "exercises": [
+        {{
+          "name": "Brisk Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 135,
+          "equipment": [],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+          "reason": "Low-impact cardio suitable for beginners",
+          "safety_notes": ["Stay hydrated", "Warm up first"]
+        }}
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 135,
+      "overall_intensity": "low"
+    }}
+  }},
+  "total_duration_minutes": 30,
+  "total_calories_burned": 135,
+  "reasoning": "This plan combines low-impact cardio with strength training",
+  "safety_notes": ["Consult physician before starting", "Listen to your body"]
+}}
+
+## EXERCISE CONSTRAINTS
+- MEAL TIMING: Before Breakfast
+- PRIMARY CARDIO: Outdoor Running
+- PRIMARY STRENGTH: Overhead Press
+- FLEXIBILITY ELEMENT: Cat-Cow Pose
+
+## EXCLUDED EXERCISES (DO NOT USE):
+- Brisk Walking, Plank Hold
+
+### Strategy: BALANCED
+Focus on mix of cardio, strength, and flexibility.
+- response:
+{
+  "id": 1,
+  "title": "Gym Back & Cardio Plan",
+  "meal_timing": "before_breakfast",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Outdoor Running",
+          "exercise_type": "cardio",
+          "duration_minutes": 15,
+          "intensity": "moderate",
+          "calories_burned": 165,
+          "equipment": ["Running Shoes"],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Run at a steady, conversational pace.", "Focus on even breathing and good form."],
+          "reason": "Moderate cardio to manage blood sugar and improve cardiovascular health before breakfast.",
+          "safety_notes": ["Check blood glucose before exercise.", "Stay hydrated in the summer heat (25°C)."]
+        },
+        {
+          "name": "Overhead Press",
+          "exercise_type": "strength",
+          "duration_minutes": 10,
+          "intensity": "moderate",
+          "calories_burned": 65,
+          "equipment": ["Dumbbells", "Barbell"],
+          "target_muscles": ["shoulders", "upper back", "triceps"],
+          "instructions": ["Perform 3 sets of 8-12 reps with controlled form.", "Keep core engaged and back straight."],
+          "reason": "Compound strength exercise to build upper body and back stability, aligning with user preference.",
+          "safety_notes": ["Start with a light weight to warm up.", "Avoid arching the lower back."]
+        },
+        {
+          "name": "Cat-Cow Pose",
+          "exercise_type": "flexibility",
+          "duration_minutes": 5,
+          "intensity": "low",
+          "calories_burned": 15,
+          "equipment": ["Yoga Mat"],
+          "target_muscles": ["spine", "back", "core"],
+          "instructions": ["Move slowly between arching (cow) and rounding (cat) your back.", "Coordinate movement with breath."],
+          "reason": "Gentle spinal mobility exercise to improve flexibility and cool down, beneficial for back health.",
+          "safety_notes": ["Move within a pain-free range.", "Focus on smooth, controlled motion."]
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 245,
+      "overall_intensity": "moderate"
+    }
+  },
+  "total_duration_minutes": 30,
+  "total_calories_burned": 245,
+  "reasoning": "This balanced plan meets the user's request for back-focused gym exercise. It starts with moderate cardio (Outdoor Running) for diabetes management and calorie burn, followed by a key strength exercise (Overhead Press) for upper back and shoulder development, and concludes with a flexibility element (Cat-Cow Pose) for spinal health. The total calories burned exceeds the 150 kcal target safely, and the moderate intensity is appropriate for an intermediate level. The session is timed before breakfast to leverage metabolic benefits for blood sugar control.",
+  "safety_notes": ["User has diabetes: monitor blood glucose before, during, and after exercise.", "Ensure proper hydration, especially in 25°C summer weather.", "Include a brief general warm-up (e.g., arm circles, leg swings) before starting the listed exercises.", "Stop exercise if you feel dizzy, lightheaded, or experience unusual pain."]
+}
+- duration <25226.824> ms

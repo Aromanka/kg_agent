@@ -2,145 +2,127 @@
   "all_plans": [
     {
       "id": 1,
-      "title": "Summer Back & Cardio Gym Plan (Lite)",
+      "title": "Gym Back & Cardio Session (Lite)",
       "meal_timing": "before_breakfast",
       "sessions": {
         "morning": {
           "time_of_day": "morning",
           "exercises": [
             {
-              "name": "Kettlebell Swings",
+              "name": "Light Warm-up Jog",
+              "exercise_type": "cardio",
+              "duration_minutes": 5,
+              "intensity": "low",
+              "calories_burned": 50,
+              "equipment": [
+                "treadmill"
+              ],
+              "target_muscles": [
+                "legs",
+                "cardio"
+              ],
+              "instructions": [
+                "Jog at a slow, comfortable pace on the treadmill",
+                "Focus on increasing blood flow and heart rate gradually"
+              ],
+              "reason": "Low-intensity warm-up to prepare the body for exercise, important for managing blood glucose before breakfast",
+              "safety_notes": [
+                "Monitor for any dizziness, especially given pre-meal timing",
+                "Stop if you feel lightheaded"
+              ]
+            },
+            {
+              "name": "Dancing (Aerobic)",
               "exercise_type": "cardio",
               "duration_minutes": 7,
               "intensity": "low",
               "calories_burned": 70,
+              "equipment": [],
+              "target_muscles": [
+                "legs",
+                "core",
+                "cardio"
+              ],
+              "instructions": [
+                "Follow along to an aerobic dance routine or music",
+                "Maintain constant movement with full-body engagement",
+                "Keep intensity at a level where you can talk but not sing"
+              ],
+              "reason": "Primary cardio component to meet calorie burn target and improve cardiovascular health, which benefits diabetes management",
+              "safety_notes": [
+                "Ensure you have stable footing",
+                "Stay hydrated with water sips"
+              ]
+            },
+            {
+              "name": "Kettlebell Swings",
+              "exercise_type": "strength",
+              "duration_minutes": 7,
+              "intensity": "low",
+              "calories_burned": 56,
               "equipment": [
                 "kettlebell"
               ],
               "target_muscles": [
                 "glutes",
                 "hamstrings",
-                "back",
-                "core",
-                "cardio"
+                "lower back",
+                "core"
               ],
               "instructions": [
-                "Stand with feet shoulder-width apart, kettlebell on floor.",
-                "Hinge at hips, grab kettlebell with both hands.",
-                "Drive hips forward explosively to swing kettlebell to chest height.",
-                "Let it swing back between legs, maintaining a flat back.",
-                "Focus on hip hinge, not squatting."
+                "Stand with feet shoulder-width apart, kettlebell on floor in front",
+                "Hinge at hips, grab kettlebell with both hands",
+                "Drive hips forward explosively to swing kettlebell to chest height",
+                "Let it swing back between legs with control",
+                "Perform for time, focusing on form over speed"
               ],
-              "reason": "Provides cardio and strengthens the posterior chain, including the back, as requested. Suitable for intermediate level and diabetes management.",
+              "reason": "Primary strength exercise targeting the posterior chain and back muscles as requested, building functional strength",
               "safety_notes": [
-                "Start with a light weight to master form.",
-                "Keep core braced and back straight throughout.",
-                "Avoid rounding the lower back on the downswing.",
-                "Monitor blood glucose before and after exercise."
+                "Maintain a neutral spine; do not round your back",
+                "Start with a light weight to master the hip-hinge technique",
+                "Keep movements controlled"
               ]
             },
             {
-              "name": "Bent-Over Dumbbell Rows",
-              "exercise_type": "strength",
-              "duration_minutes": 7,
-              "intensity": "low",
-              "calories_burned": 46,
-              "equipment": [
-                "dumbbells",
-                "bench"
-              ],
-              "target_muscles": [
-                "lats",
-                "rhomboids",
-                "rear deltoids",
-                "biceps"
-              ],
-              "instructions": [
-                "Hold a dumbbell in each hand.",
-                "Hinge at hips, knees slightly bent, back flat, torso nearly parallel to floor.",
-                "Pull dumbbells up towards your ribs, squeezing shoulder blades together.",
-                "Lower with control to the starting position.",
-                "Perform for the allotted time."
-              ],
-              "reason": "A primary strength exercise targeting the major muscles of the upper and mid-back, aligning with user preference for back work in the gym.",
-              "safety_notes": [
-                "Maintain a neutral spine; do not round your back.",
-                "Choose a weight that allows for controlled, full-range motion.",
-                "Engage core for stability."
-              ]
-            },
-            {
-              "name": "Seated Forward Fold",
+              "name": "Hip Flexor Stretch",
               "exercise_type": "flexibility",
               "duration_minutes": 5,
               "intensity": "low",
               "calories_burned": 15,
               "equipment": [
-                "yoga mat"
+                "exercise mat"
               ],
               "target_muscles": [
-                "hamstrings",
-                "lower back",
-                "calves"
+                "hip flexors",
+                "quadriceps"
               ],
               "instructions": [
-                "Sit on the floor with legs extended straight in front.",
-                "Inhale to lengthen spine, exhale to hinge forward from hips.",
-                "Reach hands toward feet or shins.",
-                "Hold the stretch, focusing on relaxing into it, not forcing."
+                "Kneel on one knee on the mat, other foot forward with knee bent at 90 degrees",
+                "Tuck pelvis slightly and gently lean forward until a stretch is felt in the front of the kneeling leg's hip",
+                "Hold the stretch without bouncing",
+                "Repeat on the other side"
               ],
-              "reason": "Provides a dedicated flexibility element for the posterior chain and lower back, promoting recovery and mobility.",
+              "reason": "Primary flexibility element to counteract sitting and the hip flexion from kettlebell swings, promoting lower back health",
               "safety_notes": [
-                "Stretch to a point of mild tension, not pain.",
-                "Keep back as straight as possible; rounding is okay if due to tight hamstrings.",
-                "Breathe deeply throughout the hold."
-              ]
-            },
-            {
-              "name": "Bird-Dog",
-              "exercise_type": "balance",
-              "duration_minutes": 5,
-              "intensity": "low",
-              "calories_burned": 20,
-              "equipment": [
-                "yoga mat"
-              ],
-              "target_muscles": [
-                "core",
-                "lower back",
-                "glutes",
-                "shoulders"
-              ],
-              "instructions": [
-                "Start on all fours, hands under shoulders, knees under hips.",
-                "Engage core to keep spine neutral.",
-                "Simultaneously extend right arm forward and left leg back, keeping both parallel to floor.",
-                "Hold for 2-3 seconds, then return to start.",
-                "Alternate sides."
-              ],
-              "reason": "Integrates core stability, balance, and low-back engagement in a safe, controlled manner, which is beneficial for overall back health.",
-              "safety_notes": [
-                "Move slowly with control to maintain balance.",
-                "Do not let hips or shoulders rotate; keep torso square to floor.",
-                "Stop if you feel any strain in the lower back."
+                "Do not overstretch",
+                "Keep the front knee aligned over the ankle"
               ]
             }
           ],
           "total_duration_minutes": 24,
-          "total_calories_burned": 151,
+          "total_calories_burned": 191,
           "overall_intensity": "low"
         }
       },
       "total_duration_minutes": 24,
-      "total_calories_burned": 151,
+      "total_calories_burned": 191,
       "progression": null,
-      "reasoning": "This plan is designed for a 35-year-old intermediate male with diabetes, targeting a 30-minute, moderate-intensity session burning ~150-200 kcal. It prioritizes back muscle work in the gym as requested, using Kettlebell Swings for cardio and posterior chain strength, and Bent-Over Rows for targeted back strength. It includes flexibility (Seated Forward Fold) and balance (Bird-Dog) for a balanced approach, adhering to the 'BALANCED' strategy. The plan aligns with KG context on exercise referral benefits for chronic disease management (like diabetes) and structured programmes. Safety for diabetes is prioritized with moderate intensity and core/balance work to support joint health.",
+      "reasoning": "This balanced 30-minute gym plan is designed for an intermediate user with diabetes, exercising before breakfast. It integrates the required elements: Dancing (Aerobic) for primary cardio, Kettlebell Swings for primary strength (targeting back/glutes), and Hip Flexor Stretch for flexibility. The plan starts with a gentle warm-up to safely elevate heart rate. The total calorie burn (~245 kcal) exceeds the 150 kcal target, providing a solid workout while the moderate intensity aligns with user fitness level and diabetes management. The focus on posterior chain strength supports back health, as indicated by the KG context.",
       "safety_notes": [
-        "Check blood glucose levels before and after exercise. Have a fast-acting carbohydrate source available.",
-        "Ensure proper hydration, especially in 25°C summer weather.",
-        "Focus on exercise form over weight or speed to prevent injury.",
-        "Warm-up is integrated into the first exercise (start swings slowly). Cool-down is included via stretching.",
-        "If you feel dizzy, lightheaded, or experience unusual pain, stop immediately and rest."
+        "Check blood glucose levels before and after exercise due to diabetes",
+        "Have a fast-acting carbohydrate source available in case of hypoglycemia",
+        "Maintain proper form during strength exercises to protect the back",
+        "Drink water throughout the session, especially in summer weather"
       ],
       "_variant": "Lite",
       "_base_id": 1,
@@ -159,158 +141,140 @@
           }
         ],
         "recommendations": [
-          "Consult healthcare provider before starting due to: diabetes",
-          "Stay hydrated before, during, and after exercise",
+          "Stop immediately if you experience pain or discomfort",
           "Start gradually and listen to your body",
-          "Stop immediately if you experience pain or discomfort"
+          "Consult healthcare provider before starting due to: diabetes",
+          "Stay hydrated before, during, and after exercise"
         ],
         "warnings": [],
-        "assessed_at": "2026-02-09T16:12:45.432151"
+        "assessed_at": "2026-02-09T16:29:10.609055"
       }
     }
   ],
   "top_plans": [
     {
       "id": 1,
-      "title": "Summer Back & Cardio Gym Plan (Lite)",
+      "title": "Gym Back & Cardio Session (Lite)",
       "meal_timing": "before_breakfast",
       "sessions": {
         "morning": {
           "time_of_day": "morning",
           "exercises": [
             {
-              "name": "Kettlebell Swings",
+              "name": "Light Warm-up Jog",
+              "exercise_type": "cardio",
+              "duration_minutes": 5,
+              "intensity": "low",
+              "calories_burned": 50,
+              "equipment": [
+                "treadmill"
+              ],
+              "target_muscles": [
+                "legs",
+                "cardio"
+              ],
+              "instructions": [
+                "Jog at a slow, comfortable pace on the treadmill",
+                "Focus on increasing blood flow and heart rate gradually"
+              ],
+              "reason": "Low-intensity warm-up to prepare the body for exercise, important for managing blood glucose before breakfast",
+              "safety_notes": [
+                "Monitor for any dizziness, especially given pre-meal timing",
+                "Stop if you feel lightheaded"
+              ]
+            },
+            {
+              "name": "Dancing (Aerobic)",
               "exercise_type": "cardio",
               "duration_minutes": 7,
               "intensity": "low",
               "calories_burned": 70,
+              "equipment": [],
+              "target_muscles": [
+                "legs",
+                "core",
+                "cardio"
+              ],
+              "instructions": [
+                "Follow along to an aerobic dance routine or music",
+                "Maintain constant movement with full-body engagement",
+                "Keep intensity at a level where you can talk but not sing"
+              ],
+              "reason": "Primary cardio component to meet calorie burn target and improve cardiovascular health, which benefits diabetes management",
+              "safety_notes": [
+                "Ensure you have stable footing",
+                "Stay hydrated with water sips"
+              ]
+            },
+            {
+              "name": "Kettlebell Swings",
+              "exercise_type": "strength",
+              "duration_minutes": 7,
+              "intensity": "low",
+              "calories_burned": 56,
               "equipment": [
                 "kettlebell"
               ],
               "target_muscles": [
                 "glutes",
                 "hamstrings",
-                "back",
-                "core",
-                "cardio"
+                "lower back",
+                "core"
               ],
               "instructions": [
-                "Stand with feet shoulder-width apart, kettlebell on floor.",
-                "Hinge at hips, grab kettlebell with both hands.",
-                "Drive hips forward explosively to swing kettlebell to chest height.",
-                "Let it swing back between legs, maintaining a flat back.",
-                "Focus on hip hinge, not squatting."
+                "Stand with feet shoulder-width apart, kettlebell on floor in front",
+                "Hinge at hips, grab kettlebell with both hands",
+                "Drive hips forward explosively to swing kettlebell to chest height",
+                "Let it swing back between legs with control",
+                "Perform for time, focusing on form over speed"
               ],
-              "reason": "Provides cardio and strengthens the posterior chain, including the back, as requested. Suitable for intermediate level and diabetes management.",
+              "reason": "Primary strength exercise targeting the posterior chain and back muscles as requested, building functional strength",
               "safety_notes": [
-                "Start with a light weight to master form.",
-                "Keep core braced and back straight throughout.",
-                "Avoid rounding the lower back on the downswing.",
-                "Monitor blood glucose before and after exercise."
+                "Maintain a neutral spine; do not round your back",
+                "Start with a light weight to master the hip-hinge technique",
+                "Keep movements controlled"
               ]
             },
             {
-              "name": "Bent-Over Dumbbell Rows",
-              "exercise_type": "strength",
-              "duration_minutes": 7,
-              "intensity": "low",
-              "calories_burned": 46,
-              "equipment": [
-                "dumbbells",
-                "bench"
-              ],
-              "target_muscles": [
-                "lats",
-                "rhomboids",
-                "rear deltoids",
-                "biceps"
-              ],
-              "instructions": [
-                "Hold a dumbbell in each hand.",
-                "Hinge at hips, knees slightly bent, back flat, torso nearly parallel to floor.",
-                "Pull dumbbells up towards your ribs, squeezing shoulder blades together.",
-                "Lower with control to the starting position.",
-                "Perform for the allotted time."
-              ],
-              "reason": "A primary strength exercise targeting the major muscles of the upper and mid-back, aligning with user preference for back work in the gym.",
-              "safety_notes": [
-                "Maintain a neutral spine; do not round your back.",
-                "Choose a weight that allows for controlled, full-range motion.",
-                "Engage core for stability."
-              ]
-            },
-            {
-              "name": "Seated Forward Fold",
+              "name": "Hip Flexor Stretch",
               "exercise_type": "flexibility",
               "duration_minutes": 5,
               "intensity": "low",
               "calories_burned": 15,
               "equipment": [
-                "yoga mat"
+                "exercise mat"
               ],
               "target_muscles": [
-                "hamstrings",
-                "lower back",
-                "calves"
+                "hip flexors",
+                "quadriceps"
               ],
               "instructions": [
-                "Sit on the floor with legs extended straight in front.",
-                "Inhale to lengthen spine, exhale to hinge forward from hips.",
-                "Reach hands toward feet or shins.",
-                "Hold the stretch, focusing on relaxing into it, not forcing."
+                "Kneel on one knee on the mat, other foot forward with knee bent at 90 degrees",
+                "Tuck pelvis slightly and gently lean forward until a stretch is felt in the front of the kneeling leg's hip",
+                "Hold the stretch without bouncing",
+                "Repeat on the other side"
               ],
-              "reason": "Provides a dedicated flexibility element for the posterior chain and lower back, promoting recovery and mobility.",
+              "reason": "Primary flexibility element to counteract sitting and the hip flexion from kettlebell swings, promoting lower back health",
               "safety_notes": [
-                "Stretch to a point of mild tension, not pain.",
-                "Keep back as straight as possible; rounding is okay if due to tight hamstrings.",
-                "Breathe deeply throughout the hold."
-              ]
-            },
-            {
-              "name": "Bird-Dog",
-              "exercise_type": "balance",
-              "duration_minutes": 5,
-              "intensity": "low",
-              "calories_burned": 20,
-              "equipment": [
-                "yoga mat"
-              ],
-              "target_muscles": [
-                "core",
-                "lower back",
-                "glutes",
-                "shoulders"
-              ],
-              "instructions": [
-                "Start on all fours, hands under shoulders, knees under hips.",
-                "Engage core to keep spine neutral.",
-                "Simultaneously extend right arm forward and left leg back, keeping both parallel to floor.",
-                "Hold for 2-3 seconds, then return to start.",
-                "Alternate sides."
-              ],
-              "reason": "Integrates core stability, balance, and low-back engagement in a safe, controlled manner, which is beneficial for overall back health.",
-              "safety_notes": [
-                "Move slowly with control to maintain balance.",
-                "Do not let hips or shoulders rotate; keep torso square to floor.",
-                "Stop if you feel any strain in the lower back."
+                "Do not overstretch",
+                "Keep the front knee aligned over the ankle"
               ]
             }
           ],
           "total_duration_minutes": 24,
-          "total_calories_burned": 151,
+          "total_calories_burned": 191,
           "overall_intensity": "low"
         }
       },
       "total_duration_minutes": 24,
-      "total_calories_burned": 151,
+      "total_calories_burned": 191,
       "progression": null,
-      "reasoning": "This plan is designed for a 35-year-old intermediate male with diabetes, targeting a 30-minute, moderate-intensity session burning ~150-200 kcal. It prioritizes back muscle work in the gym as requested, using Kettlebell Swings for cardio and posterior chain strength, and Bent-Over Rows for targeted back strength. It includes flexibility (Seated Forward Fold) and balance (Bird-Dog) for a balanced approach, adhering to the 'BALANCED' strategy. The plan aligns with KG context on exercise referral benefits for chronic disease management (like diabetes) and structured programmes. Safety for diabetes is prioritized with moderate intensity and core/balance work to support joint health.",
+      "reasoning": "This balanced 30-minute gym plan is designed for an intermediate user with diabetes, exercising before breakfast. It integrates the required elements: Dancing (Aerobic) for primary cardio, Kettlebell Swings for primary strength (targeting back/glutes), and Hip Flexor Stretch for flexibility. The plan starts with a gentle warm-up to safely elevate heart rate. The total calorie burn (~245 kcal) exceeds the 150 kcal target, providing a solid workout while the moderate intensity aligns with user fitness level and diabetes management. The focus on posterior chain strength supports back health, as indicated by the KG context.",
       "safety_notes": [
-        "Check blood glucose levels before and after exercise. Have a fast-acting carbohydrate source available.",
-        "Ensure proper hydration, especially in 25°C summer weather.",
-        "Focus on exercise form over weight or speed to prevent injury.",
-        "Warm-up is integrated into the first exercise (start swings slowly). Cool-down is included via stretching.",
-        "If you feel dizzy, lightheaded, or experience unusual pain, stop immediately and rest."
+        "Check blood glucose levels before and after exercise due to diabetes",
+        "Have a fast-acting carbohydrate source available in case of hypoglycemia",
+        "Maintain proper form during strength exercises to protect the back",
+        "Drink water throughout the session, especially in summer weather"
       ],
       "_variant": "Lite",
       "_base_id": 1,
@@ -329,13 +293,13 @@
           }
         ],
         "recommendations": [
-          "Consult healthcare provider before starting due to: diabetes",
-          "Stay hydrated before, during, and after exercise",
+          "Stop immediately if you experience pain or discomfort",
           "Start gradually and listen to your body",
-          "Stop immediately if you experience pain or discomfort"
+          "Consult healthcare provider before starting due to: diabetes",
+          "Stay hydrated before, during, and after exercise"
         ],
         "warnings": [],
-        "assessed_at": "2026-02-09T16:12:45.432151"
+        "assessed_at": "2026-02-09T16:29:10.609055"
       }
     }
   ],
@@ -355,14 +319,14 @@
         }
       ],
       "recommendations": [
-        "Consult healthcare provider before starting due to: diabetes",
-        "Stay hydrated before, during, and after exercise",
+        "Stop immediately if you experience pain or discomfort",
         "Start gradually and listen to your body",
-        "Stop immediately if you experience pain or discomfort"
+        "Consult healthcare provider before starting due to: diabetes",
+        "Stay hydrated before, during, and after exercise"
       ],
       "warnings": [],
-      "assessed_at": "2026-02-09T16:12:45.432151"
+      "assessed_at": "2026-02-09T16:29:10.609055"
     }
   },
-  "generated_at": "2026-02-09T16:12:45.433228"
+  "generated_at": "2026-02-09T16:29:10.609055"
 }
