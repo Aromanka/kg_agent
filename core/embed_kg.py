@@ -28,10 +28,7 @@ if USE_LOCAL_MODEL:
         # Try to get embedding dimension from model config
         EMBEDDING_DIM = model.get_sentence_embedding_dimension()
     else:
-        print("正在加载本地 Embedding 模型 (m3e-base 或 all-MiniLM-L6-v2)...")
-        # 推荐使用 m3e-base (中文效果好) 或 all-MiniLM-L6-v2 (轻量)
-        model = SentenceTransformer('moka-ai/m3e-base')
-        EMBEDDING_DIM = model.get_sentence_embedding_dimension()
+        raise ValueError("incorrect local embedding model!")
 
     print(f"✅ Embedding 模型加载完成，维度: {EMBEDDING_DIM}")
 
