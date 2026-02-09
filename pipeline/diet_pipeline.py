@@ -63,7 +63,8 @@ class DietPipeline:
         top_p: float = 0.92,
         top_k: int = 50,
         top_k_selection: int = 3,
-        output_path: str = "plan.json"
+        output_path: str = "plan.json",
+        use_vector: bool = False
     ) -> DietPipelineOutput:
         """
         Generate meal options with safety assessment.
@@ -81,6 +82,7 @@ class DietPipeline:
             top_k: LLM top_k for top-k sampling
             top_k_selection: Number of top plans to select by safety score
             output_path: Path to save all plans JSON
+            use_vector: Use vector search (GraphRAG) instead of keyword matching
 
         Returns:
             DietPipelineOutput with all plans, top plans, and assessments
@@ -110,7 +112,7 @@ class DietPipeline:
                 top_p=top_p,
                 top_k=top_k,
                 user_preference=user_query,
-                use_vector=args.use_vector  # GraphRAG: use vector search instead of keyword matching
+                use_vector=use_vector  # GraphRAG: use vector search instead of keyword matching
             )
             meal_candidates.extend(candidates)
             print(f"      Base {i+1}/{num_base_plans}: {len(candidates)} variants")
@@ -236,7 +238,8 @@ def run_diet_pipeline(
     top_k: int = 50,
     top_k_selection: int = 3,
     output_path: str = "plan.json",
-    print_results: bool = True
+    print_results: bool = True,
+    use_vector: bool = False
 ) -> DietPipelineOutput:
     """
     Run the diet pipeline and optionally print results.
@@ -255,6 +258,7 @@ def run_diet_pipeline(
         top_k_selection: Number of top plans to select by safety score
         output_path: Path to save all plans JSON
         print_results: Whether to print top plans to terminal
+        use_vector: Use vector search (GraphRAG) instead of keyword matching
 
     Returns:
         DietPipelineOutput object
@@ -272,7 +276,8 @@ def run_diet_pipeline(
         top_p=top_p,
         top_k=top_k,
         top_k_selection=top_k_selection,
-        output_path=output_path
+        output_path=output_path,
+        use_vector=use_vector
     )
 
     if print_results:
