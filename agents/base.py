@@ -7,7 +7,7 @@ from core.neo4j import Neo4jClient, KnowledgeGraphQuery, get_neo4j, get_kg_query
 from config_loader import get_config
 from kg.prompts import (
     DIETARY_QUERY_ENTITIES, EXERCISE_QUERY_ENTITIES,
-    get_keywords
+    get_keywords, STOP_WORDS
 )
 
 # Configuration
@@ -306,7 +306,7 @@ class DietAgentMixin:
 
                 for result in search_results:
                     entity_name = result.get("head", result.get("tail", ""))
-                    if not entity_name or entity_name.lower() in stop_words:
+                    if not entity_name or entity_name.lower() in STOP_WORDS:
                         continue
 
                     # Avoid duplicates
@@ -651,7 +651,7 @@ class ExerciseAgentMixin:
 
                 for result in search_results:
                     entity_name = result.get("head", result.get("tail", ""))
-                    if not entity_name or entity_name.lower() in stop_words:
+                    if not entity_name or entity_name.lower() in STOP_WORDS:
                         continue
 
                     # Avoid duplicates

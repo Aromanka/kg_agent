@@ -662,7 +662,7 @@ STOP_WORDS = {
 
 
 def get_keywords(text):
-    text = text.lower().split()
+    text = text.lower()
     words = re.findall(r'\b[\w\'-]+\b', text)
     
     filtered = []
