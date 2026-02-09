@@ -293,6 +293,7 @@ class DietAgentMixin:
         # === Fallback: Keyword-based Search (original logic) ===
         if not use_vector_search:
             # Extract words from user query
+            print(f"user_query={user_query}")
             keywords = get_keywords(user_query)
 
             # Search KG for each keyword
