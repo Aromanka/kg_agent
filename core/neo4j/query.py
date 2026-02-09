@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
 from .driver import Neo4jClient, get_neo4j
-from core.config_loader import get_config
+from config_loader import get_config
 import os
 
 

@@ -7,7 +7,7 @@ from tqdm import tqdm
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.neo4j.driver import Neo4jClient, get_neo4j
-from core.config_loader import get_config
+from config_loader import get_config
 
 # === 配置区域 ===
 BATCH_SIZE = 100  # 每次处理100个节点

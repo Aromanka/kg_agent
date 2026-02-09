@@ -2,3 +2,4 @@ data/
 output_history/
 __pycache__/
 tests/
+*.zip
