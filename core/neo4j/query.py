@@ -254,7 +254,7 @@ class KnowledgeGraphQuery:
             RETURN node.name AS name, score, elementId(node) AS id
             ORDER BY score DESC
             """
-            results = self.client.query(cypher, query_vector=query_vector, top_k=top_k)
+            results = self.client.query(cypher, {"query_vector": query_vector, "top_k": top_k})
             return [dict(record) for record in results if results]
         except Exception as e:
             print(f"[WARN] Vector search failed: {e}")
