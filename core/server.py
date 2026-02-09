@@ -79,13 +79,12 @@ def search_kg(keywords):
                 CALL db.index.fulltext.queryNodes("search_index", $word) YIELD node, score
                 WHERE score > 0.6
                 MATCH (node)-[r]-(m)
-                RETURN node.name as h, type(r) as rel_type, m.name as t, r.amount as a, r.unit as u
+                RETURN node.name as h, type(r) as rel_type, m.name as t
                 LIMIT 15
                 """
                 res = session.run(query, word=f"{word}~")
                 for rec in res:
                     info = f"{rec['h']} -[{rec['rel_type']}]-> {rec['t']}"
-                    if rec['a'] and rec['u']: info += f" (数值:{rec['a']}{rec['u']})"
                     data.append(info)
             except:
                 pass
@@ -166,7 +165,7 @@ def graph_endpoint(entity_name: str):
         MATCH (n)-[r]-(m)
         WHERE toLower(n.name) CONTAINS toLower($n)
         RETURN n.name as source_name, m.name as target_name,
-               type(r) as rel_type, r.amount as a, r.unit as u
+               type(r) as rel_type
         LIMIT 1000
         """
         res = session.run(q, n=entity_name)

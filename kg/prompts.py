@@ -4,6 +4,30 @@ Revised to include Demographic Targeting, Composition, and Strict JSON Formattin
 """
 
 
+kg_rels = [
+    "Indicated_For",
+    "Contraindicated_For",
+    "Has_Mechanism",
+    "Contains_Component",
+    "Synergy_With",
+    "Antagonism_With",
+    "Dosing_Guideline",
+    "Has_Benefit",
+    "Has_Risk",
+    "Disease_Management",
+    "Preparation_Method",
+]
+
+
+prioritized_risk_kg_rels = [
+    "Contraindicated_For",
+    "Synergy_With",
+    "Antagonism_With",
+    "Has_Risk",
+    "Disease_Management",
+]
+
+
 DIET_KG_EXTRACT_SCHEMA_PROMPT = """
 You are an advanced Knowledge Graph Engineer specialized in Nutritional Epidemiology and Biomedical Information Extraction.
 Your goal is to extract structured knowledge from diet and nutrition text with **clinical precision**.
@@ -325,3 +349,9 @@ Output a JSON object with a key "quads". Each item must contain 4 fields:
 
 Analyze the text provided below and output the valid JSON object.
 """
+
+
+DIETARY_QUERY_ENTITIES = ["health", "meal", "food", "diet"]
+
+
+EXERCISE_QUERY_ENTITIES = ["health", "exercise", "activity"]

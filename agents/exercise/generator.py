@@ -359,9 +359,18 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         self,
         input_data: Dict[str, Any],
         num_candidates: int = 3,
-        meal_timing: str = ""
+        meal_timing: str = "",
+        user_preference: str = None
     ) -> List[ExercisePlan]:
-        """Generate exercise plan candidates with mandatory exercise injection"""
+        """
+        Generate exercise plan candidates with mandatory exercise injection.
+
+        Args:
+            input_data: User metadata, environment, requirements
+            num_candidates: Number of candidates to generate
+            meal_timing: When to exercise relative to meals
+            user_preference: User's string preference (e.g., "I want to focus on upper body exercises")
+        """
         # Parse input
         input_obj = ExerciseAgentInput(**input_data)
         self._input_meta = input_obj.user_metadata  # Store for condition access
@@ -401,7 +410,8 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
             kg_context=kg_context,
             target_calories=target_calories,
             target_duration=target_duration,
-            target_frequency=target_frequency
+            target_frequency=target_frequency,
+            user_preference=user_preference
         )
 
         # Generate candidates with mandatory exercise injection
@@ -498,7 +508,8 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         kg_context: str,
         target_calories: int,
         target_duration: int,
-        target_frequency: int
+        target_frequency: int,
+        user_preference: str = None
     ) -> str:
         """Build the user prompt for exercise generation"""
         conditions = user_meta.get("medical_conditions", [])
@@ -525,8 +536,13 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 **Weather**: {environment.get('weather', {})}
 **Season**: {environment.get('time_context', {}).get('season', 'any')}
 
-{kg_context}
+{kg_context}"""
 
+        # Add user preference if provided
+        if user_preference:
+            prompt += f"\n## User Preference\n{user_preference}\n"
+
+        prompt += """
 ## Task
 Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
 Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
@@ -678,7 +694,8 @@ def generate_exercise_candidates(
     environment: Dict[str, Any] = {},
     user_requirement: Dict[str, Any] = {},
     num_candidates: int = 3,
-    meal_timing: str = ""
+    meal_timing: str = "",
+    user_preference: str = None
 ) -> List[ExercisePlan]:
     """
     Convenience function to generate exercise candidates.
@@ -688,6 +705,7 @@ def generate_exercise_candidates(
         environment: Environmental context
         user_requirement: User goals
         num_candidates: Number of candidates to generate
+        user_preference: User's string preference (e.g., "I want to focus on upper body exercises")
 
     Returns:
         List of ExercisePlan objects
@@ -699,7 +717,7 @@ def generate_exercise_candidates(
         "user_requirement": user_requirement,
         "num_candidates": num_candidates
     }
-    return agent.generate(input_data, num_candidates, meal_timing=meal_timing)
+    return agent.generate(input_data, num_candidates, meal_timing=meal_timing, user_preference=user_preference)
 
 
 def generate_exercise_variants(

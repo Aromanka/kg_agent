@@ -60,6 +60,7 @@ class DietPipeline:
         user_metadata: Dict[str, Any],
         environment: Dict[str, Any] = None,
         user_requirement: Dict[str, Any] = None,
+        user_query: str = None,
         num_base_plans: int = 3,
         num_variants: int = 3,
         meal_type: str = "lunch",
@@ -75,7 +76,8 @@ class DietPipeline:
         Args:
             user_metadata: User physiological data
             environment: Environmental context
-            user_requirement: User goals
+            user_requirement: User goals (optional, can be empty)
+            user_query: Free-form user preference query (e.g., "I want a tuna sandwich with vegetables")
             num_base_plans: Number of LLM-generated base plans
             num_variants: Number of portion variants per base (Lite/Standard/Plus)
             meal_type: Meal type to generate (breakfast/lunch/dinner/snacks)
@@ -99,6 +101,8 @@ class DietPipeline:
 
         # Step 1: Generate meal candidates with variants
         print(f"\n[1/4] Generating {meal_type} candidates...")
+        if user_query:
+            print(f"      User Query: \"{user_query}\"")
         meal_candidates = []
         for i in range(num_base_plans):
             candidates = generate_diet_candidates(
@@ -109,7 +113,8 @@ class DietPipeline:
                 meal_type=meal_type,
                 temperature=temperature,
                 top_p=top_p,
-                top_k=top_k
+                top_k=top_k,
+                user_preference=user_query
             )
             meal_candidates.extend(candidates)
             print(f"      Base {i+1}/{num_base_plans}: {len(candidates)} variants")
@@ -228,6 +233,7 @@ def run_diet_pipeline(
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = None,
     user_requirement: Dict[str, Any] = None,
+    user_query: str = None,
     num_base_plans: int = 3,
     num_variants: int = 3,
     meal_type: str = "lunch",
@@ -244,7 +250,8 @@ def run_diet_pipeline(
     Args:
         user_metadata: User physiological data
         environment: Environmental context
-        user_requirement: User goals
+        user_requirement: User goals (optional, can be empty)
+        user_query: Free-form user preference query (e.g., "I want a tuna sandwich with vegetables")
         num_base_plans: Number of LLM-generated base plans
         num_variants: Number of portion variants per base (Lite/Standard/Plus)
         meal_type: Meal type to generate (breakfast/lunch/dinner/snacks)
@@ -263,6 +270,7 @@ def run_diet_pipeline(
         user_metadata=user_metadata,
         environment=environment,
         user_requirement=user_requirement,
+        user_query=user_query,
         num_base_plans=num_base_plans,
         num_variants=num_variants,
         meal_type=meal_type,
@@ -282,10 +290,12 @@ def run_diet_pipeline(
 # ================= CLI =================
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='')
+    parser = argparse.ArgumentParser(description='Diet Pipeline with KG Entity Matching')
     parser.add_argument('--bn', type=int, default=3, help='base plan num')
     parser.add_argument('--vn', type=int, default=3, help='var plan num')
     parser.add_argument('--topk', type=int, default=3, help='var plan num')
+    parser.add_argument('--query', type=str, default="I want a healthy tuna salad sandwich with fresh vegetables",
+                       help='user query (free-form text for KG entity matching)')
     args = parser.parse_args()
     test_input = {
         "user_metadata": {
@@ -301,9 +311,8 @@ if __name__ == "__main__":
             "weather": {"condition": "clear", "temperature_c": 25},
             "time_context": {"season": "summer"}
         },
-        "user_requirement": {
-            "goal": "weight_loss"
-        },
+        "user_requirement": {},  # Empty, use user_query instead
+        "user_query": args.query,  # Free-form query for KG entity matching
         "num_base_plans": args.bn,
         "num_variants": args.vn,
         "meal_type": "lunch",
