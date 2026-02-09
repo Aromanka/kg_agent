@@ -7,7 +7,7 @@ from tqdm import tqdm
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.neo4j.driver import Neo4jClient, get_neo4j
-from config_loader import get_config
+from core.config_loader import get_config
 
 # === 配置区域 ===
 BATCH_SIZE = 100  # 每次处理100个节点
@@ -28,7 +28,10 @@ if USE_LOCAL_MODEL:
         # Try to get embedding dimension from model config
         EMBEDDING_DIM = model.get_sentence_embedding_dimension()
     else:
-        raise ValueError("incorrect local embedding model!")
+        print("正在加载本地 Embedding 模型 (m3e-base 或 all-MiniLM-L6-v2)...")
+        # 推荐使用 m3e-base (中文效果好) 或 all-MiniLM-L6-v2 (轻量)
+        model = SentenceTransformer('moka-ai/m3e-base')
+        EMBEDDING_DIM = model.get_sentence_embedding_dimension()
 
     print(f"✅ Embedding 模型加载完成，维度: {EMBEDDING_DIM}")
 
@@ -60,17 +63,17 @@ def main():
 
     # 3. 批量处理
     pbar = tqdm(total=total)
-    
+
     while True:
         # 3.1 拉取一批未处理的节点
         fetch_query = """
-        MATCH (n:Entity) 
-        WHERE n.embedding IS NULL 
-        RETURN elementId(n) as id, n.name as text 
-        LIMIT $batch_size
+        MATCH (n:Entity)
+        WHERE n.embedding IS NULL
+        RETURN elementId(n) as id, n.name as text
+        LIMIT $limit
         """
-        nodes = client.query(fetch_query, batch_size=BATCH_SIZE)
-        
+        nodes = client.query(fetch_query, {"limit": BATCH_SIZE})
+
         if not nodes:
             break
 
@@ -83,7 +86,7 @@ def main():
                 vector = [0.0] * EMBEDDING_DIM  # 占位符
             else:
                 vector = get_embedding(text)
-            
+
             updates.append({"id": node['id'], "vector": vector})
 
         # 3.3 批量写回 Neo4j (使用 UNWIND 语法一次性更新)
@@ -93,7 +96,7 @@ def main():
         SET n.embedding = row.vector
         """
         client.query(update_query, updates=updates)
-        
+
         pbar.update(len(nodes))
 
     pbar.close()
