@@ -68,7 +68,8 @@ class DietAgent(BaseAgent, DietAgentMixin):
         temperature: float = 0.7,
         top_p: float = 0.92,
         top_k: int = 50,
-        user_preference: str = None
+        user_preference: str = None,
+        use_vector: bool = True  # GraphRAG: use vector search instead of keyword matching
     ) -> List[DietRecommendation]:
         # Parse input
         input_obj = DietAgentInput(**input_data)
@@ -99,7 +100,7 @@ class DietAgent(BaseAgent, DietAgentMixin):
 
         # Query entity-based KG context when user_preference is provided
         if user_preference:
-            entity_knowledge = self.query_dietary_by_entity(user_preference)
+            entity_knowledge = self.query_dietary_by_entity(user_preference, use_vector=use_vector)
             entity_context = self._format_entity_kg_context(entity_knowledge)
             kg_context += entity_context
 

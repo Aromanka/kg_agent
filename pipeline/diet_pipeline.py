@@ -109,7 +109,8 @@ class DietPipeline:
                 temperature=temperature,
                 top_p=top_p,
                 top_k=top_k,
-                user_preference=user_query
+                user_preference=user_query,
+                use_vector=args.use_vector  # GraphRAG: use vector search instead of keyword matching
             )
             meal_candidates.extend(candidates)
             print(f"      Base {i+1}/{num_base_plans}: {len(candidates)} variants")
@@ -287,6 +288,7 @@ if __name__ == "__main__":
     parser.add_argument('--bn', type=int, default=3, help='base plan num')
     parser.add_argument('--vn', type=int, default=3, help='var plan num')
     parser.add_argument('--topk', type=int, default=3, help='var plan num')
+    parser.add_argument('--use_vector', action='store_true', default=False, help='Use vector search (GraphRAG) instead of keyword matching')
     parser.add_argument('--query', type=str, default="I want a healthy tuna salad sandwich with fresh vegetables",
                        help='user query (free-form text for KG entity matching)')
     args = parser.parse_args()
@@ -306,6 +308,7 @@ if __name__ == "__main__":
         },
         "user_requirement": {},  # Empty, use user_query instead
         "user_query": args.query,  # Free-form query for KG entity matching
+        "use_vector": args.use_vector,  # Use vector search (GraphRAG) instead of keyword matching
         "num_base_plans": args.bn,
         "num_variants": args.vn,
         "meal_type": "lunch",

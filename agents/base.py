@@ -203,8 +203,23 @@ class DietAgentMixin:
     def query_dietary_by_entity(
         self,
         user_query: str,
-        score_threshold: float = 0.5
+        score_threshold: float = 0.5,
+        use_vector_search: bool = True  # GraphRAG: use vector search instead of keyword matching
     ) -> Dict[str, Any]:
+        """
+        Query dietary knowledge graph using GraphRAG approach:
+        1. Vector search to find anchor entities (semantic matching)
+        2. Graph traversal to get neighbors (context expansion)
+        3. Format results for prompt
+
+        Args:
+            user_query: Natural language query
+            score_threshold: Minimum similarity score (not used in vector search)
+            use_vector_search: If True, use vector search (GraphRAG); else use keyword matching
+
+        Returns:
+            Dictionary with matched entities, benefits, risks, and conflicts
+        """
 
         results = {
             "matched_entities": [],
@@ -213,74 +228,97 @@ class DietAgentMixin:
             "entity_conflicts": []
         }
 
-        # Extract words from user query
-        # words = user_query.lower().split()
-        # Filter out stop words and short words (<3 chars)
-        # keywords = [w.strip(".,!?;:\"'") for w in words if w.lower() not in stop_words and len(w) > 2]
-        keywords = get_keywords(user_query)
-
-        # Search KG for each keyword
-        seen_entities = set()
-        for keyword in keywords:
-            search_results = self._kg.search_entities(keyword)
-
-            print(f"searched result for keyword={keyword}")
-            print(search_results)
-
-            for result in search_results:
-                entity_name = result.get("head", result.get("tail", ""))
-                if not entity_name or entity_name.lower() in stop_words:
-                    continue
-
-                # Avoid duplicates
-                if entity_name in seen_entities:
-                    continue
-                seen_entities.add(entity_name)
-                results["matched_entities"].append(entity_name)
-
-                # Collect benefits, risks, and conflicts based on relation type
-                rel_type = result.get("rel_type", "")
-                tail = result.get("tail", "")
-
-                # Determine if this is a benefit, risk, or conflict
-                if rel_type in ["Has_Benefit", "Indicated_For"]:
-                    results["entity_benefits"].append({
-                        "entity": entity_name,
-                        "benefit": tail,
-                        "relation": rel_type
-                    })
-                elif rel_type in ["Has_Risk", "Contraindicated_For"]:
-                    results["entity_risks"].append({
-                        "entity": entity_name,
-                        "risk": tail,
-                        "relation": rel_type
-                    })
-                elif rel_type == "Antagonism_With":
-                    results["entity_conflicts"].append({
-                        "entity": entity_name,
-                        "conflicts_with": tail,
-                        "relation": rel_type
-                    })
-
-        # Also query default dietary entities for additional context
-        # all_entities_to_query = list(set(results["matched_entities"] + DIETARY_QUERY_ENTITIES))
-        all_entities_to_query = list(set(results["matched_entities"]))
-
-        # Use universal search for all entities (matched + default)
-        for entity in all_entities_to_query[:10]:  # Limit total entities
+        # === GraphRAG Approach: Vector Search + Graph Traversal ===
+        if use_vector_search:
             try:
-                search_results = self._kg.search_entities(entity)
+                # 1. Anchor Search: Find semantically similar entities
+                anchors = self._kg.search_similar_entities(user_query, top_k=3)
 
-                # Classify results based on relation types
-                for result in search_results:
-                    entity_name = result.get("head", "")
-                    tail = result.get("tail", "")
-                    rel_type = result.get("rel_type", "")
+                print(f"GraphRAG: Found {len(anchors)} anchor entities for query: '{user_query}'")
+                for anchor in anchors:
+                    print(f"  - Anchor: {anchor.get('name', 'N/A')} (score: {anchor.get('score', 0):.3f})")
 
-                    if not tail:
+                # 2. Graph Traversal: Get neighbors for each anchor (1-hop)
+                seen_entities = set()
+                for anchor in anchors:
+                    anchor_name = anchor.get("name", "")
+                    if not anchor_name:
                         continue
 
-                    # Classify by relation type
+                    if anchor_name not in seen_entities:
+                        seen_entities.add(anchor_name)
+                        results["matched_entities"].append(anchor_name)
+
+                    # Get neighbors via graph traversal
+                    neighbors = self._kg.client.get_neighbors(anchor_name)
+
+                    # Collect benefits, risks, and conflicts from neighbors
+                    for neighbor in neighbors:
+                        entity_name = neighbor.get("neighbor", "")
+                        rel_type = neighbor.get("rel_type", "")
+
+                        if not entity_name:
+                            continue
+
+                        # Add to matched entities
+                        if entity_name not in seen_entities:
+                            seen_entities.add(entity_name)
+                            results["matched_entities"].append(entity_name)
+
+                        # Classify by relation type
+                        if rel_type in ["Has_Benefit", "Indicated_For"]:
+                            results["entity_benefits"].append({
+                                "entity": anchor_name,
+                                "benefit": entity_name,
+                                "relation": rel_type
+                            })
+                        elif rel_type in ["Has_Risk", "Contraindicated_For"]:
+                            results["entity_risks"].append({
+                                "entity": anchor_name,
+                                "risk": entity_name,
+                                "relation": rel_type
+                            })
+                        elif rel_type == "Antagonism_With":
+                            results["entity_conflicts"].append({
+                                "entity": anchor_name,
+                                "conflicts_with": entity_name,
+                                "relation": rel_type
+                            })
+
+            except Exception as e:
+                print(f"[WARN] GraphRAG search failed, falling back to keyword search: {e}")
+                # Fallback to keyword search if vector search fails
+                use_vector_search = False
+
+        # === Fallback: Keyword-based Search (original logic) ===
+        if not use_vector_search:
+            # Extract words from user query
+            keywords = get_keywords(user_query)
+
+            # Search KG for each keyword
+            seen_entities = set()
+            for keyword in keywords:
+                search_results = self._kg.search_entities(keyword)
+
+                print(f"searched result for keyword={keyword}")
+                print(search_results)
+
+                for result in search_results:
+                    entity_name = result.get("head", result.get("tail", ""))
+                    if not entity_name or entity_name.lower() in stop_words:
+                        continue
+
+                    # Avoid duplicates
+                    if entity_name in seen_entities:
+                        continue
+                    seen_entities.add(entity_name)
+                    results["matched_entities"].append(entity_name)
+
+                    # Collect benefits, risks, and conflicts based on relation type
+                    rel_type = result.get("rel_type", "")
+                    tail = result.get("tail", "")
+
+                    # Determine if this is a benefit, risk, or conflict
                     if rel_type in ["Has_Benefit", "Indicated_For"]:
                         results["entity_benefits"].append({
                             "entity": entity_name,
@@ -299,8 +337,45 @@ class DietAgentMixin:
                             "conflicts_with": tail,
                             "relation": rel_type
                         })
-            except Exception as e:
-                print(f"[WARN] Failed to query entity {entity}: {e}")
+
+            # Also query default dietary entities for additional context
+            all_entities_to_query = list(set(results["matched_entities"]))
+
+            # Use universal search for all entities (matched + default)
+            for entity in all_entities_to_query[:10]:  # Limit total entities
+                try:
+                    search_results = self._kg.search_entities(entity)
+
+                    # Classify results based on relation types
+                    for result in search_results:
+                        entity_name = result.get("head", "")
+                        tail = result.get("tail", "")
+                        rel_type = result.get("rel_type", "")
+
+                        if not tail:
+                            continue
+
+                        # Classify by relation type
+                        if rel_type in ["Has_Benefit", "Indicated_For"]:
+                            results["entity_benefits"].append({
+                                "entity": entity_name,
+                                "benefit": tail,
+                                "relation": rel_type
+                            })
+                        elif rel_type in ["Has_Risk", "Contraindicated_For"]:
+                            results["entity_risks"].append({
+                                "entity": entity_name,
+                                "risk": tail,
+                                "relation": rel_type
+                            })
+                        elif rel_type == "Antagonism_With":
+                            results["entity_conflicts"].append({
+                                "entity": entity_name,
+                                "conflicts_with": tail,
+                                "relation": rel_type
+                            })
+                except Exception as e:
+                    print(f"[WARN] Failed to query entity {entity}: {e}")
 
         return results
 
@@ -479,8 +554,20 @@ class ExerciseAgentMixin:
     def query_exercise_by_entity(
         self,
         user_query: str,
-        score_threshold: float = 0.5
+        score_threshold: float = 0.5,
+        use_vector_search: bool = True  # GraphRAG: use vector search instead of keyword matching
     ) -> Dict[str, Any]:
+        """
+        Query exercise knowledge graph using GraphRAG approach
+
+        Args:
+            user_query: Natural language query
+            score_threshold: Minimum similarity score (not used in vector search)
+            use_vector_search: If True, use vector search (GraphRAG); else use keyword matching
+
+        Returns:
+            Dictionary with matched entities, benefits, target muscles, duration/frequency recommendations
+        """
 
         results = {
             "matched_entities": [],
@@ -490,117 +577,177 @@ class ExerciseAgentMixin:
             "frequency_recommendations": []
         }
 
-        # Extract words from user query
-        # words = user_query.lower().split()
-        # Filter out stop words and short words (<3 chars)
-        # keywords = [w.strip(".,!?;:\"'") for w in words if w.lower() not in stop_words and len(w) > 2]
-        keywords = get_keywords(user_query)
-
-        # Search KG for each keyword
-        seen_entities = set()
-        for keyword in keywords:
-            search_results = self._kg.search_entities(keyword)
-
-            for result in search_results:
-                entity_name = result.get("head", result.get("tail", ""))
-                if not entity_name or entity_name.lower() in stop_words:
-                    continue
-
-                # Avoid duplicates
-                if entity_name in seen_entities:
-                    continue
-                seen_entities.add(entity_name)
-                results["matched_entities"].append(entity_name)
-
-        # Also try direct entity queries for more specific results
-        for entity in results["matched_entities"][:5]:  # Limit to top 5 for performance
+        # === GraphRAG Approach: Vector Search + Graph Traversal ===
+        if use_vector_search:
             try:
-                # Query benefits
-                benefits = self._kg.query_exercise_benefits(entity)
-                if benefits:
-                    for b in benefits:
-                        results["entity_benefits"].append({
-                            "entity": entity,
-                            "benefit": b.get("entity", ""),
-                            "relation": b.get("relation", "")
-                        })
+                # 1. Anchor Search: Find semantically similar entities
+                anchors = self._kg.search_similar_entities(user_query, top_k=3)
 
-                # Query target muscles
-                muscles = self._kg.query_exercise_targets_muscle(entity)
-                if muscles:
-                    for m in muscles:
-                        results["target_muscles"].append({
-                            "entity": entity,
-                            "target": m.get("entity", ""),
-                            "relation": m.get("relation", "")
-                        })
+                print(f"GraphRAG Exercise: Found {len(anchors)} anchor entities for query: '{user_query}'")
+                for anchor in anchors:
+                    print(f"  - Anchor: {anchor.get('name', 'N/A')} (score: {anchor.get('score', 0):.3f})")
 
-                # Query duration
-                duration = self._kg.query_exercise_duration(entity)
-                if duration:
-                    for d in duration:
-                        results["duration_recommendations"].append({
-                            "entity": entity,
-                            "duration": d.get("entity", ""),
-                            "relation": d.get("relation", "")
-                        })
-
-                # Query frequency
-                frequency = self._kg.query_exercise_frequency(entity)
-                if frequency:
-                    for f in frequency:
-                        results["frequency_recommendations"].append({
-                            "entity": entity,
-                            "frequency": f.get("entity", ""),
-                            "relation": f.get("relation", "")
-                        })
-            except Exception as e:
-                print(f"[WARN] Failed to query entity {entity}: {e}")
-
-        # Query default exercise entities for additional context
-        all_entities_to_query = list(set(results["matched_entities"] + EXERCISE_QUERY_ENTITIES))
-
-        # Use universal search for all entities (matched + default)
-        for entity in all_entities_to_query[:10]:  # Limit total entities
-            try:
-                search_results = self._kg.search_entities(entity)
-
-                # Classify results based on relation types
-                for result in search_results:
-                    entity_name = result.get("head", "")
-                    tail = result.get("tail", "")
-                    rel_type = result.get("rel_type", "")
-
-                    if not tail:
+                # 2. Graph Traversal: Get neighbors for each anchor (1-hop)
+                seen_entities = set()
+                for anchor in anchors:
+                    anchor_name = anchor.get("name", "")
+                    if not anchor_name:
                         continue
 
-                    # Classify by relation type for exercise
-                    if rel_type == "Targets_Entity":
-                        results["target_muscles"].append({
-                            "entity": entity_name,
-                            "target": tail,
-                            "relation": rel_type
-                        })
-                    elif rel_type in ["Has_Benefit", "Indicated_For"]:
-                        results["entity_benefits"].append({
-                            "entity": entity_name,
-                            "benefit": tail,
-                            "relation": rel_type
-                        })
-                    elif rel_type in ["Recommended_Duration", "Duration"]:
-                        results["duration_recommendations"].append({
-                            "entity": entity_name,
-                            "duration": tail,
-                            "relation": rel_type
-                        })
-                    elif rel_type in ["Recommended_Frequency", "Frequency"]:
-                        results["frequency_recommendations"].append({
-                            "entity": entity_name,
-                            "frequency": tail,
-                            "relation": rel_type
-                        })
+                    if anchor_name not in seen_entities:
+                        seen_entities.add(anchor_name)
+                        results["matched_entities"].append(anchor_name)
+
+                    # Get neighbors via graph traversal
+                    neighbors = self._kg.client.get_neighbors(anchor_name)
+
+                    for neighbor in neighbors:
+                        entity_name = neighbor.get("neighbor", "")
+                        rel_type = neighbor.get("rel_type", "")
+
+                        if not entity_name:
+                            continue
+
+                        # Classify by relation type
+                        if rel_type == "Targets_Entity":
+                            results["target_muscles"].append({
+                                "entity": anchor_name,
+                                "target": entity_name,
+                                "relation": rel_type
+                            })
+                        elif rel_type in ["Has_Benefit", "Indicated_For"]:
+                            results["entity_benefits"].append({
+                                "entity": anchor_name,
+                                "benefit": entity_name,
+                                "relation": rel_type
+                            })
+                        elif rel_type in ["Recommended_Duration", "Duration"]:
+                            results["duration_recommendations"].append({
+                                "entity": anchor_name,
+                                "duration": entity_name,
+                                "relation": rel_type
+                            })
+                        elif rel_type in ["Recommended_Frequency", "Frequency"]:
+                            results["frequency_recommendations"].append({
+                                "entity": anchor_name,
+                                "frequency": entity_name,
+                                "relation": rel_type
+                            })
+
             except Exception as e:
-                print(f"[WARN] Failed to query entity {entity}: {e}")
+                print(f"[WARN] GraphRAG search failed, falling back to keyword search: {e}")
+                use_vector_search = False
+
+        # === Fallback: Keyword-based Search (original logic) ===
+        if not use_vector_search:
+            # Extract words from user query
+            keywords = get_keywords(user_query)
+
+            # Search KG for each keyword
+            seen_entities = set()
+            for keyword in keywords:
+                search_results = self._kg.search_entities(keyword)
+
+                for result in search_results:
+                    entity_name = result.get("head", result.get("tail", ""))
+                    if not entity_name or entity_name.lower() in stop_words:
+                        continue
+
+                    # Avoid duplicates
+                    if entity_name in seen_entities:
+                        continue
+                    seen_entities.add(entity_name)
+                    results["matched_entities"].append(entity_name)
+
+            # Also try direct entity queries for more specific results
+            for entity in results["matched_entities"][:5]:  # Limit to top 5 for performance
+                try:
+                    # Query benefits
+                    benefits = self._kg.query_exercise_benefits(entity)
+                    if benefits:
+                        for b in benefits:
+                            results["entity_benefits"].append({
+                                "entity": entity,
+                                "benefit": b.get("entity", ""),
+                                "relation": b.get("relation", "")
+                            })
+
+                    # Query target muscles
+                    muscles = self._kg.query_exercise_targets_muscle(entity)
+                    if muscles:
+                        for m in muscles:
+                            results["target_muscles"].append({
+                                "entity": entity,
+                                "target": m.get("entity", ""),
+                                "relation": m.get("relation", "")
+                            })
+
+                    # Query duration
+                    duration = self._kg.query_exercise_duration(entity)
+                    if duration:
+                        for d in duration:
+                            results["duration_recommendations"].append({
+                                "entity": entity,
+                                "duration": d.get("entity", ""),
+                                "relation": d.get("relation", "")
+                            })
+
+                    # Query frequency
+                    frequency = self._kg.query_exercise_frequency(entity)
+                    if frequency:
+                        for f in frequency:
+                            results["frequency_recommendations"].append({
+                                "entity": entity,
+                                "frequency": f.get("entity", ""),
+                                "relation": f.get("relation", "")
+                            })
+                except Exception as e:
+                    print(f"[WARN] Failed to query entity {entity}: {e}")
+
+            # Query default exercise entities for additional context
+            all_entities_to_query = list(set(results["matched_entities"] + EXERCISE_QUERY_ENTITIES))
+
+            # Use universal search for all entities (matched + default)
+            for entity in all_entities_to_query[:10]:  # Limit total entities
+                try:
+                    search_results = self._kg.search_entities(entity)
+
+                    # Classify results based on relation types
+                    for result in search_results:
+                        entity_name = result.get("head", "")
+                        tail = result.get("tail", "")
+                        rel_type = result.get("rel_type", "")
+
+                        if not tail:
+                            continue
+
+                        # Classify by relation type for exercise
+                        if rel_type == "Targets_Entity":
+                            results["target_muscles"].append({
+                                "entity": entity_name,
+                                "target": tail,
+                                "relation": rel_type
+                            })
+                        elif rel_type in ["Has_Benefit", "Indicated_For"]:
+                            results["entity_benefits"].append({
+                                "entity": entity_name,
+                                "benefit": tail,
+                                "relation": rel_type
+                            })
+                        elif rel_type in ["Recommended_Duration", "Duration"]:
+                            results["duration_recommendations"].append({
+                                "entity": entity_name,
+                                "duration": tail,
+                                "relation": rel_type
+                            })
+                        elif rel_type in ["Recommended_Frequency", "Frequency"]:
+                            results["frequency_recommendations"].append({
+                                "entity": entity_name,
+                                "frequency": tail,
+                                "relation": rel_type
+                            })
+                except Exception as e:
+                    print(f"[WARN] Failed to query entity {entity}: {e}")
 
         return results
 

@@ -10,5 +10,6 @@
         "model": "deepseek-chat"
     },
     "llm_log_path": "tests/llm.log",
-    "local_model_path": "/home/bml/storage/mnt/v-044d0fb740b04ad3/org/X_Life/food_agent/script_2/model/Qwen/Qwen3-VL-8B-Instruct"
+    "local_model_path": "/home/bml/storage/mnt/v-044d0fb740b04ad3/org/X_Life/food_agent/script_2/model/Qwen/Qwen3-VL-8B-Instruct",
+    "local_emb_path": "/home/bml/storage/mnt/v-044d0fb740b04ad3/org/X_Life/AudioTextEncoder/model/qwen3emb600m"
 }

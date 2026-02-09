@@ -1,5 +1,37 @@
 from typing import List, Dict, Any, Optional
 from .driver import Neo4jClient, get_neo4j
+from core.config_loader import get_config
+import os
+
+
+# Shared embedding model cache
+_embedding_model = None
+_embedding_dim = None
+
+
+def get_embedding_model():
+    """Lazy load and cache the embedding model"""
+    global _embedding_model, _embedding_dim
+    if _embedding_model is not None:
+        return _embedding_model
+
+    from sentence_transformers import SentenceTransformer
+    config = get_config()
+    local_model_path = config.get("local_emb_path", None)
+
+    if local_model_path and os.path.exists(local_model_path):
+        _embedding_model = SentenceTransformer(local_model_path)
+    else:
+        _embedding_model = SentenceTransformer('moka-ai/m3e-base')
+
+    _embedding_dim = _embedding_model.get_sentence_embedding_dimension()
+    return _embedding_model
+
+
+def get_embedding(text: str) -> List[float]:
+    """Get embedding for a text string"""
+    model = get_embedding_model()
+    return model.encode(text).tolist()
 
 
 class KnowledgeGraphQuery:
@@ -202,6 +234,31 @@ class KnowledgeGraphQuery:
 
     def search_entities(self, keyword: str, limit: int = 20) -> List[Dict[str, Any]]:
         return self.client.search_by_keyword(keyword, score_threshold=0.2)
+
+    def search_similar_entities(self, query_text: str, top_k: int = 5) -> List[Dict[str, Any]]:
+        """
+        Vector-based semantic search using Neo4j Vector Index (GraphRAG)
+
+        Args:
+            query_text: Natural language query text
+            top_k: Number of similar entities to return
+
+        Returns:
+            List of similar entities with similarity scores
+        """
+        try:
+            query_vector = get_embedding(query_text)
+            cypher = """
+            CALL db.index.vector.queryNodes('node_embedding_index', $top_k, $query_vector)
+            YIELD node, score
+            RETURN node.name AS name, score, elementId(node) AS id
+            ORDER BY score DESC
+            """
+            results = self.client.query(cypher, query_vector=query_vector, top_k=top_k)
+            return [dict(record) for record in results if results]
+        except Exception as e:
+            print(f"[WARN] Vector search failed: {e}")
+            return []
 
     def get_entity_info(self, name: str) -> Optional[Dict[str, Any]]:
         node = self.client.get_node_by_name(name)

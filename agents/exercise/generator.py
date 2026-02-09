@@ -197,7 +197,8 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         input_data: Dict[str, Any],
         num_candidates: int = 3,
         meal_timing: str = "",
-        user_preference: str = None
+        user_preference: str = None,
+        use_vector: bool = True  # GraphRAG: use vector search instead of keyword matching
     ) -> List[ExercisePlan]:
         # Parse input
         input_obj = ExerciseAgentInput(**input_data)
@@ -227,7 +228,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 
         # Query entity-based KG context when user_preference is provided
         if user_preference:
-            entity_knowledge = self.query_exercise_by_entity(user_preference)
+            entity_knowledge = self.query_exercise_by_entity(user_preference, use_vector=use_vector)
             entity_context = self._format_exercise_entity_kg_context(entity_knowledge)
             kg_context += entity_context
 
