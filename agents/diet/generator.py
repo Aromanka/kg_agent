@@ -100,7 +100,7 @@ class DietAgent(BaseAgent, DietAgentMixin):
 
         # Query entity-based KG context when user_preference is provided
         if user_preference:
-            entity_knowledge = self.query_dietary_by_entity(user_preference, use_vector=use_vector)
+            entity_knowledge = self.query_dietary_by_entity(user_preference, use_vector_search=use_vector)
             entity_context = self._format_entity_kg_context(entity_knowledge)
             kg_context += entity_context
 
