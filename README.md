@@ -21,8 +21,17 @@
 ```bash
 # Install dependencies
 pip install -r requirements.txt
+
+# Install jdk on linux
+export JAVA_HOME=/home/bml/storage/mnt/v-044d0fb740b04ad3/org/X_Life/kg_agents/packages/jdk-17.0.18
+export JRE_HOME=${JAVA_HOME}/jre
+export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
+export PATH=${JAVA_HOME}/bin:$PATH
+java -version
+
 # Start Neo4j
-net start Neo4j
+net start Neo4j # windows
+./neo4j start # Linux
 # Build knowledge graph
 python -m core.build_kg
 # Import knowledge graph
