@@ -198,37 +198,29 @@ class DietAgent(BaseAgent, DietAgentMixin):
         meal_base_plans: Dict[str, Dict[str, Any]] = {}
 
         for mt in meal_types:
-            # [改进] 随机选择策略，尽量不重复
-            remaining_strategies = [s for s in available_strategies if s not in used_strategies]
-            if not remaining_strategies:
-                remaining_strategies = available_strategies
+            # Select strategy and cuisine - DISABLE random constraints when user_preference exists
+            # When user has a specific request, let LLM decide based on user intent
+            if user_preference:
+                strategy = "User-Directed"  # Tell Prompt this is a user-directed task
+                cuisine = "As Requested"   # Let LLM infer from query
+                excluded = []
+            else:
+                # Only use random injection to ensure variety when user has no preference
+                # [改进] 随机选择策略，尽量不重复
+                remaining_strategies = [s for s in available_strategies if s not in used_strategies]
+                if not remaining_strategies:
+                    remaining_strategies = available_strategies
 
-            strategy = random.choice(remaining_strategies)
-            used_strategies.add(strategy)
+                strategy = random.choice(remaining_strategies)
+                used_strategies.add(strategy)
 
-            # [改进] 随机选择菜系/风格
-            cuisine = random.choice(available_cuisines)
+                # [改进] 随机选择菜系/风格
+                cuisine = random.choice(available_cuisines)
 
-            # # [新增] 随机抽取核心食材 (Hero Ingredients)
-            # protein = random.choice(PROTEIN_SOURCES)
-            # carb = random.choice(CARB_SOURCES)
-            # veg = random.choice(VEG_SOURCES)
-
-            # # [新增] 避免重复组合
-            # combo_key = f"{protein}-{carb}"
-            # max_attempts = 3
-            # attempts = 0
-            # while combo_key in used_combinations and attempts < max_attempts:
-            #     protein = random.choice(PROTEIN_SOURCES)
-            #     carb = random.choice(CARB_SOURCES)
-            #     combo_key = f"{protein}-{carb}"
-            #     attempts += 1
-            # used_combinations.add(combo_key)
-
-            # [新增] 随机禁用"无聊"食材 (50% 概率)
-            excluded = []
-            if random.random() > 0.5:
-                excluded = random.sample(COMMON_BORING_FOODS, k=random.randint(1, 2))
+                # [新增] 随机禁用"无聊"食材 (50% 概率)
+                excluded = []
+                if random.random() > 0.5:
+                    excluded = random.sample(COMMON_BORING_FOODS, k=random.randint(1, 2))
 
             # [新增] 构建约束 Prompt
             # constraint_prompt = build_constraint_prompt(protein, carb, veg, excluded)
@@ -463,6 +455,21 @@ class DietAgent(BaseAgent, DietAgentMixin):
         }
         target = meal_targets.get(meal_type, int(target_calories * 0.25))
 
+        # Build prompt with "Instruction - Context - Constraint" structure
+        # User Preference is placed at top as HIGHEST PRIORITY
+
+        prompt = f"""## TARGET TASK
+Generate a meal plan for the following user.
+"""
+
+        # User Preference at the TOP with HIGHEST PRIORITY
+        if user_preference:
+            prompt += f"""
+### USER REQUEST (HIGHEST PRIORITY)
+The user strictly explicitly wants: "{user_preference}"
+Ensure the generated meal focuses PRIMARILY on this request.
+"""
+
         # Build user profile section
         profile_parts = [
             f"Age: {user_meta.get('age', 30)}",
@@ -473,17 +480,16 @@ class DietAgent(BaseAgent, DietAgentMixin):
         if restrictions:
             profile_parts.append(f"Restrictions: {', '.join(restrictions)}")
 
-        prompt = f"""## Profile
+        prompt += f"""
+## Profile
 {chr(10).join(profile_parts)}
 
 ## Target
 Goal: {requirement.get('goal', 'maintenance')}
 {meal_type.capitalize()}: {target} kcal (max)
-{chr(10)}{kg_context}"""
 
-        # Add user preference if provided
-        if user_preference:
-            prompt += f"\n## User Preference\n{user_preference}\n"
+## Knowledge Graph Insights (Use these to optimize safety and effectiveness, but do not deviate from the USER REQUEST)
+{kg_context}"""
 
         prompt += f"""## Output Format
 JSON list of foods. Each item:

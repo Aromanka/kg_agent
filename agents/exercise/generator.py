@@ -103,6 +103,11 @@ IMPORTANT:
 
 EXERCISE_GENERATION_SYSTEM_PROMPT = """You are a professional exercise prescription AI. Your task to generate personalized exercise plans based on user health data.
 
+## PRIME DIRECTIVE
+1. **PRIORITIZE USER INTENT**: If the user provides a specific goal, body part, or exercise preference (e.g., "back muscles", "yoga"), you MUST build the plan around that request.
+2. **SAFETY**: Apply safety rules strictly, but try to accommodate the user's request safely (e.g., if a user wants HIIT but has knee pain, switch to Low-Impact HIIT).
+3. **KG & CONTEXT**: Use Knowledge Graph data to enhance the plan, but do not let general data override user-specific requests.
+
 ## Guidelines
 
 ### Exercise Types
@@ -481,29 +486,38 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
             # 1. Randomly select meal timing
             # meal_timing = random.choice(MEAL_TIMING_OPTIONS)
 
-            # 2. Randomly select primary exercises
-            primary_cardio = random.choice(CARDIO_ACTIVITIES)
-            primary_strength = random.choice(STRENGTH_MOVEMENTS)
-            flexibility = random.choice(FLEXIBILITY_POSES)
+            # 2. Select primary exercises - DISABLE random constraints when user_preference exists
+            # When user has a specific request, let LLM decide based on user intent
+            if user_preference:
+                primary_cardio = None
+                primary_strength = None
+                flexibility = None
+                excluded = []
+                equipment = None
+            else:
+                # Only use random injection to ensure variety when user has no preference
+                primary_cardio = random.choice(CARDIO_ACTIVITIES)
+                primary_strength = random.choice(STRENGTH_MOVEMENTS)
+                flexibility = random.choice(FLEXIBILITY_POSES)
 
-            # 3. Randomly exclude boring exercises (50% chance)
+            # 3. Randomly exclude boring exercises (50% chance) - only when no user preference
             excluded = []
-            if random.random() > 0.5:
+            if not user_preference and random.random() > 0.5:
                 excluded = random.sample(COMMON_BORING_EXERCISES, k=random.randint(1, 2))
 
-            # 4. Optionally add equipment constraint (30% chance)
+            # 4. Optionally add equipment constraint (30% chance) - only when no user preference
             equipment = None
-            if random.random() > 0.7:
+            if not user_preference and random.random() > 0.7:
                 equipment = random.choice(EQUIPMENT_OPTIONS)
 
-            # 5. Optionally prioritize outdoor (based on weather/season)
+            # 5. Optionally prioritize outdoor (based on weather/season) - only when no user preference
             outdoor = False
-            if weather.get("condition") in ["clear", "sunny"] and random.random() > 0.5:
+            if not user_preference and weather.get("condition") in ["clear", "sunny"] and random.random() > 0.5:
                 outdoor = True
 
-            # 6. Avoid duplicate combinations
+            # 6. Avoid duplicate combinations (only when using random constraints)
             combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
-            if combo_key in used_combinations and num_candidates < len(CARDIO_ACTIVITIES):
+            if not user_preference and combo_key in used_combinations and num_candidates < len(CARDIO_ACTIVITIES):
                 primary_cardio = random.choice(CARDIO_ACTIVITIES)
                 combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
             used_combinations.add(combo_key)
@@ -636,7 +650,23 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         weight = user_meta.get("weight_kg", 70)
         goal = requirement.get("goal", "maintenance")
 
-        prompt = f"""## User Profile
+        # Build prompt with "Instruction - Context - Constraint" structure
+        # User Preference is placed at top as HIGHEST PRIORITY
+
+        prompt = f"""## TARGET TASK
+Generate an exercise plan for the following user.
+"""
+
+        # User Preference at the TOP with HIGHEST PRIORITY
+        if user_preference:
+            prompt += f"""
+### USER REQUEST (HIGHEST PRIORITY)
+The user strictly explicitly wants: "{user_preference}"
+Ensure the generated plan focuses PRIMARILY on this request.
+"""
+
+        prompt += f"""
+## User Profile
 
 **Age**: {user_meta.get('age', 30)}
 **Gender**: {user_meta.get('gender', 'male')}
@@ -654,11 +684,8 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 **Weather**: {environment.get('weather', {})}
 **Season**: {environment.get('time_context', {}).get('season', 'any')}
 
+## Knowledge Graph Insights (Use these to optimize safety and effectiveness, but do not deviate from the USER REQUEST)
 {kg_context}"""
-
-        # Add user preference if provided
-        if user_preference:
-            prompt += f"\n## User Preference\n{user_preference}\n"
 
         prompt += """
 ## Task

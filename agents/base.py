@@ -11,17 +11,87 @@ from core.llm import LLMClient, get_llm
 from core.neo4j import Neo4jClient, KnowledgeGraphQuery, get_neo4j, get_kg_query
 from config_loader import get_config
 from kg.prompts import DIETARY_QUERY_ENTITIES, EXERCISE_QUERY_ENTITIES
+import re
 
 
         # Stop words to filter out from query
 stop_words = {
-    "i", "want", "a", "the", "with", "and", "or", "for", "to",
-    "my", "me", "is", "are", "was", "were", "be", "been", "being",
-    "have", "has", "had", "do", "does", "did", "will", "would",
-    "could", "should", "may", "might", "must", "shall", "can",
-    "this", "that", "these", "those", "it", "they", "them", "their",
-    "on", "in", "at", "by", "from", "as", "of", "an", "like"
+    # --- Articles & Conjunctions ---
+    "a", "an", "the", "and", "or", "but", "nor", "so", "yet", "for",
+    "as", "because", "if", "while", "although", "though", "since", "unless",
+    "whether", "either", "neither",
+
+    # --- Prepositions ---
+    "in", "on", "at", "by", "from", "to", "with", "without", "within",
+    "of", "off", "up", "down", "out", "over", "under", "again", "further",
+    "then", "once", "here", "there", "when", "where", "why", "how",
+    "all", "any", "both", "each", "few", "more", "most", "other", "some",
+    "such", "no", "nor", "not", "only", "own", "same", "than", "too",
+    "very", "can", "will", "just", "don", "should", "now", "into",
+    "through", "during", "before", "after", "above", "below", "between",
+    "among", "against", "about", "around",
+
+    # --- Pronouns (Subject, Object, Possessive) ---
+    "i", "me", "my", "myself", "mine",
+    "we", "us", "our", "ours", "ourselves",
+    "you", "your", "yours", "yourself", "yourselves",
+    "he", "him", "his", "himself",
+    "she", "her", "hers", "herself",
+    "it", "its", "itself",
+    "they", "them", "their", "theirs", "themselves",
+    "this", "that", "these", "those",
+    "who", "whom", "whose", "which", "what",
+
+    # --- Verbs (Auxiliary & To Be) ---
+    "am", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "having",
+    "do", "does", "did", "doing",
+    "will", "would", "shall", "should",
+    "can", "could", "may", "might", "must", "ought",
+    
+    # --- Contractions (if you haven't stripped punctuation) ---
+    "isn't", "aren't", "wasn't", "weren't", "haven't", "hasn't", "hadn't",
+    "won't", "wouldn't", "don't", "doesn't", "didn't",
+    "can't", "couldn't", "shouldn't", "mightn't", "mustn't",
+
+    # --- Common Search/Intent Fillers (Useless for keywords) ---
+    "want", "wants", "wanted",
+    "need", "needs", "needed",
+    "look", "looking", "looks",
+    "search", "searching",
+    "find", "finding",
+    "get", "gets", "getting",
+    "make", "makes", "making",
+    "go", "going", "gone",
+    "know", "knows", "knew",
+    "take", "takes", "taking",
+    "please", "help", "thanks", "thank",
+    "like", "likes", "liked"
+
+    # --- others ---
+    "etc."
 }
+
+def get_keywords(text):
+    # 将文本分割为单词（考虑多种分隔符）
+    words = re.findall(r'\b[\w\'-]+\b', text)
+    
+    filtered = []
+    for word in words:
+        # 去除尾部标点
+        word = re.sub(r'[.,!?;:\'"]+$', '', word)
+        
+        # 检查是否只包含字母（允许连字符）
+        if not re.fullmatch(r'[A-Za-z]+(?:-[A-Za-z]+)*', word):
+            continue
+            
+        word_lower = word.lower()
+        
+        # 长度和停用词检查
+        if len(word) > 2 and word_lower not in stop_words:
+            filtered.append(word_lower)
+    
+    return filtered
 
 # ================= Configuration =================
 
@@ -261,9 +331,10 @@ class DietAgentMixin:
         }
 
         # Extract words from user query
-        words = user_query.lower().split()
+        # words = user_query.lower().split()
         # Filter out stop words and short words (<3 chars)
-        keywords = [w.strip(".,!?;:\"'") for w in words if w.lower() not in stop_words and len(w) > 2]
+        # keywords = [w.strip(".,!?;:\"'") for w in words if w.lower() not in stop_words and len(w) > 2]
+        keywords = get_keywords(user_query)
 
         # Search KG for each keyword
         seen_entities = set()
@@ -563,9 +634,10 @@ class ExerciseAgentMixin:
         }
 
         # Extract words from user query
-        words = user_query.lower().split()
+        # words = user_query.lower().split()
         # Filter out stop words and short words (<3 chars)
-        keywords = [w.strip(".,!?;:\"'") for w in words if w.lower() not in stop_words and len(w) > 2]
+        # keywords = [w.strip(".,!?;:\"'") for w in words if w.lower() not in stop_words and len(w) > 2]
+        keywords = get_keywords(user_query)
 
         # Search KG for each keyword
         seen_entities = set()
