@@ -19,12 +19,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Check for non-ASCII characters
-        run: |
-          # -r: 递归搜索
-          # -P: 使用 Perl 正则 (支持 \xHH)
-          # -l: 只输出文件名 (如果找到)
-          # --include: 指定文件类型
-          
+        run: |          
           if grep -rP "[^\x00-\x7F]" . \
               --include="*.txt" \
               --include="*.md" \
