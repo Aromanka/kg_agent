@@ -380,7 +380,11 @@ EXERCISE_QUERY_ENTITIES = ["health", "exercise", "activity"]
 
 available_strategies = ["balanced", "protein_focus", "variety", "low_carb", "fiber_rich"]
 available_cuisines = ["Mediterranean", "Asian", "Western", "Fusion", "Local Home-style", "Simple & Quick"]
-        
+
+# Allowed portion units for diet generation
+UNIT_LIST = ["gram", "kg", "ml", "liter", "cup", "bowl", "piece", "slice", "spoon", "tablespoon", "pinch"]
+UNIT_LIST_STR = ", ".join(f'"{u}"' for u in UNIT_LIST)
+
 
 DIET_GENERATION_SYSTEM_PROMPT = f"""You are a professional nutritionist. Generate BASE meal plans with standardized portions.
 
