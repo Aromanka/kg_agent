@@ -30,7 +30,7 @@ if USE_LOCAL_MODEL:
     else:
         print("正在加载本地 Embedding 模型 (m3e-base 或 all-MiniLM-L6-v2)...")
         # 推荐使用 m3e-base (中文效果好) 或 all-MiniLM-L6-v2 (轻量)
-        model = SentenceTransformer('moka-ai/m3e-base')
+        model = SentenceTransformer('moka-ai/m3e-base') 
         EMBEDDING_DIM = model.get_sentence_embedding_dimension()
 
     print(f"✅ Embedding 模型加载完成，维度: {EMBEDDING_DIM}")
@@ -54,7 +54,13 @@ def main():
     # 2. 统计需要处理的节点总数 (假设 Label 为 Entity，且没有 embedding 属性)
     count_query = "MATCH (n:Entity) WHERE n.embedding IS NULL RETURN count(n) as total"
     result = client.query(count_query)
-    total = result[0]['total']
+    
+    # 增加健壮性检查，防止返回结果格式不同
+    if result and isinstance(result, list) and len(result) > 0:
+        total = result[0].get('total', 0)
+    else:
+        total = 0
+        
     print(f"📊 发现 {total} 个节点需要生成 Embedding")
 
     if total == 0:
@@ -63,30 +69,30 @@ def main():
 
     # 3. 批量处理
     pbar = tqdm(total=total)
-
+    
     while True:
         # 3.1 拉取一批未处理的节点
         fetch_query = """
-        MATCH (n:Entity)
-        WHERE n.embedding IS NULL
-        RETURN elementId(n) as id, n.name as text
+        MATCH (n:Entity) 
+        WHERE n.embedding IS NULL 
+        RETURN elementId(n) as id, n.name as text 
         LIMIT $limit
         """
         nodes = client.query(fetch_query, {"limit": BATCH_SIZE})
-
+        
         if not nodes:
             break
 
         # 3.2 计算 Embedding
         updates = []
         for node in nodes:
-            text = node['text']
+            text = node.get('text', '')
             # 简单的错误处理，防止空文本报错
-            if not text or len(text.strip()) == 0:
-                vector = [0.0] * EMBEDDING_DIM  # 占位符
+            if not text or len(str(text).strip()) == 0:
+                vector = [0.0] * EMBEDDING_DIM # 占位符
             else:
-                vector = get_embedding(text)
-
+                vector = get_embedding(str(text))
+            
             updates.append({"id": node['id'], "vector": vector})
 
         # 3.3 批量写回 Neo4j (使用 UNWIND 语法一次性更新)
@@ -95,8 +101,10 @@ def main():
         MATCH (n) WHERE elementId(n) = row.id
         SET n.embedding = row.vector
         """
-        client.query(update_query, updates=updates)
-
+        
+        # === 修复点：将 updates 作为字典的值传递 ===
+        client.query(update_query, {"updates": updates})
+        
         pbar.update(len(nodes))
 
     pbar.close()
