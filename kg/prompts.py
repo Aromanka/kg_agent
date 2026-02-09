@@ -4,7 +4,7 @@ Revised to include Demographic Targeting, Composition, and Strict JSON Formattin
 """
 
 
-kg_rels = [
+diet_kg_rels = [
     "Indicated_For",
     "Contraindicated_For",
     "Has_Mechanism",
@@ -16,6 +16,21 @@ kg_rels = [
     "Has_Risk",
     "Disease_Management",
     "Preparation_Method",
+]
+
+
+exer_kg_rels = [
+    "Indicated_For",
+    "Contraindicated_For",
+    "Disease_Management",
+    "Targets_Entity",
+    "Has_Benefit",
+    "Has_Risk",
+    "Dosing_Guideline",
+    "Has_Mechanism",
+    "Synergy_With",
+    "Antagonism_With",
+    "Technique_Method",
 ]
 
 

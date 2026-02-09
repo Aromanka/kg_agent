@@ -97,13 +97,14 @@ class Neo4jClient:
         database: str = "neo4j"
     ) -> List[Dict[str, Any]]:
         """使用全文索引搜索节点"""
+        lucene_query = f"*{keyword}*"
         query = """
         CALL db.index.fulltext.queryNodes("search_index", $word) YIELD node, score
         WHERE score > $threshold
         MATCH (node)-[r]-(m)
         RETURN node.name as head, type(r) as rel_type, m.name as tail
         """
-        results = self.query(query, {"word": keyword, "threshold": score_threshold}, database)
+        results = self.query(query, {"word": lucene_query, "threshold": score_threshold}, database)
         return [dict(record) for record in results]
 
     def get_node_by_name(

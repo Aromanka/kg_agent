@@ -665,8 +665,30 @@ Return JSON with:
         conditions = user_metadata.get("medical_conditions", [])
         restrictions = user_metadata.get("dietary_restrictions", [])
 
-        # Build query entities: food items + conditions + default entities
-        all_entities = list(set(food_items + conditions + restrictions + list(DIETARY_QUERY_ENTITIES)))
+        # Define stop words for keyword filtering
+        stop_words = {
+            "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
+            "of", "with", "by", "from", "as", "is", "are", "was", "were", "be",
+            "been", "being", "have", "has", "had", "do", "does", "did", "will",
+            "would", "could", "should", "may", "might", "must", "can", "need",
+            "this", "that", "these", "those", "i", "you", "he", "she", "it", "we",
+            "they", "what", "which", "who", "whom", "whose", "where", "when", "why",
+            "how", "all", "each", "every", "both", "few", "more", "most", "other",
+            "some", "such", "no", "not", "only", "own", "same", "so", "than",
+            "too", "very", "just", "also", "now", "here", "there", "then", "once"
+        }
+
+        # Build query entities: food items + conditions + restrictions + default entities
+        # Apply keyword split logic to each entity
+        all_entities = []
+        for entity in food_items:
+            words = entity.lower().split()
+            keywords = [w.strip(".,!?;:\"'()[]{}") for w in words if w.lower() not in stop_words and len(w) > 2]
+            all_entities.extend(keywords)
+        all_entities.extend(conditions + restrictions + list(DIETARY_QUERY_ENTITIES))
+
+        # Remove duplicates while preserving order
+        all_entities = list(dict.fromkeys(all_entities))
 
         # Query KG for each entity, filtering by prioritized risk relations
         for entity in all_entities[:15]:  # Limit to 15 entities for performance
@@ -732,17 +754,42 @@ Return JSON with:
         # Get user conditions
         conditions = user_metadata.get("medical_conditions", [])
 
+        # Define stop words for keyword filtering
+        stop_words = {
+            "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
+            "of", "with", "by", "from", "as", "is", "are", "was", "were", "be",
+            "been", "being", "have", "has", "had", "do", "does", "did", "will",
+            "would", "could", "should", "may", "might", "must", "can", "need",
+            "this", "that", "these", "those", "i", "you", "he", "she", "it", "we",
+            "they", "what", "which", "who", "whom", "whose", "where", "when", "why",
+            "how", "all", "each", "every", "both", "few", "more", "most", "other",
+            "some", "such", "no", "not", "only", "own", "same", "so", "than",
+            "too", "very", "just", "also", "now", "here", "there", "then", "once"
+        }
+
         # Build query entities: exercise names + conditions
-        all_entities = list(set(exercise_names + conditions))
+        # Apply keyword split logic to each entity
+        all_entities = []
+        for entity_list in [exercise_names, conditions]:
+            for entity in entity_list:
+                # Extract words from entity
+                words = entity.lower().split()
+                # Filter out stop words and short words (<3 chars)
+                keywords = [w.strip(".,!?;:\"'()[]{}") for w in words if w.lower() not in stop_words and len(w) > 2]
+                all_entities.extend(keywords)
+
+        # Remove duplicates while preserving order
+        all_entities = list(dict.fromkeys(all_entities))
 
         # Exercise-specific risk relations
-        exercise_risk_rels = [
-            "Contraindicated_For",
-            "Has_Risk",
-            "Antagonism_With",
-            "Disease_Management",
-            "Targets_Entity"
-        ]
+        # exercise_risk_rels = [
+        #     "Contraindicated_For",
+        #     "Has_Risk",
+        #     "Antagonism_With",
+        #     "Disease_Management",
+        #     "Targets_Entity"
+        # ]
+        exercise_risk_rels = None
 
         # Query KG for each entity
         for entity in all_entities[:15]:
@@ -755,7 +802,7 @@ Return JSON with:
                     rel_type = result.get("rel_type", "")
 
                     # Filter by exercise risk relations
-                    if rel_type not in exercise_risk_rels:
+                    if exercise_risk_rels is not None and rel_type not in exercise_risk_rels:
                         continue
 
                     if not tail:
@@ -773,7 +820,8 @@ Return JSON with:
         if not results:
             return "No relevant KG data found."
 
-        context_lines = ["## Relevant Knowledge Graph Relationships"]
+        # context_lines = ["## Relevant Knowledge Graph Relationships"]
+        context_lines = []
         for r in results[:20]:
             context_lines.append(f"- {r['entity']} --[{r['relation']}]--> {r['related_to']}")
 

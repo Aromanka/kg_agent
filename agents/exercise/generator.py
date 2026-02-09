@@ -20,7 +20,7 @@ from agents.exercise.config import *
 
 
 
-EXERCISE_GENERATION_SYSTEM_PROMPT = """You are a professional exercise prescription AI. Your task to generate personalized exercise plans based on user health data.
+EXERCISE_GENERATION_SYSTEM_PROMPT_0 = """You are a professional exercise prescription AI. Your task to generate personalized exercise plans based on user health data.
 
 ## Guidelines
 
@@ -52,6 +52,77 @@ EXERCISE_GENERATION_SYSTEM_PROMPT = """You are a professional exercise prescript
 3. For advanced: HIGH intensity, 45-60 min sessions
 4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
 5. Joint problems: Prioritize LOW-impact exercises (swimming, cycling)
+6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
+7. Always include warm-up and cool-down
+
+## Output Format
+Return a valid JSON object matching the provided schema. STRICTLY follow:
+- "calories_burned": TOTAL calories for this exercise (NOT per minute)
+- Use lowercase for all enum values: "cardio", "strength", "low", "moderate", etc.
+- "duration_minutes": Integer (not fractional)
+
+## Example Output:
+{
+  "id": 1,
+  "title": "Morning Cardio Plan",
+  "meal_timing": "after_breakfast",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Brisk Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 135,
+          "equipment": [],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+          "reason": "Low-impact cardio suitable for beginners",
+          "safety_notes": ["Stay hydrated", "Warm up first"]
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 135,
+      "overall_intensity": "low"
+    }
+  },
+  "total_duration_minutes": 30,
+  "total_calories_burned": 135,
+  "reasoning": "This plan combines low-impact cardio with strength training",
+  "safety_notes": ["Consult physician before starting", "Listen to your body"]
+}
+
+IMPORTANT:
+- calories_burned should be realistic totals (e.g., 30 min walking = ~135 kcal, NOT 4-5 kcal).
+- meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".
+- Generate only ONE session per day (single morning/afternoon/evening block).
+"""
+
+
+EXERCISE_GENERATION_SYSTEM_PROMPT = """You are a professional exercise prescription AI. Your task to generate personalized exercise plans based on user health data.
+
+## Guidelines
+
+### Exercise Types
+- CARDIO: Running, swimming, cycling, rowing, jumping rope
+- STRENGTH: Weight lifting, bodyweight exercises, resistance bands
+- FLEXIBILITY: Stretching, yoga, Pilates
+- BALANCE: Balance training, tai chi
+- HIIT: High-intensity interval training
+
+### Intensity Levels
+- LOW: Gentle movement, warm-up level (RPE 1-3)
+- MODERATE: Sustainable effort, conversation possible (RPE 4-6)
+- HIGH: Challenging, breathing heavily (RPE 7-8)
+- VERY_HIGH: Maximum effort, short bursts only (RPE 9-10)
+
+### Safety Rules
+1. For beginners: Start with LOW intensity, 15-20 min sessions
+2. For intermediate: MODERATE intensity, 30-45 min sessions
+3. For advanced: HIGH intensity, 45-60 min sessions
+4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
 6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
 7. Always include warm-up and cool-down
 
@@ -594,39 +665,39 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
 Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
 Generate ONLY ONE session per day (single morning/afternoon/evening block).
-
-Example format:
-{{
-  "id": 1,
-  "title": "Morning Cardio Plan",
-  "meal_timing": "after_breakfast",
-  "sessions": {{
-    "morning": {{
-      "time_of_day": "morning",
-      "exercises": [
-        {{
-          "name": "Brisk Walking",
-          "exercise_type": "cardio",
-          "duration_minutes": 30,
-          "intensity": "low",
-          "calories_burned": 135,
-          "equipment": [],
-          "target_muscles": ["legs", "cardio"],
-          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
-          "reason": "Low-impact cardio suitable for beginners",
-          "safety_notes": ["Stay hydrated", "Warm up first"]
-        }}
-      ],
-      "total_duration_minutes": 30,
-      "total_calories_burned": 135,
-      "overall_intensity": "low"
-    }}
-  }},
-  "total_duration_minutes": 30,
-  "total_calories_burned": 135,
-  "reasoning": "This plan combines low-impact cardio with strength training",
-  "safety_notes": ["Consult physician before starting", "Listen to your body"]
-}}"""
+"""
+# Example format:
+# {{
+#   "id": 1,
+#   "title": "Morning Cardio Plan",
+#   "meal_timing": "after_breakfast",
+#   "sessions": {{
+#     "morning": {{
+#       "time_of_day": "morning",
+#       "exercises": [
+#         {{
+#           "name": "Brisk Walking",
+#           "exercise_type": "cardio",
+#           "duration_minutes": 30,
+#           "intensity": "low",
+#           "calories_burned": 135,
+#           "equipment": [],
+#           "target_muscles": ["legs", "cardio"],
+#           "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+#           "reason": "Low-impact cardio suitable for beginners",
+#           "safety_notes": ["Stay hydrated", "Warm up first"]
+#         }}
+#       ],
+#       "total_duration_minutes": 30,
+#       "total_calories_burned": 135,
+#       "overall_intensity": "low"
+#     }}
+#   }},
+#   "total_duration_minutes": 30,
+#   "total_calories_burned": 135,
+#   "reasoning": "This plan combines low-impact cardio with strength training",
+#   "safety_notes": ["Consult physician before starting", "Listen to your body"]
+# }}"""
 
         return prompt
 
