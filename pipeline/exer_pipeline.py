@@ -68,7 +68,8 @@ class ExercisePipeline:
         top_k: int = 50,
         top_k_selection: int = 3,
         output_path: str = "exer_plan.json",
-        meal_timing: str = ""
+        meal_timing: str = "",
+        use_vector: bool = False
     ) -> ExercisePipelineOutput:
         """
         Generate exercise options with safety assessment.
@@ -109,7 +110,7 @@ class ExercisePipeline:
             num_var=num_var_plans,
             meal_timing=meal_timing,
             user_preference=user_query,
-            use_vector=args.use_vector  # GraphRAG: use vector search instead of keyword matching
+            use_vector=use_vector  # GraphRAG: use vector search instead of keyword matching
         )
 
         # Flatten variants into a single list
@@ -247,7 +248,8 @@ def run_exercise_pipeline(
     top_k_selection: int = 3,
     output_path: str = "exer_plan.json",
     print_results: bool = True,
-    meal_timing: str = ""
+    meal_timing: str = "",
+    use_vector: bool = False
 ) -> ExercisePipelineOutput:
     """
     Run the exercise pipeline and optionally print results.
@@ -282,7 +284,8 @@ def run_exercise_pipeline(
         top_k=top_k,
         top_k_selection=top_k_selection,
         output_path=output_path,
-        meal_timing=meal_timing
+        meal_timing=meal_timing,
+        use_vector=use_vector
     )
 
     if print_results:

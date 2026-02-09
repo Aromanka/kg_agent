@@ -595,7 +595,8 @@ def generate_exercise_candidates(
     user_requirement: Dict[str, Any] = {},
     num_candidates: int = 3,
     meal_timing: str = "",
-    user_preference: str = None
+    user_preference: str = None,
+    use_vector: bool = False
 ) -> List[ExercisePlan]:
     """
     Convenience function to generate exercise candidates.
@@ -606,6 +607,7 @@ def generate_exercise_candidates(
         user_requirement: User requirements (intensity, duration in minutes)
         num_candidates: Number of candidates to generate
         user_preference: User's string preference (e.g., "I want to focus on upper body exercises")
+        use_vector: Use vector search (GraphRAG) instead of keyword matching
 
     Returns:
         List of ExercisePlan objects
@@ -617,7 +619,7 @@ def generate_exercise_candidates(
         "user_requirement": user_requirement,
         "num_candidates": num_candidates
     }
-    return agent.generate(input_data, num_candidates, meal_timing=meal_timing, user_preference=user_preference)
+    return agent.generate(input_data, num_candidates, meal_timing=meal_timing, user_preference=user_preference, use_vector=use_vector)
 
 
 def generate_exercise_variants(
@@ -627,7 +629,8 @@ def generate_exercise_variants(
     num_candidates: int = 3,
     num_var: int = 3,
     meal_timing: str = "",
-    user_preference: str = None
+    user_preference: str = None,
+    use_vector: bool = False
 ) -> Dict[str, List[ExercisePlan]]:
     """
     Generate exercise plans with intensity variants (Lite/Standard/Plus).
@@ -638,6 +641,7 @@ def generate_exercise_variants(
         user_requirement: User requirements (intensity, duration in minutes)
         num_candidates: Number of base candidates to generate
         user_preference: User's string preference (e.g., "I want to focus on upper body exercises")
+        use_vector: Use vector search (GraphRAG) instead of keyword matching
 
     Returns:
         Dict mapping candidate_id to dict of variants:
@@ -649,7 +653,7 @@ def generate_exercise_variants(
     """
     # Generate base candidates
     base_candidates = generate_exercise_candidates(
-        user_metadata, environment, user_requirement, num_candidates, meal_timing, user_preference
+        user_metadata, environment, user_requirement, num_candidates, meal_timing, user_preference, use_vector
     )
 
     # Expand each candidate into variants

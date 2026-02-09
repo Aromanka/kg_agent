@@ -429,7 +429,8 @@ def generate_diet_candidates(
     temperature: float = 0.7,
     top_p: float = 0.92,
     top_k: int = 50,
-    user_preference: str = None
+    user_preference: str = None,
+    use_vector: bool = False
 ) -> List[DietRecommendation]:
     agent = DietAgent()
     input_data = {
@@ -437,7 +438,7 @@ def generate_diet_candidates(
         "environment": environment,
         "user_requirement": user_requirement,
     }
-    return agent.generate(input_data, num_variants, meal_type, temperature, top_p, top_k, user_preference)
+    return agent.generate(input_data, num_variants, meal_type, temperature, top_p, top_k, user_preference, use_vector)
 
 
 if __name__ == "__main__":
