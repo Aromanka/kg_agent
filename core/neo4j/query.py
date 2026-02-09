@@ -224,7 +224,7 @@ class KnowledgeGraphQuery:
 
     def search_entities(self, keyword: str, limit: int = 20) -> List[Dict[str, Any]]:
         """通用实体搜索"""
-        return self.client.search_by_keyword(keyword, score_threshold=0.5)
+        return self.client.search_by_keyword(keyword, score_threshold=0.2)
 
     def get_entity_info(self, name: str) -> Optional[Dict[str, Any]]:
         """获取实体完整信息"""

@@ -146,12 +146,32 @@ def query(cypher):
 
 @click.command()
 @click.argument('keyword')
-def search(keyword):
+@click.option('--threshold', type=float, default=0.1,
+              help='Minimum score threshold for fulltext search')
+def search(keyword, threshold):
     """Search for entities by keyword"""
     click.echo(f"\n[SEARCH] Searching for: {keyword}")
     try:
         with get_driver().session() as session:
-            # Search entities
+            # Try fulltext search first
+            fulltext_query = """
+            CALL db.index.fulltext.queryNodes("search_index", $word) YIELD node, score
+            WHERE score > $threshold
+            MATCH (node)-[r]-(m)
+            RETURN node.name as head, type(r) as rel_type, m.name as tail, score
+            ORDER BY score DESC
+            LIMIT 20
+            """
+            fulltext_result = session.run(fulltext_query, word=keyword, threshold=threshold)
+            ft_rels = [r.data() for r in fulltext_result]
+            if ft_rels:
+                click.secho(f"\n[Fulltext Search Results for '{keyword}']:", fg="cyan", bold=True)
+                for r in ft_rels:
+                    click.echo(f"  {r['head']} -[{r['rel_type']}]-> {r['tail']} (score: {r['score']:.3f})")
+            else:
+                click.echo(f"\n[Fulltext Search] No results with threshold {threshold}")
+
+            # Fallback to CONTAINS search
             query = """
             MATCH (n)
             WHERE toLower(n.name) CONTAINS toLower($keyword)
@@ -161,7 +181,7 @@ def search(keyword):
             """
             result = session.run(query, keyword=keyword)
             entities = [r.data() for r in result]
-            print_result(f"Entities matching '{keyword}'", entities)
+            print_result(f"Entities matching '{keyword}' (CONTAINS)", entities)
 
             # Also search relationships
             rel_query = """

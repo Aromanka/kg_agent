@@ -1,15 +1,3 @@
-"""
-Exercise Pipeline
-Generates exercise plans with safety assessment and selection.
-
-Flow:
-1. Generate multiple exercise base plans via LLM
-2. Expand each base plan to Lite/Standard/Plus intensity variants
-3. Assess each variant through safeguard
-4. Select top_k (default 3) by safety score
-5. Output all expanded plans to exer_plan.json
-6. Output chosen plans to terminal
-"""
 import json
 import os
 from typing import List, Dict, Any
@@ -72,7 +60,9 @@ class ExercisePipeline:
         user_metadata: Dict[str, Any],
         environment: Dict[str, Any] = None,
         user_requirement: Dict[str, Any] = None,
+        user_query: str = None,
         num_base_plans: int = 3,
+        num_var_plans: int = 3,
         temperature: float = 0.7,
         top_p: float = 0.92,
         top_k: int = 50,
@@ -86,7 +76,8 @@ class ExercisePipeline:
         Args:
             user_metadata: User physiological data
             environment: Environmental context
-            user_requirement: User goals
+            user_requirement: User requirements (intensity, duration in minutes)
+            user_query: Free-form user preference query (e.g., "I want to focus on upper body exercises")
             num_base_plans: Number of LLM-generated base plans
             temperature: LLM temperature (0.0-1.0)
             top_p: LLM top_p for nucleus sampling (0.0-1.0)
@@ -108,17 +99,23 @@ class ExercisePipeline:
 
         # Step 1: Generate exercise candidates with variants
         print(f"\n[1/4] Generating exercise candidates...")
+        if user_query:
+            print(f"      User Query: \"{user_query}\"")
         all_variants = generate_exercise_variants(
             user_metadata=user_metadata,
             environment=env,
             user_requirement=req,
             num_candidates=num_base_plans,
-            meal_timing=meal_timing
+            num_var=num_var_plans,
+            meal_timing=meal_timing,
+            user_preference=user_query
         )
 
         # Flatten variants into a single list
         all_plans_list = []
+        # print(f"[DEBUG] all_variants = {all_variants}")
         for base_id, variants in all_variants.items():
+            # print(f"[DEBUG] base_id={base_id}, variants={variants}")
             for variant_name, plan in variants.items():
                 plan_dict = plan.model_dump()
                 plan_dict["_variant"] = variant_name
@@ -240,7 +237,9 @@ def run_exercise_pipeline(
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = None,
     user_requirement: Dict[str, Any] = None,
+    user_query: str = None,
     num_base_plans: int = 3,
+    num_var_plans: int = 3,
     temperature: float = 0.7,
     top_p: float = 0.92,
     top_k: int = 50,
@@ -255,8 +254,10 @@ def run_exercise_pipeline(
     Args:
         user_metadata: User physiological data
         environment: Environmental context
-        user_requirement: User goals
+        user_requirement: User requirements (intensity, duration in minutes)
+        user_query: Free-form user preference query (e.g., "I want to focus on upper body exercises")
         num_base_plans: Number of LLM-generated base plans
+        num_var_plans: Number of intensity variants per base plan (Lite/Standard/Plus)
         temperature: LLM temperature (0.0-1.0)
         top_p: LLM top_p for nucleus sampling (0.0-1.0)
         top_k: LLM top_k for top-k sampling
@@ -272,7 +273,9 @@ def run_exercise_pipeline(
         user_metadata=user_metadata,
         environment=environment,
         user_requirement=user_requirement,
+        user_query=user_query,
         num_base_plans=num_base_plans,
+        num_var_plans=num_var_plans,
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
@@ -292,8 +295,10 @@ def run_exercise_pipeline(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--bn', type=int, default=3, help='base plan num')
+    parser.add_argument('--vn', type=int, default=3, help='variation plan num')
     parser.add_argument('--topk', type=int, default=3, help='top k selection')
     parser.add_argument('--meal_timing', type=str, default="before_breakfast", help='meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".')
+    parser.add_argument('--query', type=str, default="I want to focus on upper body exercises with moderate intensity", help='user query (free-form text for KG entity matching)')
     args = parser.parse_args()
     test_input = {
         "user_metadata": {
@@ -309,10 +314,12 @@ if __name__ == "__main__":
             "time_context": {"season": "summer"}
         },
         "user_requirement": {
-            "goal": "weight_loss",
-            "intensity": "moderate"
+            "intensity": "moderate",
+            "duration": 30
         },
+        "user_query": args.query,
         "num_base_plans": args.bn,
+        "num_var_plans": args.vn,
         "temperature": 0.7,
         "top_k_selection": args.topk,
         "output_path": "exer_plan.json",

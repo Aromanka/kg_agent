@@ -16,63 +16,11 @@ from core.llm import get_llm
 from core.llm.utils import parse_json_response
 from core.neo4j import get_kg_query
 import random
+from agents.exercise.config import *
 
 
-# ================= Exercise Pools for Mandatory Selection =================
 
-CARDIO_ACTIVITIES = [
-    "Outdoor Running", "Treadmill Running", "Cycling (Outdoor)", "Stationary Bike",
-    "Swimming (Freestyle)", "Swimming (Laps)", "Rowing Machine", "Jump Rope",
-    "Hiking (Trail)", "Stair Climbing", "Elliptical Training", " Dancing (Aerobic)",
-    "Boxing (Bag Work)", "Kettlebell Cardio", "Battle Ropes", "Mountain Climbers"
-]
-
-STRENGTH_MOVEMENTS = [
-    "Barbell Squats", "Deadlifts", "Bench Press", "Overhead Press",
-    "Pull-Ups", "Dips", "Push-Ups", "Lunges",
-    "Goblet Squats", "Turkish Get-Up", "Kettlebell Swings", "Farmer's Walk",
-    "Romanian Deadlifts", "Face Pulls", "Plank Variations", "Bulgarian Split Squats"
-]
-
-FLEXIBILITY_POSES = [
-    "Sun Salutation Flow", "Hip Flexor Stretch", "Hamstring Stretch",
-    "Cat-Cow Pose", "Child's Pose", "Pigeon Pose", "Seated Forward Fold",
-    "Quad Stretch", "Chest Opener", "Thread the Needle Stretch",
-    "Downward Dog", "Warrior Poses", "Balance Tree Pose", "Deep Breathing"
-]
-
-EQUIPMENT_OPTIONS = [
-    "Resistance Bands", "Dumbbells", "Kettlebell", "Medicine Ball",
-    "TRX Suspension", "Pull-Up Bar", "Jump Rope", "Foam Roller",
-    "Yoga Mat", "Exercise Bench", "None (Bodyweight Only)"
-]
-
-OUTDOOR_ACTIVITIES = [
-    "Trail Running", "Hiking", "Outdoor Cycling", "Park Workout",
-    "Beach Workout", "Stair Climbing (Stadium)", "Outdoor Yoga",
-    "Kayaking", "Rock Climbing (Indoor/Bouldering)"
-]
-
-WATER_ACTIVITIES = [
-    "Lap Swimming", "Water Aerobics", "Treading Water", "Pool Laps"
-]
-
-HIIT_EXERCISES = [
-    "Burpees", "Mountain Climbers", "Box Jumps", "High Knees",
-    "Jump Squats", "Skaters", "Tuck Jumps", "Battle Ropes",
-    "Sprint Intervals", "Cycle Sprints"
-]
-
-# Boring/common exercises that may be excluded for variety
-COMMON_BORING_EXERCISES = [
-    "Brisk Walking", "Bodyweight Squats", "Jumping Jacks", "Plank Hold",
-    "Stationary Biking (Easy)", "Basic Stretching"
-]
-
-
-# ================= System Prompts =================
-
-EXERCISE_GENERATION_SYSTEM_PROMPT = """You are a professional exercise prescription AI. Your task to generate personalized exercise plans based on user health data.
+EXERCISE_GENERATION_SYSTEM_PROMPT_0 = """You are a professional exercise prescription AI. Your task to generate personalized exercise plans based on user health data.
 
 ## Guidelines
 
@@ -104,6 +52,77 @@ EXERCISE_GENERATION_SYSTEM_PROMPT = """You are a professional exercise prescript
 3. For advanced: HIGH intensity, 45-60 min sessions
 4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
 5. Joint problems: Prioritize LOW-impact exercises (swimming, cycling)
+6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
+7. Always include warm-up and cool-down
+
+## Output Format
+Return a valid JSON object matching the provided schema. STRICTLY follow:
+- "calories_burned": TOTAL calories for this exercise (NOT per minute)
+- Use lowercase for all enum values: "cardio", "strength", "low", "moderate", etc.
+- "duration_minutes": Integer (not fractional)
+
+## Example Output:
+{
+  "id": 1,
+  "title": "Morning Cardio Plan",
+  "meal_timing": "after_breakfast",
+  "sessions": {
+    "morning": {
+      "time_of_day": "morning",
+      "exercises": [
+        {
+          "name": "Brisk Walking",
+          "exercise_type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "low",
+          "calories_burned": 135,
+          "equipment": [],
+          "target_muscles": ["legs", "cardio"],
+          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+          "reason": "Low-impact cardio suitable for beginners",
+          "safety_notes": ["Stay hydrated", "Warm up first"]
+        }
+      ],
+      "total_duration_minutes": 30,
+      "total_calories_burned": 135,
+      "overall_intensity": "low"
+    }
+  },
+  "total_duration_minutes": 30,
+  "total_calories_burned": 135,
+  "reasoning": "This plan combines low-impact cardio with strength training",
+  "safety_notes": ["Consult physician before starting", "Listen to your body"]
+}
+
+IMPORTANT:
+- calories_burned should be realistic totals (e.g., 30 min walking = ~135 kcal, NOT 4-5 kcal).
+- meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".
+- Generate only ONE session per day (single morning/afternoon/evening block).
+"""
+
+
+EXERCISE_GENERATION_SYSTEM_PROMPT = """You are a professional exercise prescription AI. Your task to generate personalized exercise plans based on user health data.
+
+## Guidelines
+
+### Exercise Types
+- CARDIO: Running, swimming, cycling, rowing, jumping rope
+- STRENGTH: Weight lifting, bodyweight exercises, resistance bands
+- FLEXIBILITY: Stretching, yoga, Pilates
+- BALANCE: Balance training, tai chi
+- HIIT: High-intensity interval training
+
+### Intensity Levels
+- LOW: Gentle movement, warm-up level (RPE 1-3)
+- MODERATE: Sustainable effort, conversation possible (RPE 4-6)
+- HIGH: Challenging, breathing heavily (RPE 7-8)
+- VERY_HIGH: Maximum effort, short bursts only (RPE 9-10)
+
+### Safety Rules
+1. For beginners: Start with LOW intensity, 15-20 min sessions
+2. For intermediate: MODERATE intensity, 30-45 min sessions
+3. For advanced: HIGH intensity, 45-60 min sessions
+4. Cardiac conditions: Avoid HIGH/VERY_HIGH intensity
 6. Diabetic users: Avoid vigorous exercise during hypoglycemia risk periods
 7. Always include warm-up and cool-down
 
@@ -249,7 +268,8 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
     def calculate_target_calories(
         self,
         weight_kg: float,
-        goal: str = "maintenance"
+        goal: str = "maintenance",
+        duration_minutes: int = None
     ) -> int:
         """
         Calculate target daily calories to burn based on goal.
@@ -257,49 +277,64 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         Args:
             weight_kg: User weight in kg
             goal: fitness goal (weight_loss, muscle_building, cardio_improvement, etc.)
+            duration_minutes: Target duration in minutes (overrides goal-based calculation)
 
         Returns:
             Target daily calories to burn
         """
-        goal_targets = {
-            "weight_loss": 400,
-            "muscle_building": 200,
-            "cardio_improvement": 450,
-            "flexibility": 100,
-            "endurance": 400,
-            "general_fitness": 250,
-            "maintenance": 150
-        }
+        # If duration is provided, calculate calories based on MET and duration
+        if duration_minutes is not None:
+            goal_targets = {
+                "weight_loss": 400,
+                "muscle_building": 200,
+                "cardio_improvement": 450,
+                "flexibility": 100,
+                "endurance": 400,
+                "general_fitness": 250,
+                "maintenance": 150
+            }
 
-        # Apply condition adjustments
-        conditions = []
-        if hasattr(self, '_input_meta'):
-            conditions = self._input_meta.get("medical_conditions", [])
+            # Apply condition adjustments
+            conditions = []
+            if hasattr(self, '_input_meta'):
+                conditions = self._input_meta.get("medical_conditions", [])
 
-        # Reduce targets for certain conditions
-        reduction_factor = 1.0
-        for condition in conditions:
-            if condition.lower() in ["heart_disease", "obesity", "arthritis"]:
-                reduction_factor = 0.75
+            # Reduce targets for certain conditions
+            reduction_factor = 1.0
+            for condition in conditions:
+                if condition.lower() in ["heart_disease", "obesity", "arthritis"]:
+                    reduction_factor = 0.75
 
-        return int(goal_targets.get(goal, 250) * reduction_factor)
+            return int(goal_targets.get(goal, 250) * reduction_factor)
+        else:
+            # Calculate based on duration: ~5-8 kcal/min average for moderate exercise
+            # Using simple MET-based estimation (MET = 4-8 for moderate exercise)
+            # Calories = MET * weight(kg) * duration(min) / 60
+            met_avg = 6  # Average MET for moderate exercise
+            return int(met_avg * weight_kg * duration_minutes / 60)
 
     def calculate_target_duration(
         self,
         fitness_level: str = "beginner",
-        goal: str = "maintenance"
+        goal: str = "maintenance",
+        duration_minutes: int = None
     ) -> int:
         """
         Calculate target exercise duration in minutes based on fitness level and goal.
 
         Args:
             fitness_level: beginner, intermediate, advanced
-            goal: fitness goal
+            goal: fitness goal (legacy, for backward compatibility)
+            duration_minutes: Target duration in minutes (overrides goal-based calculation)
 
         Returns:
             Target duration in minutes per session
         """
-        # Base duration by fitness level (minutes)
+        # If duration is provided, return it directly
+        if duration_minutes is not None:
+            return duration_minutes
+
+        # Base duration by fitness level (minutes) - used only if duration not provided
         base_durations = {
             "beginner": 20,
             "intermediate": 40,
@@ -325,7 +360,6 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
     def calculate_target_weekly_frequency(
         self,
         fitness_level: str = "beginner",
-        goal: str = "maintenance",
         conditions: List[str] = None
     ) -> int:
         """
@@ -333,7 +367,6 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 
         Args:
             fitness_level: User fitness level
-            goal: Fitness goal
             conditions: Medical conditions
 
         Returns:
@@ -346,16 +379,6 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
             "advanced": 5
         }
 
-        # Goal adjustments
-        goal_adjustments = {
-            "weight_loss": 1,
-            "muscle_building": 0,
-            "cardio_improvement": 1,
-            "flexibility": 0,
-            "endurance": 1,
-            "maintenance": -1
-        }
-
         # Condition restrictions
         condition_restrictions = {
             "heart_disease": -2,
@@ -365,7 +388,6 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         }
 
         freq = base_freq.get(fitness_level.lower(), 3)
-        freq += goal_adjustments.get(goal.lower(), 0)
 
         if conditions:
             for cond in conditions:
@@ -376,27 +398,6 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
                         break
 
         return max(1, min(7, freq))
-
-    def get_strategies_for_goal(self, goal: str) -> List[str]:
-        """
-        Get generation strategies based on user goal.
-
-        Args:
-            goal: Fitness goal
-
-        Returns:
-            List of strategy names
-        """
-        strategy_map = {
-            "weight_loss": ["calorie_burn", "variety", "sustainability"],
-            "muscle_building": ["progressive_overload", "variety", "recovery"],
-            "cardio_improvement": ["intervals", "endurance", "variety"],
-            "flexibility": ["mobility", "balance", "recovery"],
-            "endurance": ["progressive", "variety", "intensity"],
-            "general_fitness": ["balanced", "variety", "progressive"],
-            "maintenance": ["balanced", "sustainability", "variety"]
-        }
-        return strategy_map.get(goal.lower(), ["balanced", "variety"])
 
     def get_agent_name(self) -> str:
         return "exercise"
@@ -411,9 +412,18 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         self,
         input_data: Dict[str, Any],
         num_candidates: int = 3,
-        meal_timing: str = ""
+        meal_timing: str = "",
+        user_preference: str = None
     ) -> List[ExercisePlan]:
-        """Generate exercise plan candidates with mandatory exercise injection"""
+        """
+        Generate exercise plan candidates with mandatory exercise injection.
+
+        Args:
+            input_data: User metadata, environment, requirements
+            num_candidates: Number of candidates to generate
+            meal_timing: When to exercise relative to meals
+            user_preference: User's string preference (e.g., "I want to focus on upper body exercises")
+        """
         # Parse input
         input_obj = ExerciseAgentInput(**input_data)
         self._input_meta = input_obj.user_metadata  # Store for condition access
@@ -426,20 +436,25 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         conditions = user_meta.get("medical_conditions", [])
         fitness_level = user_meta.get("fitness_level", "beginner")
         weight = user_meta.get("weight_kg", 70)
-        goal = requirement.get("goal", "maintenance")
+        duration = requirement.get("duration", None)
         preferred_intensity = requirement.get("intensity", "moderate")
 
         # Calculate target metrics using instance methods
-        target_calories = self.calculate_target_calories(weight, goal)
-        target_duration = self.calculate_target_duration(fitness_level, goal)
-        target_frequency = self.calculate_target_weekly_frequency(fitness_level, goal, conditions)
-        strategies = self.get_strategies_for_goal(goal)
+        target_calories = self.calculate_target_calories(weight, goal="maintenance", duration_minutes=duration)
+        target_duration = self.calculate_target_duration(fitness_level, goal="maintenance", duration_minutes=duration)
+        target_frequency = self.calculate_target_weekly_frequency(fitness_level, conditions)
 
         # Get knowledge graph context using mixin
         kg_context = ""
         if conditions:
             exercise_knowledge = self.query_exercise_knowledge(conditions, fitness_level)
             kg_context = self._format_kg_context(exercise_knowledge)
+
+        # Query entity-based KG context when user_preference is provided
+        if user_preference:
+            entity_knowledge = self.query_exercise_by_entity(user_preference)
+            entity_context = self._format_exercise_entity_kg_context(entity_knowledge)
+            kg_context += entity_context
 
         # Get environment context
         weather = env.get("weather", {})
@@ -452,8 +467,10 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
             requirement=requirement,
             kg_context=kg_context,
             target_calories=target_calories,
-            target_duration=target_duration,
-            target_frequency=target_frequency
+            target_duration=duration,
+            target_intensity=preferred_intensity,
+            target_frequency=target_frequency,
+            user_preference=user_preference
         )
 
         # Generate candidates with mandatory exercise injection
@@ -505,42 +522,101 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
             # 7. Combine prompts
             full_prompt = base_prompt + "\n" + constraint_prompt
 
-            # 8. Get strategy
-            strategy = strategies[i % len(strategies)] if strategies else "balanced"
-
             candidate = self._generate_single_candidate(
                 user_prompt=full_prompt,
                 candidate_id=i + 1,
                 fitness_level=fitness_level,
                 weight=weight,
-                strategy=strategy
+                # strategy=strategy
             )
             if candidate:
                 candidates.append(candidate)
 
         return candidates
 
-    def _format_kg_context(self, knowledge: Dict) -> str:
-        """Format KG knowledge for prompt inclusion"""
-        context = "\n## Knowledge Graph Context\n"
+    def _format_kg_context(self, knowledge: List) -> str:
+        """Format KG knowledge for prompt inclusion (matching diet agent pattern)"""
+        if not knowledge:
+            return ""
 
-        if knowledge.get("recommended_exercises"):
-            exercises = [e.get("exercise", "") for e in knowledge["recommended_exercises"]]
-            context += f"- Recommended exercises: {', '.join(set(exercises))}\n"
+        parts = []
 
-        if knowledge.get("avoid_exercises"):
-            avoids = [a.get("exercise", "") for a in knowledge["avoid_exercises"]]
-            context += f"- Avoid: {', '.join(set(avoids))}\n"
+        # Set maximum input length = 20
+        maximum_inputs = 20
+        if len(knowledge) > maximum_inputs:
+            random.shuffle(knowledge)
+            knowledge = knowledge[:maximum_inputs]
 
-        if knowledge.get("intensity_recommendations"):
-            for rec in knowledge["intensity_recommendations"][:3]:
-                context += f"- Intensity for {rec.get('condition', 'general')}: {rec.get('recommended_intensity')}\n"
+        for item in knowledge:
+            entity_name = item.get("entity", "name")
+            rel = item.get("rel", "relation")
+            tail = item.get("tail", "name")
+            condition = item.get("condition", "condition")
 
-        if knowledge.get("condition_specific_notes"):
-            for note in knowledge["condition_specific_notes"][:2]:
-                context += f"- Note: {note.get('note', '')}\n"
+            part = "{} {} {} under condition: {}".format(entity_name, rel, tail, condition)
+            parts.append(part)
 
-        return context
+        return "## Knowledge Graph Context\n" + "\n".join(parts) + "\n"
+
+    def _format_exercise_entity_kg_context(self, entity_knowledge: Dict) -> str:
+        """Format entity-based KG knowledge for exercise prompt (matching diet agent pattern)"""
+        if not entity_knowledge:
+            return ""
+
+        parts = []
+
+        if entity_knowledge.get("matched_entities"):
+            entities = entity_knowledge["matched_entities"]
+            parts.append(f"- Matched Entities from KG: {', '.join(set(entities))}")
+
+        if entity_knowledge.get("entity_benefits"):
+            benefits = entity_knowledge["entity_benefits"][:5]  # Limit to top 5
+            unique_benefits = {}
+            for b in benefits:
+                key = f"{b.get('entity', '')}-{b.get('benefit', '')}"
+                if key not in unique_benefits:
+                    unique_benefits[key] = b
+            if unique_benefits:
+                benefit_list = [f"{b.get('entity', '')} has {b.get('benefit', '')}" for b in unique_benefits.values()]
+                parts.append(f"- Exercise Benefits: {', '.join(benefit_list)}")
+
+        if entity_knowledge.get("target_muscles"):
+            muscles = entity_knowledge["target_muscles"][:5]  # Limit to top 5
+            unique_muscles = {}
+            for m in muscles:
+                key = f"{m.get('entity', '')}-{m.get('target', '')}"
+                if key not in unique_muscles:
+                    unique_muscles[key] = m
+            if unique_muscles:
+                muscle_list = [f"{m.get('entity', '')} targets {m.get('target', '')}" for m in unique_muscles.values()]
+                parts.append(f"- Target Muscles: {', '.join(muscle_list)}")
+
+        if entity_knowledge.get("duration_recommendations"):
+            durations = entity_knowledge["duration_recommendations"][:5]  # Limit to top 5
+            unique_durations = {}
+            for d in durations:
+                key = f"{d.get('entity', '')}-{d.get('duration', '')}"
+                if key not in unique_durations:
+                    unique_durations[key] = d
+            if unique_durations:
+                duration_list = [f"{d.get('entity', '')}: {d.get('duration', '')}" for d in unique_durations.values()]
+                parts.append(f"- Duration Recommendations: {', '.join(duration_list)}")
+
+        if entity_knowledge.get("frequency_recommendations"):
+            frequencies = entity_knowledge["frequency_recommendations"][:5]  # Limit to top 5
+            unique_frequencies = {}
+            for f in frequencies:
+                key = f"{f.get('entity', '')}-{f.get('frequency', '')}"
+                if key not in unique_frequencies:
+                    unique_frequencies[key] = f
+            if unique_frequencies:
+                freq_list = [f"{f.get('entity', '')}: {f.get('frequency', '')}" for f in unique_frequencies.values()]
+                parts.append(f"- Frequency Recommendations: {', '.join(freq_list)}")
+
+        if parts:
+            return "## Entity-Based KG Context\n" + "\n".join(parts) + "\n"
+        return ""
+
 
     def _build_exercise_prompt(
         self,
@@ -550,7 +626,9 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         kg_context: str,
         target_calories: int,
         target_duration: int,
-        target_frequency: int
+        target_intensity: str,
+        target_frequency: int,
+        user_preference: str = None
     ) -> str:
         """Build the user prompt for exercise generation"""
         conditions = user_meta.get("medical_conditions", [])
@@ -566,9 +644,8 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 **Fitness Level**: {fitness_level}
 **Medical Conditions**: {', '.join(conditions) if conditions else 'None'}
 
-## Goal
-**Primary Goal**: {goal}
-**Preferred Intensity**: {requirement.get('intensity', 'moderate')}
+## Requirements
+**Target Intensity**: {target_intensity}
 **Target Daily Calories Burn**: {target_calories} kcal
 **Target Duration**: {target_duration} minutes per session
 **Weekly Frequency**: {target_frequency} sessions per week
@@ -577,45 +654,50 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 **Weather**: {environment.get('weather', {})}
 **Season**: {environment.get('time_context', {}).get('season', 'any')}
 
-{kg_context}
+{kg_context}"""
 
+        # Add user preference if provided
+        if user_preference:
+            prompt += f"\n## User Preference\n{user_preference}\n"
+
+        prompt += """
 ## Task
 Generate a single exercise plan candidate. Return ONLY the JSON object, NO markdown code blocks, NO extra wrapper keys.
 Each exercise MUST have: "name", "exercise_type", "duration_minutes", "intensity", "calories_burned".
 Generate ONLY ONE session per day (single morning/afternoon/evening block).
-
-Example format:
-{{
-  "id": 1,
-  "title": "Morning Cardio Plan",
-  "meal_timing": "after_breakfast",
-  "sessions": {{
-    "morning": {{
-      "time_of_day": "morning",
-      "exercises": [
-        {{
-          "name": "Brisk Walking",
-          "exercise_type": "cardio",
-          "duration_minutes": 30,
-          "intensity": "low",
-          "calories_burned": 135,
-          "equipment": [],
-          "target_muscles": ["legs", "cardio"],
-          "instructions": ["Walk at comfortable pace", "Maintain good posture"],
-          "reason": "Low-impact cardio suitable for beginners",
-          "safety_notes": ["Stay hydrated", "Warm up first"]
-        }}
-      ],
-      "total_duration_minutes": 30,
-      "total_calories_burned": 135,
-      "overall_intensity": "low"
-    }}
-  }},
-  "total_duration_minutes": 30,
-  "total_calories_burned": 135,
-  "reasoning": "This plan combines low-impact cardio with strength training",
-  "safety_notes": ["Consult physician before starting", "Listen to your body"]
-}}"""
+"""
+# Example format:
+# {{
+#   "id": 1,
+#   "title": "Morning Cardio Plan",
+#   "meal_timing": "after_breakfast",
+#   "sessions": {{
+#     "morning": {{
+#       "time_of_day": "morning",
+#       "exercises": [
+#         {{
+#           "name": "Brisk Walking",
+#           "exercise_type": "cardio",
+#           "duration_minutes": 30,
+#           "intensity": "low",
+#           "calories_burned": 135,
+#           "equipment": [],
+#           "target_muscles": ["legs", "cardio"],
+#           "instructions": ["Walk at comfortable pace", "Maintain good posture"],
+#           "reason": "Low-impact cardio suitable for beginners",
+#           "safety_notes": ["Stay hydrated", "Warm up first"]
+#         }}
+#       ],
+#       "total_duration_minutes": 30,
+#       "total_calories_burned": 135,
+#       "overall_intensity": "low"
+#     }}
+#   }},
+#   "total_duration_minutes": 30,
+#   "total_calories_burned": 135,
+#   "reasoning": "This plan combines low-impact cardio with strength training",
+#   "safety_notes": ["Consult physician before starting", "Listen to your body"]
+# }}"""
 
         return prompt
 
@@ -730,7 +812,8 @@ def generate_exercise_candidates(
     environment: Dict[str, Any] = {},
     user_requirement: Dict[str, Any] = {},
     num_candidates: int = 3,
-    meal_timing: str = ""
+    meal_timing: str = "",
+    user_preference: str = None
 ) -> List[ExercisePlan]:
     """
     Convenience function to generate exercise candidates.
@@ -738,8 +821,9 @@ def generate_exercise_candidates(
     Args:
         user_metadata: User physiological data
         environment: Environmental context
-        user_requirement: User goals
+        user_requirement: User requirements (intensity, duration in minutes)
         num_candidates: Number of candidates to generate
+        user_preference: User's string preference (e.g., "I want to focus on upper body exercises")
 
     Returns:
         List of ExercisePlan objects
@@ -751,7 +835,7 @@ def generate_exercise_candidates(
         "user_requirement": user_requirement,
         "num_candidates": num_candidates
     }
-    return agent.generate(input_data, num_candidates, meal_timing=meal_timing)
+    return agent.generate(input_data, num_candidates, meal_timing=meal_timing, user_preference=user_preference)
 
 
 def generate_exercise_variants(
@@ -759,7 +843,9 @@ def generate_exercise_variants(
     environment: Dict[str, Any] = {},
     user_requirement: Dict[str, Any] = {},
     num_candidates: int = 3,
-    meal_timing: str = ""
+    num_var: int = 3,
+    meal_timing: str = "",
+    user_preference: str = None
 ) -> Dict[str, List[ExercisePlan]]:
     """
     Generate exercise plans with intensity variants (Lite/Standard/Plus).
@@ -767,8 +853,9 @@ def generate_exercise_variants(
     Args:
         user_metadata: User physiological data
         environment: Environmental context
-        user_requirement: User goals
+        user_requirement: User requirements (intensity, duration in minutes)
         num_candidates: Number of base candidates to generate
+        user_preference: User's string preference (e.g., "I want to focus on upper body exercises")
 
     Returns:
         Dict mapping candidate_id to dict of variants:
@@ -780,15 +867,25 @@ def generate_exercise_variants(
     """
     # Generate base candidates
     base_candidates = generate_exercise_candidates(
-        user_metadata, environment, user_requirement, num_candidates, meal_timing
+        user_metadata, environment, user_requirement, num_candidates, meal_timing, user_preference
     )
 
     # Expand each candidate into variants
     parser = ExercisePlanParser()
     result = {}
+    print(f"num_var = {num_var}")
+    if num_var == 1:
+        var = ["Lite"]
+    elif num_var == 2:
+        var = ["Lite", "Standard"]
+    elif num_var == 3:
+        var = ["Lite", "Standard", "Plus"]
+    else:
+        # Default to all 3 variants for any other num_var value
+        var = ["Lite", "Standard", "Plus"]
 
     for base_plan in base_candidates:
-        variants = parser.expand_plan(base_plan)
+        variants = parser.expand_plan(base_plan, variants=var)
         result[base_plan.id] = variants
 
     return result

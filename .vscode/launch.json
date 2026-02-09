@@ -1,0 +1,30 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Py: Diet",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pipeline.diet_pipeline",
+            "args": [
+                "--query",
+                "\"I want a Mediterranean pasta with salmon\"",
+                "--bn", "1", "--vn", "1"
+            ]
+        },
+        {
+            "name": "Py: Exer",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pipeline.exer_pipeline",
+            "args": [
+                "--query",
+                "\"I want to do some exercise about back muscles in the gym.\"",
+                "--bn", "1", "--vn", "1"
+            ]
+        }
+    ]
+}

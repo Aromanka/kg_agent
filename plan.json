@@ -1,0 +1,314 @@
+{
+  "all_plans": [
+    {
+      "id": 1,
+      "meal_type": "lunch",
+      "variant": "Lite",
+      "items": [
+        {
+          "food": "Whole Wheat Pasta",
+          "portion": "80.0gram",
+          "calories": 104,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Grilled Salmon Fillet",
+          "portion": "120.0gram",
+          "calories": 240,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cherry Tomatoes",
+          "portion": "120.0gram",
+          "calories": 24,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Kalamata Olives",
+          "portion": "24.0gram",
+          "calories": 64,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Baby Spinach",
+          "portion": "80.0gram",
+          "calories": 18,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Extra Virgin Olive Oil",
+          "portion": "12.0ml",
+          "calories": 108,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Fresh Lemon Juice",
+          "portion": "12.0ml",
+          "calories": 3,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Fresh Basil",
+          "portion": "8.0gram",
+          "calories": 2,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Crumbled Feta Cheese (Low Sodium)",
+          "portion": "32.0gram",
+          "calories": 88,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Toasted Pine Nuts",
+          "portion": "8.0gram",
+          "calories": 56,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 707,
+      "target_calories": 904,
+      "calories_deviation": -21.8,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Lite",
+        "Style: Fusion, Strategy: balanced",
+        "Calorie deviation: -21.8%"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 707 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 707 is dangerously low"
+        ],
+        "assessed_at": "2026-02-09T15:22:54.150506"
+      }
+    }
+  ],
+  "top_plans": [
+    {
+      "id": 1,
+      "meal_type": "lunch",
+      "variant": "Lite",
+      "items": [
+        {
+          "food": "Whole Wheat Pasta",
+          "portion": "80.0gram",
+          "calories": 104,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Grilled Salmon Fillet",
+          "portion": "120.0gram",
+          "calories": 240,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Cherry Tomatoes",
+          "portion": "120.0gram",
+          "calories": 24,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Kalamata Olives",
+          "portion": "24.0gram",
+          "calories": 64,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Baby Spinach",
+          "portion": "80.0gram",
+          "calories": 18,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Extra Virgin Olive Oil",
+          "portion": "12.0ml",
+          "calories": 108,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Fresh Lemon Juice",
+          "portion": "12.0ml",
+          "calories": 3,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Fresh Basil",
+          "portion": "8.0gram",
+          "calories": 2,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Crumbled Feta Cheese (Low Sodium)",
+          "portion": "32.0gram",
+          "calories": 88,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Toasted Pine Nuts",
+          "portion": "8.0gram",
+          "calories": 56,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        }
+      ],
+      "total_calories": 707,
+      "target_calories": 904,
+      "calories_deviation": -21.8,
+      "safety_notes": [
+        "Meal: lunch",
+        "Variant: Lite",
+        "Style: Fusion, Strategy: balanced",
+        "Calorie deviation: -21.8%"
+      ],
+      "_assessment": {
+        "score": 0,
+        "is_safe": false,
+        "status": "failed",
+        "risk_level": "very_high",
+        "risk_factors": [
+          {
+            "factor": "extremely_low_calories",
+            "category": "nutritional",
+            "severity": "high",
+            "description": "Total calories 707 is dangerously low",
+            "recommendation": "Consult a dietitian for safe calorie targets"
+          }
+        ],
+        "safety_checks": [
+          {
+            "check_name": "min_calories",
+            "passed": false,
+            "message": "Daily calories too low",
+            "severity": "high"
+          }
+        ],
+        "recommendations": [
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
+        ],
+        "warnings": [
+          "Total calories 707 is dangerously low"
+        ],
+        "assessed_at": "2026-02-09T15:22:54.150506"
+      }
+    }
+  ],
+  "assessments": {
+    "1": {
+      "score": 0,
+      "is_safe": false,
+      "status": "failed",
+      "risk_level": "very_high",
+      "risk_factors": [
+        {
+          "factor": "extremely_low_calories",
+          "category": "nutritional",
+          "severity": "high",
+          "description": "Total calories 707 is dangerously low",
+          "recommendation": "Consult a dietitian for safe calorie targets"
+        }
+      ],
+      "safety_checks": [
+        {
+          "check_name": "min_calories",
+          "passed": false,
+          "message": "Daily calories too low",
+          "severity": "high"
+        }
+      ],
+      "recommendations": [
+        "Consult a dietitian for safe calorie targets",
+        "Consult healthcare provider before starting due to: diabetes"
+      ],
+      "warnings": [
+        "Total calories 707 is dangerously low"
+      ],
+      "assessed_at": "2026-02-09T15:22:54.150506"
+    }
+  },
+  "generated_at": "2026-02-09T15:22:54.153040"
+}

@@ -12,18 +12,17 @@ from core.llm.utils import parse_messages_to_str, parse_response_to_str
 
 
 def get_llm_client() -> OpenAI:
-    """获取 DeepSeek LLM 客户端"""
     config = get_config()
     return OpenAI(
-        api_key=config["deepseek"]["api_key"],
-        base_url=config["deepseek"]["base_url"]
+        api_key=config["api_model"]["api_key"],
+        base_url=config["api_model"]["base_url"]
     )
 
 
 def get_model_name() -> str:
     """获取模型名称"""
     config = get_config()
-    return config.get("deepseek", {}).get("model", "deepseek-chat")
+    return config.get("api_model", {}).get("model", "deepseek-chat")
 
 
 class LLMClient:
@@ -74,21 +73,20 @@ class LLMClient:
     def chat(
         self,
         messages: List[Dict[str, str]],
-        temperature: float = 0.7,
+        temperature: float = 0.0,
         max_tokens: Optional[int] = None,
         **kwargs
-    ) -> str:
+        ) -> str:
         """发送对话请求，返回内容"""
         start_time = datetime.now()
         resp = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
             temperature=temperature,
-            max_tokens=max_tokens,
-            **kwargs
+            max_tokens=max_tokens
         )
-        duration_ms = (datetime.now() - start_time).total_seconds() * 1000
         content = resp.choices[0].message.content
+        duration_ms = (datetime.now() - start_time).total_seconds() * 1000
         self._log(messages, {"content": content}, duration_ms)
         return content
 
@@ -97,46 +95,23 @@ class LLMClient:
         messages: List[Dict[str, str]],
         temperature: float = 0.0,
         **kwargs
-    ) -> dict:
+        ) -> dict:
         """发送对话请求，返回解析后的 JSON"""
         start_time = datetime.now()
-        try:
-            resp = self.client.chat.completions.create(
+        # Filter out unsupported parameters that cause TypeError
+        unsupported_params = ['temperature', 'top_p', 'top_k']
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k not in unsupported_params}
+        resp = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 temperature=temperature,
                 response_format={'type': 'json_object'},
-                **kwargs
+                **filtered_kwargs
             )
-            content = resp.choices[0].message.content
-            duration_ms = (datetime.now() - start_time).total_seconds() * 1000
-
-            # Handle empty response
-            if not content or not content.strip():
-                print(f"[WARN] LLM returned empty response")
-                self._log(messages, {"content": "", "error": "empty response"}, duration_ms)
-                return {}
-
-            # Try to extract JSON from markdown code blocks
-            import re
-            json_match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', content)
-            if json_match:
-                content = json_match.group(1)
-
-            # Parse JSON
-            result = json.loads(content.strip())
-            self._log(messages, result, duration_ms)
-            return result
-
-        except json.JSONDecodeError as e:
-            print(f"[ERROR] JSON parsing failed: {e}")
-            print(f"[DEBUG] Raw response: {content if 'content' in dir() else 'N/A'}")
-            self._log(messages, {"error": str(e)}, duration_ms)
-            return {}
-        except Exception as e:
-            print(f"[ERROR] LLM request failed: {e}")
-            self._log(messages, {"error": str(e)}, duration_ms)
-            return {}
+        content = resp.choices[0].message.content
+        duration_ms = (datetime.now() - start_time).total_seconds() * 1000
+        self._log(messages, {"content": content}, duration_ms)
+        return content
 
     def extract_keywords(self, question: str, max_count: int = 3) -> List[str]:
         """提取问题中的关键词"""
@@ -159,12 +134,15 @@ _llm_client: Optional[LLMClient] = None
 
 
 def get_llm():
-    """获取全局 LLM 客户端实例，优先使用本地模型"""
+    """获取全局 LLM 客户端实例，优先使用api/本地模型"""
     global _llm_client
     if _llm_client is None:
         from core.llm.local_llm import is_local_mode, get_local_llm
+        _llm_client = LLMClient()
+        """
         if is_local_mode():
             _llm_client = get_local_llm()
         else:
             _llm_client = LLMClient()
+        """
     return _llm_client

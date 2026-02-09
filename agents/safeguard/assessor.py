@@ -1,10 +1,3 @@
-"""
-Safeguard Agent - Safety Assessment Module
-Evaluates plan safety based on user metadata, environment, and plan content.
-Provides 0-100 safety score and True/False safety judgment.
-
-适应 DietRecommendation 和 ExercisePlan 的真实数据结构。
-"""
 import json
 import os
 from typing import List, Dict, Any, Optional
@@ -17,109 +10,13 @@ from agents.safeguard.models import (
 )
 from core.llm import get_llm
 from core.neo4j import get_kg_query
+from agents.safeguard.config import *
+from kg.prompts import prioritized_risk_kg_rels, DIETARY_QUERY_ENTITIES
 
 
-# ================= Safety Rules =================
-
-# Rule-based safety thresholds
-DIET_SAFETY_RULES = {
-    "min_calories": {
-        "value": 1200,
-        "message": "Daily calories too low",
-        "severity": RiskLevel.HIGH
-    },
-    "max_calories": {
-        "value": 4000,
-        "message": "Daily calories too high",
-        "severity": RiskLevel.MODERATE
-    },
-    "min_protein_ratio": {
-        "value": 0.10,
-        "message": "Protein ratio too low (need adequate protein)",
-        "severity": RiskLevel.MODERATE
-    },
-    "max_fat_ratio": {
-        "value": 0.40,
-        "message": "Fat ratio too high",
-        "severity": RiskLevel.MODERATE
-    },
-    "single_meal_calories": {
-        "value": 1500,
-        "message": "Single meal calorie too high",
-        "severity": RiskLevel.LOW
-    }
-}
-
-EXERCISE_SAFETY_RULES = {
-    "max_daily_duration_beginner": {
-        "value": 30,
-        "message": "Exercise duration too long for beginner",
-        "severity": RiskLevel.HIGH
-    },
-    "max_daily_duration_intermediate": {
-        "value": 60,
-        "message": "Exercise duration too long",
-        "severity": RiskLevel.MODERATE
-    },
-    "max_daily_duration_advanced": {
-        "value": 120,
-        "message": "Exercise duration excessive",
-        "severity": RiskLevel.LOW
-    },
-    "min_rest_between_hiit": {
-        "value": 48,
-        "message": "HIIT sessions too frequent (need rest days)",
-        "severity": RiskLevel.HIGH
-    },
-    "max_weekly_sessions": {
-        "value": 7,
-        "message": "Daily exercise without rest (need rest days)",
-        "severity": RiskLevel.MODERATE
-    }
-}
-
-# Condition-specific restrictions
-CONDITION_RESTRICTIONS = {
-    "diabetes": {
-        "diet": {
-            "avoid_high_sugar": "High sugar foods",
-            "avoid_irregular_meals": "Irregular meal timing"
-        },
-        "exercise": {
-            "avoid_vigorous_if_below_100": "Vigorous exercise with blood sugar < 100mg/dL",
-            "avoid_late_exercise": "Late night exercise (hypoglycemia risk)"
-        }
-    },
-    "hypertension": {
-        "diet": {
-            "max_sodium": 2300,
-            "avoid_high_sodium": "High sodium foods"
-        },
-        "exercise": {
-            "avoid_isometric": "Isometric exercises (heavy static holds)",
-            "avoid_valsalva": "Breath holding during exercise"
-        }
-    },
-    "heart_disease": {
-        "exercise": {
-            "max_heart_rate": "220 - age * 0.7",
-            "avoid_high_intensity": "High intensity exercise",
-            "require_clearance": "Medical clearance required"
-        }
-    },
-    "obesity": {
-        "exercise": {
-            "avoid_high_impact": "High impact exercises",
-            "start_low": "Low impact, gradual progression"
-        }
-    },
-    "arthritis": {
-        "exercise": {
-            "avoid_high_impact": "Running, jumping",
-            "prefer_low_impact": "Swimming, cycling"
-        }
-    }
-}
+DIET_SAFETY_RULES = get_DIET_SAFETY_RULES(RiskLevel)
+EXERCISE_SAFETY_RULES = get_EXERCISE_SAFETY_RULES(RiskLevel)
+CONDITION_RESTRICTIONS = get_CONDITION_RESTRICTIONS()
 
 
 # ================= Safeguard Agent =================
@@ -687,8 +584,15 @@ class SafeguardAgent(BaseAgent):
         user_metadata: Dict[str, Any],
         environment: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
-        """Use LLM for semantic safety assessment"""
+        """Use LLM for semantic safety assessment with KG context"""
         try:
+            # Build KG context if available
+            kg_context = ""
+            if plan_type == "diet":
+                kg_context = self._query_diet_kg_for_assessment(plan, user_metadata)
+            elif plan_type == "exercise":
+                kg_context = self._query_exercise_kg_for_assessment(plan, user_metadata)
+
             prompt = f"""Analyze the following {plan_type} plan for safety issues.
 
 ## User Profile
@@ -698,6 +602,9 @@ class SafeguardAgent(BaseAgent):
 
 ## Environment
 {environment}
+
+## Knowledge Graph Context
+{kg_context if kg_context else "No KG data available"}
 
 ## Plan
 {json.dumps(plan, ensure_ascii=False, indent=2)}
@@ -709,6 +616,9 @@ Identify any safety concerns that rule-based checks might miss:
 3. Nutrient deficiencies
 4. Overtraining signs
 5. Environmental mismatches
+6. Conflicts with user's medical conditions
+
+Use the Knowledge Graph context to identify potential risks, contraindications, and interactions.
 
 Return JSON with:
 - "risk_factors": array of {{factor, description, severity}}
@@ -727,6 +637,195 @@ Return JSON with:
         except Exception as e:
             print(f"LLM assessment failed: {e}")
             return None
+
+    def _query_diet_kg_for_assessment(
+        self,
+        plan: Dict[str, Any],
+        user_metadata: Dict[str, Any]
+    ) -> str:
+        """Query knowledge graph for diet plan safety assessment"""
+        kg = get_kg_query()
+        results = []
+
+        # Extract food items from plan
+        food_items = []
+        meal_plan = plan.get("meal_plan", {})
+        if isinstance(meal_plan, dict):
+            for meal_type, items in meal_plan.items():
+                if isinstance(items, list):
+                    for item in items:
+                        if isinstance(item, dict):
+                            food_name = item.get("food", "")
+                            if food_name:
+                                food_items.append(food_name)
+                        elif hasattr(item, 'food'):
+                            food_items.append(item.food)
+
+        # Get user conditions and restrictions
+        conditions = user_metadata.get("medical_conditions", [])
+        restrictions = user_metadata.get("dietary_restrictions", [])
+
+        # Define stop words for keyword filtering
+        stop_words = {
+            "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
+            "of", "with", "by", "from", "as", "is", "are", "was", "were", "be",
+            "been", "being", "have", "has", "had", "do", "does", "did", "will",
+            "would", "could", "should", "may", "might", "must", "can", "need",
+            "this", "that", "these", "those", "i", "you", "he", "she", "it", "we",
+            "they", "what", "which", "who", "whom", "whose", "where", "when", "why",
+            "how", "all", "each", "every", "both", "few", "more", "most", "other",
+            "some", "such", "no", "not", "only", "own", "same", "so", "than",
+            "too", "very", "just", "also", "now", "here", "there", "then", "once"
+        }
+
+        # Build query entities: food items + conditions + restrictions + default entities
+        # Apply keyword split logic to each entity
+        all_entities = []
+        for entity in food_items:
+            words = entity.lower().split()
+            keywords = [w.strip(".,!?;:\"'()[]{}") for w in words if w.lower() not in stop_words and len(w) > 2]
+            all_entities.extend(keywords)
+        all_entities.extend(conditions + restrictions + list(DIETARY_QUERY_ENTITIES))
+
+        # Remove duplicates while preserving order
+        all_entities = list(dict.fromkeys(all_entities))
+
+        # Query KG for each entity, filtering by prioritized risk relations
+        for entity in all_entities[:15]:  # Limit to 15 entities for performance
+            try:
+                search_results = kg.search_entities(entity)
+
+                for result in search_results:
+                    entity_name = result.get("head", "")
+                    tail = result.get("tail", "")
+                    rel_type = result.get("rel_type", "")
+
+                    # Filter by prioritized risk relations
+                    if rel_type not in prioritized_risk_kg_rels:
+                        continue
+
+                    if not tail:
+                        continue
+
+                    results.append({
+                        "entity": entity_name,
+                        "relation": rel_type,
+                        "related_to": tail
+                    })
+            except Exception as e:
+                print(f"[WARN] Failed to query entity {entity}: {e}")
+
+        # Format results for prompt
+        if not results:
+            return "No relevant KG data found."
+
+        context_lines = ["## Relevant Knowledge Graph Relationships"]
+        for r in results[:20]:  # Limit to 20 most relevant results
+            context_lines.append(f"- {r['entity']} --[{r['relation']}]--> {r['related_to']}")
+
+        return "\n".join(context_lines)
+
+    def _query_exercise_kg_for_assessment(
+        self,
+        plan: Dict[str, Any],
+        user_metadata: Dict[str, Any]
+    ) -> str:
+        """Query knowledge graph for exercise plan safety assessment"""
+        kg = get_kg_query()
+        results = []
+
+        # Extract exercise names from plan
+        exercise_names = []
+        sessions = plan.get("sessions", {})
+        if isinstance(sessions, dict):
+            for session_key, session in sessions.items():
+                if isinstance(session, dict):
+                    exercises = session.get("exercises", [])
+                    for ex in exercises:
+                        if isinstance(ex, dict):
+                            ex_name = ex.get("name", "")
+                            if ex_name:
+                                exercise_names.append(ex_name)
+                elif hasattr(session, 'exercises'):
+                    for ex in session.exercises:
+                        if hasattr(ex, 'name'):
+                            exercise_names.append(ex.name)
+
+        # Get user conditions
+        conditions = user_metadata.get("medical_conditions", [])
+
+        # Define stop words for keyword filtering
+        stop_words = {
+            "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
+            "of", "with", "by", "from", "as", "is", "are", "was", "were", "be",
+            "been", "being", "have", "has", "had", "do", "does", "did", "will",
+            "would", "could", "should", "may", "might", "must", "can", "need",
+            "this", "that", "these", "those", "i", "you", "he", "she", "it", "we",
+            "they", "what", "which", "who", "whom", "whose", "where", "when", "why",
+            "how", "all", "each", "every", "both", "few", "more", "most", "other",
+            "some", "such", "no", "not", "only", "own", "same", "so", "than",
+            "too", "very", "just", "also", "now", "here", "there", "then", "once"
+        }
+
+        # Build query entities: exercise names + conditions
+        # Apply keyword split logic to each entity
+        all_entities = []
+        for entity_list in [exercise_names, conditions]:
+            for entity in entity_list:
+                # Extract words from entity
+                words = entity.lower().split()
+                # Filter out stop words and short words (<3 chars)
+                keywords = [w.strip(".,!?;:\"'()[]{}") for w in words if w.lower() not in stop_words and len(w) > 2]
+                all_entities.extend(keywords)
+
+        # Remove duplicates while preserving order
+        all_entities = list(dict.fromkeys(all_entities))
+
+        # Exercise-specific risk relations
+        # exercise_risk_rels = [
+        #     "Contraindicated_For",
+        #     "Has_Risk",
+        #     "Antagonism_With",
+        #     "Disease_Management",
+        #     "Targets_Entity"
+        # ]
+        exercise_risk_rels = None
+
+        # Query KG for each entity
+        for entity in all_entities[:15]:
+            try:
+                search_results = kg.search_entities(entity)
+
+                for result in search_results:
+                    entity_name = result.get("head", "")
+                    tail = result.get("tail", "")
+                    rel_type = result.get("rel_type", "")
+
+                    # Filter by exercise risk relations
+                    if exercise_risk_rels is not None and rel_type not in exercise_risk_rels:
+                        continue
+
+                    if not tail:
+                        continue
+
+                    results.append({
+                        "entity": entity_name,
+                        "relation": rel_type,
+                        "related_to": tail
+                    })
+            except Exception as e:
+                print(f"[WARN] Failed to query entity {entity}: {e}")
+
+        # Format results for prompt
+        if not results:
+            return "No relevant KG data found."
+
+        # context_lines = ["## Relevant Knowledge Graph Relationships"]
+        context_lines = []
+        for r in results[:20]:
+            context_lines.append(f"- {r['entity']} --[{r['relation']}]--> {r['related_to']}")
+
+        return "\n".join(context_lines)
 
     def _generate_recommendations(
         self,
