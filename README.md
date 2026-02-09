@@ -34,7 +34,7 @@ python -m core.import_kg
 # Diet recommendation (4 base plans × 3 portion variants = 12 variants)
 python -m pipeline.diet_pipeline --bn 4 --vn 3
 # Exercise recommendation (3 base plans × 3 intensity levels = 9 variants)
-python -m pipeline.exer_pipeline --bn 3 --topk 3 --meal_timing after_lunch
+python -m pipeline.exer_pipeline --bn 1 --vn 1 --query "I want to do some exercise about back muscles in the gym."
 ```
 
 ## Configuration

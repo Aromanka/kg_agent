@@ -28,6 +28,15 @@ prioritized_risk_kg_rels = [
 ]
 
 
+prioritized_exercise_risk_kg_rels = [
+    "Contraindicated_For",
+    "Has_Risk",
+    "Antagonism_With",
+    "Disease_Management",
+    "Targets_Entity",
+]
+
+
 DIET_KG_EXTRACT_SCHEMA_PROMPT = """
 You are an advanced Knowledge Graph Engineer specialized in Nutritional Epidemiology and Biomedical Information Extraction.
 Your goal is to extract structured knowledge from diet and nutrition text with **clinical precision**.

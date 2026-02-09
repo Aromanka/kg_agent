@@ -489,65 +489,43 @@ class ExerciseAgentMixin:
     def query_exercise_knowledge(
         self,
         conditions: List[str],
-        fitness_level: str = "beginner"
-    ) -> Dict[str, Any]:
-        """Query knowledge graph for exercise recommendations"""
-        results = {
-            "recommended_exercises": [],
-            "avoid_exercises": [],
-            "intensity_recommendations": [],
-            "condition_specific_notes": []
-        }
+        fitness_level: str = "beginner",
+        cared_rels: List[str] = None
+    ) -> List[Dict]:
+        """
+        Query knowledge graph for exercise recommendations.
+        Returns a list of relationship dicts matching the diet agent pattern.
+        """
+        results = []
+        all_entities = list(set(conditions + EXERCISE_QUERY_ENTITIES))
+
 
         # Use universal search for all conditions
-        for condition in conditions:
+        for entity in all_entities:
             try:
-                search_results = self._kg.search_entities(condition)
+                search_results = self._kg.search_entities(entity)
+                all_rel_types = []
 
                 # Classify results based on relation types
                 for result in search_results:
                     entity_name = result.get("head", "")
                     tail = result.get("tail", "")
                     rel_type = result.get("rel_type", "")
+                    if cared_rels is not None and rel_type not in cared_rels:
+                        continue
+                    all_rel_types.append(rel_type)
 
                     if not tail:
                         continue
 
-                    # Classify by relation type
-                    if rel_type in ["Indicated_For", "Recommended_For", "Beneficial_For"]:
-                        results["recommended_exercises"].append({
-                            "entity": entity_name,
-                            "exercise": tail,
-                            "condition": condition,
-                            "source": "kg"
-                        })
-                    elif rel_type in ["Contraindicated_For", "Should_Avoid", "Risk_For", "Harmful_For"]:
-                        results["avoid_exercises"].append({
-                            "entity": entity_name,
-                            "exercise": tail,
-                            "condition": condition,
-                            "reason": f"Risky for {condition}",
-                            "severity": "high"
-                        })
-                    elif rel_type in ["Recommended_Intensity", "Safe_Intensity", "Intensity"]:
-                        results["intensity_recommendations"].append({
-                            "entity": entity_name,
-                            "intensity": tail,
-                            "condition": condition,
-                            "fitness_level": fitness_level
-                        })
-                    elif rel_type in ["Note", "Precaution", "Advice"]:
-                        results["condition_specific_notes"].append({
-                            "entity": entity_name,
-                            "note": tail,
-                            "condition": condition
-                        })
+                    results.append({
+                        "entity": entity_name,
+                        "rel": rel_type,
+                        "tail": tail,
+                        "condition": entity
+                    })
             except Exception as e:
                 print(f"[WARN] Failed to query condition {condition}: {e}")
-
-        # Deduplicate
-        results["recommended_exercises"] = self._deduplicate_exercises(results["recommended_exercises"])
-        results["avoid_exercises"] = self._deduplicate_exercises(results["avoid_exercises"])
 
         return results
 

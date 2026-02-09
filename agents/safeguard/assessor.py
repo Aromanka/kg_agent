@@ -11,6 +11,7 @@ from agents.safeguard.models import (
 from core.llm import get_llm
 from core.neo4j import get_kg_query
 from agents.safeguard.config import *
+from kg.prompts import prioritized_risk_kg_rels, DIETARY_QUERY_ENTITIES
 
 
 DIET_SAFETY_RULES = get_DIET_SAFETY_RULES(RiskLevel)
@@ -583,8 +584,15 @@ class SafeguardAgent(BaseAgent):
         user_metadata: Dict[str, Any],
         environment: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
-        """Use LLM for semantic safety assessment"""
+        """Use LLM for semantic safety assessment with KG context"""
         try:
+            # Build KG context if available
+            kg_context = ""
+            if plan_type == "diet":
+                kg_context = self._query_diet_kg_for_assessment(plan, user_metadata)
+            elif plan_type == "exercise":
+                kg_context = self._query_exercise_kg_for_assessment(plan, user_metadata)
+
             prompt = f"""Analyze the following {plan_type} plan for safety issues.
 
 ## User Profile
@@ -594,6 +602,9 @@ class SafeguardAgent(BaseAgent):
 
 ## Environment
 {environment}
+
+## Knowledge Graph Context
+{kg_context if kg_context else "No KG data available"}
 
 ## Plan
 {json.dumps(plan, ensure_ascii=False, indent=2)}
@@ -605,6 +616,9 @@ Identify any safety concerns that rule-based checks might miss:
 3. Nutrient deficiencies
 4. Overtraining signs
 5. Environmental mismatches
+6. Conflicts with user's medical conditions
+
+Use the Knowledge Graph context to identify potential risks, contraindications, and interactions.
 
 Return JSON with:
 - "risk_factors": array of {{factor, description, severity}}
@@ -623,6 +637,147 @@ Return JSON with:
         except Exception as e:
             print(f"LLM assessment failed: {e}")
             return None
+
+    def _query_diet_kg_for_assessment(
+        self,
+        plan: Dict[str, Any],
+        user_metadata: Dict[str, Any]
+    ) -> str:
+        """Query knowledge graph for diet plan safety assessment"""
+        kg = get_kg_query()
+        results = []
+
+        # Extract food items from plan
+        food_items = []
+        meal_plan = plan.get("meal_plan", {})
+        if isinstance(meal_plan, dict):
+            for meal_type, items in meal_plan.items():
+                if isinstance(items, list):
+                    for item in items:
+                        if isinstance(item, dict):
+                            food_name = item.get("food", "")
+                            if food_name:
+                                food_items.append(food_name)
+                        elif hasattr(item, 'food'):
+                            food_items.append(item.food)
+
+        # Get user conditions and restrictions
+        conditions = user_metadata.get("medical_conditions", [])
+        restrictions = user_metadata.get("dietary_restrictions", [])
+
+        # Build query entities: food items + conditions + default entities
+        all_entities = list(set(food_items + conditions + restrictions + list(DIETARY_QUERY_ENTITIES)))
+
+        # Query KG for each entity, filtering by prioritized risk relations
+        for entity in all_entities[:15]:  # Limit to 15 entities for performance
+            try:
+                search_results = kg.search_entities(entity)
+
+                for result in search_results:
+                    entity_name = result.get("head", "")
+                    tail = result.get("tail", "")
+                    rel_type = result.get("rel_type", "")
+
+                    # Filter by prioritized risk relations
+                    if rel_type not in prioritized_risk_kg_rels:
+                        continue
+
+                    if not tail:
+                        continue
+
+                    results.append({
+                        "entity": entity_name,
+                        "relation": rel_type,
+                        "related_to": tail
+                    })
+            except Exception as e:
+                print(f"[WARN] Failed to query entity {entity}: {e}")
+
+        # Format results for prompt
+        if not results:
+            return "No relevant KG data found."
+
+        context_lines = ["## Relevant Knowledge Graph Relationships"]
+        for r in results[:20]:  # Limit to 20 most relevant results
+            context_lines.append(f"- {r['entity']} --[{r['relation']}]--> {r['related_to']}")
+
+        return "\n".join(context_lines)
+
+    def _query_exercise_kg_for_assessment(
+        self,
+        plan: Dict[str, Any],
+        user_metadata: Dict[str, Any]
+    ) -> str:
+        """Query knowledge graph for exercise plan safety assessment"""
+        kg = get_kg_query()
+        results = []
+
+        # Extract exercise names from plan
+        exercise_names = []
+        sessions = plan.get("sessions", {})
+        if isinstance(sessions, dict):
+            for session_key, session in sessions.items():
+                if isinstance(session, dict):
+                    exercises = session.get("exercises", [])
+                    for ex in exercises:
+                        if isinstance(ex, dict):
+                            ex_name = ex.get("name", "")
+                            if ex_name:
+                                exercise_names.append(ex_name)
+                elif hasattr(session, 'exercises'):
+                    for ex in session.exercises:
+                        if hasattr(ex, 'name'):
+                            exercise_names.append(ex.name)
+
+        # Get user conditions
+        conditions = user_metadata.get("medical_conditions", [])
+
+        # Build query entities: exercise names + conditions
+        all_entities = list(set(exercise_names + conditions))
+
+        # Exercise-specific risk relations
+        exercise_risk_rels = [
+            "Contraindicated_For",
+            "Has_Risk",
+            "Antagonism_With",
+            "Disease_Management",
+            "Targets_Entity"
+        ]
+
+        # Query KG for each entity
+        for entity in all_entities[:15]:
+            try:
+                search_results = kg.search_entities(entity)
+
+                for result in search_results:
+                    entity_name = result.get("head", "")
+                    tail = result.get("tail", "")
+                    rel_type = result.get("rel_type", "")
+
+                    # Filter by exercise risk relations
+                    if rel_type not in exercise_risk_rels:
+                        continue
+
+                    if not tail:
+                        continue
+
+                    results.append({
+                        "entity": entity_name,
+                        "relation": rel_type,
+                        "related_to": tail
+                    })
+            except Exception as e:
+                print(f"[WARN] Failed to query entity {entity}: {e}")
+
+        # Format results for prompt
+        if not results:
+            return "No relevant KG data found."
+
+        context_lines = ["## Relevant Knowledge Graph Relationships"]
+        for r in results[:20]:
+            context_lines.append(f"- {r['entity']} --[{r['relation']}]--> {r['related_to']}")
+
+        return "\n".join(context_lines)
 
     def _generate_recommendations(
         self,

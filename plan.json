@@ -6,25 +6,25 @@
       "variant": "Lite",
       "items": [
         {
+          "food": "Whole Wheat Pasta",
+          "portion": "80.0gram",
+          "calories": 104,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
           "food": "Grilled Salmon Fillet",
-          "portion": "144.0gram",
-          "calories": 288,
+          "portion": "120.0gram",
+          "calories": 240,
           "protein": 0.0,
           "carbs": 0.0,
           "fat": 0.0,
           "fiber": null
         },
         {
-          "food": "Konjac Noodles (Shirataki)",
-          "portion": "160.0gram",
-          "calories": 16,
-          "protein": 0.0,
-          "carbs": 0.0,
-          "fat": 0.0,
-          "fiber": null
-        },
-        {
-          "food": "Stir-fried Bok Choy",
+          "food": "Cherry Tomatoes",
           "portion": "120.0gram",
           "calories": 24,
           "protein": 0.0,
@@ -33,68 +33,77 @@
           "fiber": null
         },
         {
-          "food": "Sliced Shiitake Mushrooms",
+          "food": "Kalamata Olives",
+          "portion": "24.0gram",
+          "calories": 64,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Baby Spinach",
           "portion": "80.0gram",
-          "calories": 28,
+          "calories": 18,
           "protein": 0.0,
           "carbs": 0.0,
           "fat": 0.0,
           "fiber": null
         },
         {
-          "food": "Sesame Oil (for cooking and dressing)",
-          "portion": "8.0ml",
-          "calories": 72,
-          "protein": 0.0,
-          "carbs": 0.0,
-          "fat": 0.0,
-          "fiber": null
-        },
-        {
-          "food": "Soy Sauce (Low Sodium)",
+          "food": "Extra Virgin Olive Oil",
           "portion": "12.0ml",
-          "calories": 8,
+          "calories": 108,
           "protein": 0.0,
           "carbs": 0.0,
           "fat": 0.0,
           "fiber": null
         },
         {
-          "food": "Minced Garlic and Ginger",
-          "portion": "16.0gram",
-          "calories": 20,
+          "food": "Fresh Lemon Juice",
+          "portion": "12.0ml",
+          "calories": 3,
           "protein": 0.0,
           "carbs": 0.0,
           "fat": 0.0,
           "fiber": null
         },
         {
-          "food": "Toasted Sesame Seeds",
-          "portion": "4.0gram",
-          "calories": 24,
+          "food": "Fresh Basil",
+          "portion": "8.0gram",
+          "calories": 2,
           "protein": 0.0,
           "carbs": 0.0,
           "fat": 0.0,
           "fiber": null
         },
         {
-          "food": "Fresh Lime Wedge",
-          "portion": "0.5piece",
-          "calories": 5,
+          "food": "Crumbled Feta Cheese (Low Sodium)",
+          "portion": "32.0gram",
+          "calories": 88,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Toasted Pine Nuts",
+          "portion": "8.0gram",
+          "calories": 56,
           "protein": 0.0,
           "carbs": 0.0,
           "fat": 0.0,
           "fiber": null
         }
       ],
-      "total_calories": 485,
+      "total_calories": 707,
       "target_calories": 904,
-      "calories_deviation": -46.3,
+      "calories_deviation": -21.8,
       "safety_notes": [
         "Meal: lunch",
         "Variant: Lite",
-        "Style: Asian, Strategy: low_carb",
-        "Calorie deviation: -46.3%"
+        "Style: Fusion, Strategy: balanced",
+        "Calorie deviation: -21.8%"
       ],
       "_assessment": {
         "score": 0,
@@ -106,7 +115,7 @@
             "factor": "extremely_low_calories",
             "category": "nutritional",
             "severity": "high",
-            "description": "Total calories 485 is dangerously low",
+            "description": "Total calories 707 is dangerously low",
             "recommendation": "Consult a dietitian for safe calorie targets"
           }
         ],
@@ -119,13 +128,13 @@
           }
         ],
         "recommendations": [
-          "Consult healthcare provider before starting due to: diabetes",
-          "Consult a dietitian for safe calorie targets"
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
         ],
         "warnings": [
-          "Total calories 485 is dangerously low"
+          "Total calories 707 is dangerously low"
         ],
-        "assessed_at": "2026-02-09T13:15:09.708054"
+        "assessed_at": "2026-02-09T15:22:54.150506"
       }
     }
   ],
@@ -136,25 +145,25 @@
       "variant": "Lite",
       "items": [
         {
+          "food": "Whole Wheat Pasta",
+          "portion": "80.0gram",
+          "calories": 104,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
           "food": "Grilled Salmon Fillet",
-          "portion": "144.0gram",
-          "calories": 288,
+          "portion": "120.0gram",
+          "calories": 240,
           "protein": 0.0,
           "carbs": 0.0,
           "fat": 0.0,
           "fiber": null
         },
         {
-          "food": "Konjac Noodles (Shirataki)",
-          "portion": "160.0gram",
-          "calories": 16,
-          "protein": 0.0,
-          "carbs": 0.0,
-          "fat": 0.0,
-          "fiber": null
-        },
-        {
-          "food": "Stir-fried Bok Choy",
+          "food": "Cherry Tomatoes",
           "portion": "120.0gram",
           "calories": 24,
           "protein": 0.0,
@@ -163,68 +172,77 @@
           "fiber": null
         },
         {
-          "food": "Sliced Shiitake Mushrooms",
+          "food": "Kalamata Olives",
+          "portion": "24.0gram",
+          "calories": 64,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Baby Spinach",
           "portion": "80.0gram",
-          "calories": 28,
+          "calories": 18,
           "protein": 0.0,
           "carbs": 0.0,
           "fat": 0.0,
           "fiber": null
         },
         {
-          "food": "Sesame Oil (for cooking and dressing)",
-          "portion": "8.0ml",
-          "calories": 72,
-          "protein": 0.0,
-          "carbs": 0.0,
-          "fat": 0.0,
-          "fiber": null
-        },
-        {
-          "food": "Soy Sauce (Low Sodium)",
+          "food": "Extra Virgin Olive Oil",
           "portion": "12.0ml",
-          "calories": 8,
+          "calories": 108,
           "protein": 0.0,
           "carbs": 0.0,
           "fat": 0.0,
           "fiber": null
         },
         {
-          "food": "Minced Garlic and Ginger",
-          "portion": "16.0gram",
-          "calories": 20,
+          "food": "Fresh Lemon Juice",
+          "portion": "12.0ml",
+          "calories": 3,
           "protein": 0.0,
           "carbs": 0.0,
           "fat": 0.0,
           "fiber": null
         },
         {
-          "food": "Toasted Sesame Seeds",
-          "portion": "4.0gram",
-          "calories": 24,
+          "food": "Fresh Basil",
+          "portion": "8.0gram",
+          "calories": 2,
           "protein": 0.0,
           "carbs": 0.0,
           "fat": 0.0,
           "fiber": null
         },
         {
-          "food": "Fresh Lime Wedge",
-          "portion": "0.5piece",
-          "calories": 5,
+          "food": "Crumbled Feta Cheese (Low Sodium)",
+          "portion": "32.0gram",
+          "calories": 88,
+          "protein": 0.0,
+          "carbs": 0.0,
+          "fat": 0.0,
+          "fiber": null
+        },
+        {
+          "food": "Toasted Pine Nuts",
+          "portion": "8.0gram",
+          "calories": 56,
           "protein": 0.0,
           "carbs": 0.0,
           "fat": 0.0,
           "fiber": null
         }
       ],
-      "total_calories": 485,
+      "total_calories": 707,
       "target_calories": 904,
-      "calories_deviation": -46.3,
+      "calories_deviation": -21.8,
       "safety_notes": [
         "Meal: lunch",
         "Variant: Lite",
-        "Style: Asian, Strategy: low_carb",
-        "Calorie deviation: -46.3%"
+        "Style: Fusion, Strategy: balanced",
+        "Calorie deviation: -21.8%"
       ],
       "_assessment": {
         "score": 0,
@@ -236,7 +254,7 @@
             "factor": "extremely_low_calories",
             "category": "nutritional",
             "severity": "high",
-            "description": "Total calories 485 is dangerously low",
+            "description": "Total calories 707 is dangerously low",
             "recommendation": "Consult a dietitian for safe calorie targets"
           }
         ],
@@ -249,13 +267,13 @@
           }
         ],
         "recommendations": [
-          "Consult healthcare provider before starting due to: diabetes",
-          "Consult a dietitian for safe calorie targets"
+          "Consult a dietitian for safe calorie targets",
+          "Consult healthcare provider before starting due to: diabetes"
         ],
         "warnings": [
-          "Total calories 485 is dangerously low"
+          "Total calories 707 is dangerously low"
         ],
-        "assessed_at": "2026-02-09T13:15:09.708054"
+        "assessed_at": "2026-02-09T15:22:54.150506"
       }
     }
   ],
@@ -270,7 +288,7 @@
           "factor": "extremely_low_calories",
           "category": "nutritional",
           "severity": "high",
-          "description": "Total calories 485 is dangerously low",
+          "description": "Total calories 707 is dangerously low",
           "recommendation": "Consult a dietitian for safe calorie targets"
         }
       ],
@@ -283,14 +301,14 @@
         }
       ],
       "recommendations": [
-        "Consult healthcare provider before starting due to: diabetes",
-        "Consult a dietitian for safe calorie targets"
+        "Consult a dietitian for safe calorie targets",
+        "Consult healthcare provider before starting due to: diabetes"
       ],
       "warnings": [
-        "Total calories 485 is dangerously low"
+        "Total calories 707 is dangerously low"
       ],
-      "assessed_at": "2026-02-09T13:15:09.708054"
+      "assessed_at": "2026-02-09T15:22:54.150506"
     }
   },
-  "generated_at": "2026-02-09T13:15:09.708054"
+  "generated_at": "2026-02-09T15:22:54.153040"
 }
