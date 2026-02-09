@@ -20,11 +20,21 @@ jobs:
 
       - name: Check for non-ASCII characters
         run: |
-          # 查找所有非ASCII字符并显示
-          if git diff --cached --name-only | grep -E '\.(txt|md|py|js|cpp)$' | xargs grep -P '[^\x00-\x7F]' > result.log; then
-            echo "Non-ASCII characters found in the following files:"
+          # -r: 递归搜索
+          # -P: 使用 Perl 正则 (支持 \xHH)
+          # -l: 只输出文件名 (如果找到)
+          # --include: 指定文件类型
+          
+          if grep -rP "[^\x00-\x7F]" . \
+              --include="*.txt" \
+              --include="*.md" \
+              --include="*.py" \
+              --include="*.js" \
+              --include="*.cpp" > result.log; then
+              
+            echo "❌ Found non-ASCII characters in the following files:"
             cat result.log
             exit 1
           else
-            echo "No non-ASCII characters found."
+            echo "✅ No non-ASCII characters found."
           fi

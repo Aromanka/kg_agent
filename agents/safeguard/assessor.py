@@ -11,7 +11,10 @@ from agents.safeguard.models import (
 from core.llm import get_llm
 from core.neo4j import get_kg_query
 from agents.safeguard.config import *
-from kg.prompts import prioritized_risk_kg_rels, DIETARY_QUERY_ENTITIES
+from kg.prompts import (
+    prioritized_risk_kg_rels, DIETARY_QUERY_ENTITIES,
+    get_keywords
+)
 
 
 DIET_SAFETY_RULES = get_DIET_SAFETY_RULES(RiskLevel)
@@ -19,11 +22,9 @@ EXERCISE_SAFETY_RULES = get_EXERCISE_SAFETY_RULES(RiskLevel)
 CONDITION_RESTRICTIONS = get_CONDITION_RESTRICTIONS()
 
 
-# ================= Safeguard Agent =================
+# security agent
 
 class SafeguardAgent(BaseAgent):
-    """Agent for safety assessment of diet and exercise plans"""
-
     def get_agent_name(self) -> str:
         return "safeguard"
 
@@ -38,16 +39,6 @@ class SafeguardAgent(BaseAgent):
         input_data: Dict[str, Any],
         num_candidates: int = 1
     ) -> List[SafetyAssessment]:
-        """
-        Generate safety assessments for plans.
-
-        Args:
-            input_data: Dictionary containing plan, plan_type, user_metadata, environment
-            num_candidates: Number of assessments to generate (ignored, always returns 1)
-
-        Returns:
-            List of SafetyAssessment objects
-        """
         plan = input_data.get("plan", {})
         plan_type = input_data.get("plan_type", "diet")
         user_metadata = input_data.get("user_metadata", {})
@@ -63,19 +54,6 @@ class SafeguardAgent(BaseAgent):
         user_metadata: Dict[str, Any],
         environment: Dict[str, Any] = {}
     ) -> SafetyAssessment:
-        """
-        Assess safety of a plan.
-
-        Args:
-            plan: The plan to assess (dict)
-            plan_type: 'diet' or 'exercise'
-            user_metadata: User physiological data
-            environment: Environmental context
-
-        Returns:
-            SafetyAssessment object with score and risk factors
-        """
-        # Initialize checks and risk factors
         checks = []
         risk_factors = []
 
@@ -128,7 +106,6 @@ class SafeguardAgent(BaseAgent):
 
         # Merge LLM findings
         if llm_assessment:
-            # Convert dicts to model objects
             for rf_dict in llm_assessment.get("risk_factors", []):
                 if isinstance(rf_dict, dict):
                     risk_factors.append(RiskFactor(**rf_dict))
@@ -186,7 +163,6 @@ class SafeguardAgent(BaseAgent):
         plan: Dict[str, Any],
         user_metadata: Dict[str, Any]
     ) -> tuple:
-        """Run diet-specific safety checks - adapted for DietRecommendation model"""
         checks = []
         risk_factors = []
 
@@ -222,16 +198,12 @@ class SafeguardAgent(BaseAgent):
                 message="Calorie intake within acceptable range"
             ))
 
-        # Macro ratio checks - DietRecommendation.macro_nutrients is MacroNutrients (dict)
-        # Structure: {protein, carbs, fat, protein_ratio, carbs_ratio, fat_ratio}
         macros = plan.get("macro_nutrients", {})
         if macros:
-            # Handle both dict and object formats
             if isinstance(macros, dict):
                 protein_ratio = macros.get("protein_ratio", 0)
                 fat_ratio = macros.get("fat_ratio", 0)
             else:
-                # Object format
                 protein_ratio = getattr(macros, "protein_ratio", 0)
                 fat_ratio = getattr(macros, "fat_ratio", 0)
 
@@ -253,7 +225,6 @@ class SafeguardAgent(BaseAgent):
                     recommendation="Reduce high-fat foods"
                 ))
 
-        # Single meal calorie check - check meals in meal_plan
         meal_plan = plan.get("meal_plan", {})
         if meal_plan:
             for meal_type, items in meal_plan.items():
@@ -280,7 +251,6 @@ class SafeguardAgent(BaseAgent):
         plan: Dict[str, Any],
         user_metadata: Dict[str, Any]
     ) -> tuple:
-        """Run exercise-specific safety checks - adapted for ExercisePlan model"""
         checks = []
         risk_factors = []
 
@@ -452,18 +422,15 @@ class SafeguardAgent(BaseAgent):
         plan_type: str,
         user_metadata: Dict[str, Any]
     ) -> tuple:
-        """Check plan against condition-specific restrictions"""
         checks = []
         risk_factors = []
 
         conditions = user_metadata.get("medical_conditions", [])
 
-        # Extract plan content for checking
         plan_content = self._extract_plan_content_text(plan, plan_type)
 
         for condition in conditions:
             condition_lower = condition.lower()
-            # Match condition (handle variations)
             matched_condition = None
             for known_condition in CONDITION_RESTRICTIONS:
                 if condition_lower == known_condition or condition_lower.replace("_", "") == known_condition.replace("_", ""):
@@ -503,7 +470,6 @@ class SafeguardAgent(BaseAgent):
 
                     for rule_key, rule_desc in ex_rules.items():
                         if "avoid" in rule_key or "max" in rule_key or "isometric" in rule_key:
-                            # Check for forbidden exercise types
                             forbidden_exercises = {
                                 "isometric": ["plank", "wall sit", "static hold"],
                                 "high_intensity": ["hiit", "sprint", "burpee", "jump"],
@@ -665,25 +631,11 @@ Return JSON with:
         conditions = user_metadata.get("medical_conditions", [])
         restrictions = user_metadata.get("dietary_restrictions", [])
 
-        # Define stop words for keyword filtering
-        stop_words = {
-            "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
-            "of", "with", "by", "from", "as", "is", "are", "was", "were", "be",
-            "been", "being", "have", "has", "had", "do", "does", "did", "will",
-            "would", "could", "should", "may", "might", "must", "can", "need",
-            "this", "that", "these", "those", "i", "you", "he", "she", "it", "we",
-            "they", "what", "which", "who", "whom", "whose", "where", "when", "why",
-            "how", "all", "each", "every", "both", "few", "more", "most", "other",
-            "some", "such", "no", "not", "only", "own", "same", "so", "than",
-            "too", "very", "just", "also", "now", "here", "there", "then", "once"
-        }
-
         # Build query entities: food items + conditions + restrictions + default entities
         # Apply keyword split logic to each entity
         all_entities = []
         for entity in food_items:
-            words = entity.lower().split()
-            keywords = [w.strip(".,!?;:\"'()[]{}") for w in words if w.lower() not in stop_words and len(w) > 2]
+            keywords = get_keywords(entity)
             all_entities.extend(keywords)
         all_entities.extend(conditions + restrictions + list(DIETARY_QUERY_ENTITIES))
 
@@ -753,29 +705,10 @@ Return JSON with:
 
         # Get user conditions
         conditions = user_metadata.get("medical_conditions", [])
-
-        # Define stop words for keyword filtering
-        stop_words = {
-            "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
-            "of", "with", "by", "from", "as", "is", "are", "was", "were", "be",
-            "been", "being", "have", "has", "had", "do", "does", "did", "will",
-            "would", "could", "should", "may", "might", "must", "can", "need",
-            "this", "that", "these", "those", "i", "you", "he", "she", "it", "we",
-            "they", "what", "which", "who", "whom", "whose", "where", "when", "why",
-            "how", "all", "each", "every", "both", "few", "more", "most", "other",
-            "some", "such", "no", "not", "only", "own", "same", "so", "than",
-            "too", "very", "just", "also", "now", "here", "there", "then", "once"
-        }
-
-        # Build query entities: exercise names + conditions
-        # Apply keyword split logic to each entity
         all_entities = []
         for entity_list in [exercise_names, conditions]:
             for entity in entity_list:
-                # Extract words from entity
-                words = entity.lower().split()
-                # Filter out stop words and short words (<3 chars)
-                keywords = [w.strip(".,!?;:\"'()[]{}") for w in words if w.lower() not in stop_words and len(w) > 2]
+                keywords = get_keywords(entity)
                 all_entities.extend(keywords)
 
         # Remove duplicates while preserving order
@@ -855,26 +788,12 @@ Return JSON with:
         return list(set(recommendations))  # Remove duplicates
 
 
-# ================= Convenience Functions =================
-
 def assess_plan_safety(
     plan: Dict[str, Any],
     plan_type: str,
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = {}
 ) -> SafetyAssessment:
-    """
-    Convenience function to assess plan safety.
-
-    Args:
-        plan: The plan to assess
-        plan_type: 'diet' or 'exercise'
-        user_metadata: User physiological data
-        environment: Environmental context
-
-    Returns:
-        SafetyAssessment object
-    """
     agent = SafeguardAgent()
     return agent.assess(plan, plan_type, user_metadata, environment)
 
@@ -918,7 +837,6 @@ def combined_assessment(
 
 
 if __name__ == "__main__":
-    # Test the safeguard agent with DietRecommendation-like structure
     diet_plan = {
         "id": 1,
         "meal_plan": {

@@ -1,8 +1,3 @@
-"""
-Agent Base Class
-All specialized agents inherit from this base class.
-Provides common interface, LLM client, and knowledge graph integration.
-"""
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, TypeVar, Type
 from pydantic import BaseModel
@@ -10,90 +5,12 @@ from pydantic import BaseModel
 from core.llm import LLMClient, get_llm
 from core.neo4j import Neo4jClient, KnowledgeGraphQuery, get_neo4j, get_kg_query
 from config_loader import get_config
-from kg.prompts import DIETARY_QUERY_ENTITIES, EXERCISE_QUERY_ENTITIES
-import re
+from kg.prompts import (
+    DIETARY_QUERY_ENTITIES, EXERCISE_QUERY_ENTITIES,
+    get_keywords
+)
 
-
-        # Stop words to filter out from query
-stop_words = {
-    # --- Articles & Conjunctions ---
-    "a", "an", "the", "and", "or", "but", "nor", "so", "yet", "for",
-    "as", "because", "if", "while", "although", "though", "since", "unless",
-    "whether", "either", "neither",
-
-    # --- Prepositions ---
-    "in", "on", "at", "by", "from", "to", "with", "without", "within",
-    "of", "off", "up", "down", "out", "over", "under", "again", "further",
-    "then", "once", "here", "there", "when", "where", "why", "how",
-    "all", "any", "both", "each", "few", "more", "most", "other", "some",
-    "such", "no", "nor", "not", "only", "own", "same", "than", "too",
-    "very", "can", "will", "just", "don", "should", "now", "into",
-    "through", "during", "before", "after", "above", "below", "between",
-    "among", "against", "about", "around",
-
-    # --- Pronouns (Subject, Object, Possessive) ---
-    "i", "me", "my", "myself", "mine",
-    "we", "us", "our", "ours", "ourselves",
-    "you", "your", "yours", "yourself", "yourselves",
-    "he", "him", "his", "himself",
-    "she", "her", "hers", "herself",
-    "it", "its", "itself",
-    "they", "them", "their", "theirs", "themselves",
-    "this", "that", "these", "those",
-    "who", "whom", "whose", "which", "what",
-
-    # --- Verbs (Auxiliary & To Be) ---
-    "am", "is", "are", "was", "were", "be", "been", "being",
-    "have", "has", "had", "having",
-    "do", "does", "did", "doing",
-    "will", "would", "shall", "should",
-    "can", "could", "may", "might", "must", "ought",
-    
-    # --- Contractions (if you haven't stripped punctuation) ---
-    "isn't", "aren't", "wasn't", "weren't", "haven't", "hasn't", "hadn't",
-    "won't", "wouldn't", "don't", "doesn't", "didn't",
-    "can't", "couldn't", "shouldn't", "mightn't", "mustn't",
-
-    # --- Common Search/Intent Fillers (Useless for keywords) ---
-    "want", "wants", "wanted",
-    "need", "needs", "needed",
-    "look", "looking", "looks",
-    "search", "searching",
-    "find", "finding",
-    "get", "gets", "getting",
-    "make", "makes", "making",
-    "go", "going", "gone",
-    "know", "knows", "knew",
-    "take", "takes", "taking",
-    "please", "help", "thanks", "thank",
-    "like", "likes", "liked"
-
-    # --- others ---
-    "etc."
-}
-
-def get_keywords(text):
-    # 将文本分割为单词（考虑多种分隔符）
-    words = re.findall(r'\b[\w\'-]+\b', text)
-    
-    filtered = []
-    for word in words:
-        # 去除尾部标点
-        word = re.sub(r'[.,!?;:\'"]+$', '', word)
-        
-        # 检查是否只包含字母（允许连字符）
-        if not re.fullmatch(r'[A-Za-z]+(?:-[A-Za-z]+)*', word):
-            continue
-            
-        word_lower = word.lower()
-        
-        # 长度和停用词检查
-        if len(word) > 2 and word_lower not in stop_words:
-            filtered.append(word_lower)
-    
-    return filtered
-
-# ================= Configuration =================
+# Configuration
 
 class UserMetadata(BaseModel):
     """Common user metadata for all agents"""
@@ -122,7 +39,7 @@ class AgentInput(BaseModel):
 T = TypeVar("T", bound=BaseModel)
 
 
-# ================= Base Agent Class =================
+# Base Agent Class
 
 class BaseAgent(ABC):
     """
@@ -219,20 +136,6 @@ class BaseAgent(ABC):
         top_p: float = 0.92,
         top_k: int = 50
     ) -> Any:
-        """
-        Call LLM with system and user prompts.
-
-        Args:
-            system_prompt: System prompt defining behavior
-            user_prompt: User prompt with input data
-            response_format: Optional Pydantic model for structured output
-            temperature: LLM temperature (0.0-1.0)
-            top_p: LLM top_p for nucleus sampling (0.0-1.0)
-            top_k: LLM top_k for top-k sampling
-
-        Returns:
-            LLM response (string or parsed model)
-        """
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
@@ -251,9 +154,6 @@ class BaseAgent(ABC):
     def _validate_input(self, input_data: Dict[str, Any]) -> AgentInput:
         """Validate and normalize input data"""
         return AgentInput(**input_data)
-
-
-# ================= Specialized Agent Mixins =================
 
 class DietAgentMixin:
     """Mixin for diet-related agent capabilities"""
@@ -305,23 +205,6 @@ class DietAgentMixin:
         user_query: str,
         score_threshold: float = 0.5
     ) -> Dict[str, Any]:
-        """
-        Query knowledge graph for dietary context based on entity matching.
-
-        Extracts words from user query and searches for matching entities in the KG.
-        Returns relevant dietary context (benefits, risks, conflicts) for matched entities.
-
-        Args:
-            user_query: User's preference string (e.g., "I want a tuna sandwich with vegetable")
-            score_threshold: Minimum score threshold for entity matching (default 0.5)
-
-        Returns:
-            Dictionary with:
-            - matched_entities: List of matched entity names from KG
-            - entity_benefits: List of benefits for matched entities
-            - entity_risks: List of risks for matched entities
-            - entity_conflicts: List of conflicts/contraindications for matched entities
-        """
 
         results = {
             "matched_entities": [],
@@ -501,10 +384,6 @@ class DietAgentMixin:
 
 class ExerciseAgentMixin:
     """Mixin for exercise-related agent capabilities"""
-
-    # ================= Condition-Exercise Knowledge Base =================
-    # Fallback knowledge when KG doesn't have exercise data
-
     _CONDITION_EXERCISE_MAP = {
         "diabetes": {
             "recommended": ["walking", "swimming", "cycling", "light_strength", "water_aerobics"],
@@ -556,7 +435,7 @@ class ExerciseAgentMixin:
         }
     }
 
-    # ================= KG Query Methods =================
+    # KG query
 
     def query_exercise_knowledge(
         self,
@@ -564,10 +443,6 @@ class ExerciseAgentMixin:
         fitness_level: str = "beginner",
         cared_rels: List[str] = None
     ) -> List[Dict]:
-        """
-        Query knowledge graph for exercise recommendations.
-        Returns a list of relationship dicts matching the diet agent pattern.
-        """
         results = []
         all_entities = list(set(conditions + EXERCISE_QUERY_ENTITIES))
 
@@ -606,24 +481,6 @@ class ExerciseAgentMixin:
         user_query: str,
         score_threshold: float = 0.5
     ) -> Dict[str, Any]:
-        """
-        Query knowledge graph for exercise context based on entity matching.
-
-        Extracts words from user query and searches for matching entities in the KG.
-        Returns relevant exercise context (benefits, target muscles, duration, frequency) for matched entities.
-
-        Args:
-            user_query: User's preference string (e.g., "I want to focus on upper body exercises")
-            score_threshold: Minimum score threshold for entity matching (default 0.5)
-
-        Returns:
-            Dictionary with:
-            - matched_entities: List of matched entity names from KG
-            - entity_benefits: List of benefits for matched entities
-            - target_muscles: List of target muscle groups for matched entities
-            - duration_recommendations: List of recommended duration for matched entities
-            - frequency_recommendations: List of recommended frequency for matched entities
-        """
 
         results = {
             "matched_entities": [],
@@ -806,66 +663,66 @@ class ExerciseAgentMixin:
             return "## Entity-Based KG Context\n" + "\n".join(parts) + "\n"
         return ""
 
-    def query_exercise_by_type(
-        self,
-        exercise_type: str,
-        conditions: List[str] = None
-    ) -> List[Dict[str, Any]]:
-        exercise_library = {
-            "cardio": [
-                {"name": "Brisk Walking", "intensity_levels": ["low", "moderate"], "cal_per_min": {"low": 4, "moderate": 5}},
-                {"name": "Jogging", "intensity_levels": ["moderate", "high"], "cal_per_min": {"moderate": 8, "high": 10}},
-                {"name": "Running", "intensity_levels": ["moderate", "high", "very_high"], "cal_per_min": {"moderate": 10, "high": 12}},
-                {"name": "Cycling", "intensity_levels": ["low", "moderate", "high"], "cal_per_min": {"low": 5, "moderate": 7, "high": 9}},
-                {"name": "Swimming", "intensity_levels": ["low", "moderate", "high"], "cal_per_min": {"low": 6, "moderate": 8, "high": 10}},
-                {"name": "Rowing", "intensity_levels": ["moderate", "high"], "cal_per_min": {"moderate": 7, "high": 9}},
-                {"name": "Jump Rope", "intensity_levels": ["high", "very_high"], "cal_per_min": {"high": 12, "very_high": 15}},
-                {"name": "Elliptical", "intensity_levels": ["low", "moderate"], "cal_per_min": {"low": 5, "moderate": 7}},
-                {"name": "Stair Climbing", "intensity_levels": ["moderate", "high"], "cal_per_min": {"moderate": 7, "high": 9}},
-                {"name": "Dancing", "intensity_levels": ["low", "moderate", "high"], "cal_per_min": {"low": 4, "moderate": 6, "high": 8}}
-            ],
-            "strength": [
-                {"name": "Bodyweight Squats", "intensity_levels": ["low", "moderate"], "target_muscles": ["legs", "glutes"]},
-                {"name": "Push-ups", "intensity_levels": ["moderate", "high"], "target_muscles": ["chest", "arms", "core"]},
-                {"name": "Lunges", "intensity_levels": ["low", "moderate"], "target_muscles": ["legs", "glutes"]},
-                {"name": "Plank", "intensity_levels": ["moderate", "high"], "target_muscles": ["core", "shoulders"]},
-                {"name": "Dumbbell Rows", "intensity_levels": ["moderate", "high"], "target_muscles": ["back", "arms"]},
-                {"name": "Resistance Band Exercises", "intensity_levels": ["low", "moderate"], "target_muscles": ["full_body"]},
-                {"name": "Bodyweight Rows", "intensity_levels": ["moderate", "high"], "target_muscles": ["back", "biceps"]},
-                {"name": "Glute Bridge", "intensity_levels": ["low", "moderate"], "target_muscles": ["glutes", "hamstrings"]}
-            ],
-            "flexibility": [
-                {"name": "Static Stretching", "duration_unit": "seconds"},
-                {"name": "Yoga Sun Salutation", "flow": True},
-                {"name": "Dynamic Stretching", "warmup": True},
-                {"name": "Hamstring Stretch", "target": "hamstrings"},
-                {"name": "Hip Flexor Stretch", "target": "hip_flexors"},
-                {"name": "Shoulder Stretch", "target": "shoulders"},
-                {"name": "Cat-Cow Flow", "target": "spine"}
-            ],
-            "balance": [
-                {"name": "Single Leg Stand", "progression": "eyes_closed"},
-                {"name": "Heel-to-Toe Walk", "progression": "forward_backward"},
-                {"name": "Tandem Stance", "progression": "tandem_walk"},
-                {"name": "Tai Chi Movements", "flow": True},
-                {"name": "Balance Board", "difficulty": "progressive"}
-            ],
-            "hiit": [
-                {"name": "Sprint Intervals", "work_rest": "1:2", "max_duration": 30},
-                {"name": "Burpee Variations", "work_rest": "1:1", "max_duration": 20},
-                {"name": "Mountain Climbers", "work_rest": "1:1", "max_duration": 30},
-                {"name": "High Knees", "work_rest": "1:1", "max_duration": 30},
-                {"name": "Box Jumps", "work_rest": "1:2", "max_duration": 20}
-            ]
-        }
+    # def query_exercise_by_type(
+    #     self,
+    #     exercise_type: str,
+    #     conditions: List[str] = None
+    # ) -> List[Dict[str, Any]]:
+    #     exercise_library = {
+    #         "cardio": [
+    #             {"name": "Brisk Walking", "intensity_levels": ["low", "moderate"], "cal_per_min": {"low": 4, "moderate": 5}},
+    #             {"name": "Jogging", "intensity_levels": ["moderate", "high"], "cal_per_min": {"moderate": 8, "high": 10}},
+    #             {"name": "Running", "intensity_levels": ["moderate", "high", "very_high"], "cal_per_min": {"moderate": 10, "high": 12}},
+    #             {"name": "Cycling", "intensity_levels": ["low", "moderate", "high"], "cal_per_min": {"low": 5, "moderate": 7, "high": 9}},
+    #             {"name": "Swimming", "intensity_levels": ["low", "moderate", "high"], "cal_per_min": {"low": 6, "moderate": 8, "high": 10}},
+    #             {"name": "Rowing", "intensity_levels": ["moderate", "high"], "cal_per_min": {"moderate": 7, "high": 9}},
+    #             {"name": "Jump Rope", "intensity_levels": ["high", "very_high"], "cal_per_min": {"high": 12, "very_high": 15}},
+    #             {"name": "Elliptical", "intensity_levels": ["low", "moderate"], "cal_per_min": {"low": 5, "moderate": 7}},
+    #             {"name": "Stair Climbing", "intensity_levels": ["moderate", "high"], "cal_per_min": {"moderate": 7, "high": 9}},
+    #             {"name": "Dancing", "intensity_levels": ["low", "moderate", "high"], "cal_per_min": {"low": 4, "moderate": 6, "high": 8}}
+    #         ],
+    #         "strength": [
+    #             {"name": "Bodyweight Squats", "intensity_levels": ["low", "moderate"], "target_muscles": ["legs", "glutes"]},
+    #             {"name": "Push-ups", "intensity_levels": ["moderate", "high"], "target_muscles": ["chest", "arms", "core"]},
+    #             {"name": "Lunges", "intensity_levels": ["low", "moderate"], "target_muscles": ["legs", "glutes"]},
+    #             {"name": "Plank", "intensity_levels": ["moderate", "high"], "target_muscles": ["core", "shoulders"]},
+    #             {"name": "Dumbbell Rows", "intensity_levels": ["moderate", "high"], "target_muscles": ["back", "arms"]},
+    #             {"name": "Resistance Band Exercises", "intensity_levels": ["low", "moderate"], "target_muscles": ["full_body"]},
+    #             {"name": "Bodyweight Rows", "intensity_levels": ["moderate", "high"], "target_muscles": ["back", "biceps"]},
+    #             {"name": "Glute Bridge", "intensity_levels": ["low", "moderate"], "target_muscles": ["glutes", "hamstrings"]}
+    #         ],
+    #         "flexibility": [
+    #             {"name": "Static Stretching", "duration_unit": "seconds"},
+    #             {"name": "Yoga Sun Salutation", "flow": True},
+    #             {"name": "Dynamic Stretching", "warmup": True},
+    #             {"name": "Hamstring Stretch", "target": "hamstrings"},
+    #             {"name": "Hip Flexor Stretch", "target": "hip_flexors"},
+    #             {"name": "Shoulder Stretch", "target": "shoulders"},
+    #             {"name": "Cat-Cow Flow", "target": "spine"}
+    #         ],
+    #         "balance": [
+    #             {"name": "Single Leg Stand", "progression": "eyes_closed"},
+    #             {"name": "Heel-to-Toe Walk", "progression": "forward_backward"},
+    #             {"name": "Tandem Stance", "progression": "tandem_walk"},
+    #             {"name": "Tai Chi Movements", "flow": True},
+    #             {"name": "Balance Board", "difficulty": "progressive"}
+    #         ],
+    #         "hiit": [
+    #             {"name": "Sprint Intervals", "work_rest": "1:2", "max_duration": 30},
+    #             {"name": "Burpee Variations", "work_rest": "1:1", "max_duration": 20},
+    #             {"name": "Mountain Climbers", "work_rest": "1:1", "max_duration": 30},
+    #             {"name": "High Knees", "work_rest": "1:1", "max_duration": 30},
+    #             {"name": "Box Jumps", "work_rest": "1:2", "max_duration": 20}
+    #         ]
+    #     }
 
-        exercises = exercise_library.get(exercise_type.lower(), [])
+    #     exercises = exercise_library.get(exercise_type.lower(), [])
 
-        # Filter by conditions if provided
-        if conditions:
-            exercises = [ex for ex in exercises if not self._check_exercise_conflict(ex.get("name", ""), conditions)]
+    #     # Filter by conditions if provided
+    #     # if conditions:
+    #     #     exercises = [ex for ex in exercises if not self._check_exercise_conflict(ex.get("name", ""), conditions)]
 
-        return exercises
+    #     return exercises
 
     # ================= Progression Planning =================
 
@@ -962,35 +819,35 @@ class ExerciseAgentMixin:
 
         return fitness_adjustments.get(fitness_level, {}).get(base_intensity, "moderate")
 
-    def _check_exercise_conflict(
-        self,
-        exercise_name: str,
-        conditions: List[str]
-    ) -> bool:
-        """Check if an exercise conflicts with any medical condition"""
-        exercise_lower = exercise_name.lower()
+    # def _check_exercise_conflict(
+    #     self,
+    #     exercise_name: str,
+    #     conditions: List[str]
+    # ) -> bool:
+    #     """Check if an exercise conflicts with any medical condition"""
+    #     exercise_lower = exercise_name.lower()
 
-        # Build conflict map
-        conflicts = {
-            "diabetes": ["hiit", "high intensity", "extreme", "sprinting", "heavy lifting"],
-            "hypertension": ["heavy weightlifting", "isometric", "valsalva", "heavy lifting"],
-            "heart_disease": ["running", "hiit", "heavy", "sprinting", "competitive"],
-            "obesity": ["running", "jumping", "jump rope", "high impact"],
-            "arthritis": ["running", "jumping", "high impact", "heavy squat", "deadlift"],
-            "back_pain": ["heavy squat", "deadlift", "heavy lifting", "jumping"],
-            "asthma": ["running", "hiit", "cold weather", "high intensity"],
-            "osteoporosis": ["running", "jumping", "high impact", "heavy lifting"]
-        }
+    #     # Build conflict map
+    #     conflicts = {
+    #         "diabetes": ["hiit", "high intensity", "extreme", "sprinting", "heavy lifting"],
+    #         "hypertension": ["heavy weightlifting", "isometric", "valsalva", "heavy lifting"],
+    #         "heart_disease": ["running", "hiit", "heavy", "sprinting", "competitive"],
+    #         "obesity": ["running", "jumping", "jump rope", "high impact"],
+    #         "arthritis": ["running", "jumping", "high impact", "heavy squat", "deadlift"],
+    #         "back_pain": ["heavy squat", "deadlift", "heavy lifting", "jumping"],
+    #         "asthma": ["running", "hiit", "cold weather", "high intensity"],
+    #         "osteoporosis": ["running", "jumping", "high impact", "heavy lifting"]
+    #     }
 
-        for condition in conditions:
-            condition_key = condition.lower()
-            for cond_key, conflict_exercises in conflicts.items():
-                if cond_key in condition_key or condition_key in cond_key:
-                    for conflict in conflict_exercises:
-                        if conflict in exercise_lower:
-                            return True
+    #     for condition in conditions:
+    #         condition_key = condition.lower()
+    #         for cond_key, conflict_exercises in conflicts.items():
+    #             if cond_key in condition_key or condition_key in cond_key:
+    #                 for conflict in conflict_exercises:
+    #                     if conflict in exercise_lower:
+    #                         return True
 
-        return False
+    #     return False
 
     def _deduplicate_exercises(self, exercises: List[Dict]) -> List[Dict]:
         """Remove duplicate exercises from list"""
@@ -1002,8 +859,7 @@ class ExerciseAgentMixin:
                 seen.add(key)
                 unique.append(ex)
         return unique
-
-    # ================= Calorie Estimation =================
+    
 
     def estimate_calories_burned(
         self,
@@ -1013,7 +869,6 @@ class ExerciseAgentMixin:
         intensity: str = "moderate"
     ) -> int:
         """Estimate calories burned for an exercise (MET-based)"""
-        # Extended MET values database
         met_values = {
             # Cardio
             "walking": {"low": 2.5, "moderate": 3.5, "high": 5.0, "very_high": 6.0},
@@ -1052,20 +907,17 @@ class ExerciseAgentMixin:
             "swimming_laps": {"low": 5.0, "moderate": 7.0, "high": 9.0, "very_high": 11.0}
         }
 
-        # Get MET value (default to moderate if not found)
-        met = 5.0  # Default MET
+        met = 5.0
         for key, values in met_values.items():
             if key in exercise_type.lower() or exercise_type.lower() in key:
                 met = values.get(intensity.lower(), values.get("moderate", 5.0))
                 break
 
-        # Calculate calories: MET * 3.5 * weight_kg / 200 = kcal/min
         calories_per_minute = (met * 3.5 * weight_kg) / 200
         return int(calories_per_minute * duration_minutes)
 
 
-# ================= Agent Registry =================
-
+# Register Agent
 _AGENT_REGISTRY: Dict[str, Type[BaseAgent]] = {}
 
 
@@ -1073,9 +925,7 @@ def register_agent(agent_class: Type[BaseAgent]) -> Type[BaseAgent]:
     """Decorator to register an agent class"""
     name = getattr(agent_class, "AGENT_NAME", None)
     if name is None:
-        # Try to get from get_agent_name method
         if hasattr(agent_class, "get_agent_name"):
-            # Can't call it here, use class attribute
             pass
     _AGENT_REGISTRY[agent_class.__name__] = agent_class
     return agent_class

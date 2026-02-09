@@ -22,35 +22,6 @@ from kg.prompts import (
 )
 
 
-
-
-# ================= Helper Functions =================
-
-def calculate_target_calories_burned(
-    weight_kg: float,
-    goal: str = "maintenance",
-    activity_factor: float = 1.2
-) -> int:
-    """Calculate target daily calories to burn based on goal"""
-    # Basal metabolic rate (simplified)
-    bmr = 25 * weight_kg
-
-    # Target calorie burn from exercise
-    goal_targets = {
-        "weight_loss": 300,
-        "muscle_building": 200,
-        "cardio_improvement": 400,
-        "flexibility": 100,
-        "endurance": 350,
-        "general_fitness": 250,
-        "maintenance": 150
-    }
-
-    return goal_targets.get(goal, 200)
-
-
-# ================= Constraint Builder =================
-
 MEAL_TIMING_OPTIONS = [
     "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner"
 ]
@@ -110,12 +81,8 @@ def build_exercise_constraint_prompt(
     return ""
 
 
-# ================= Exercise Agent =================
-
 class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
     """Agent for generating exercise plan candidates"""
-
-    # ================= Target Calculation Methods =================
 
     def calculate_target_calories(
         self,
@@ -123,18 +90,6 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         goal: str = "maintenance",
         duration_minutes: int = None
     ) -> int:
-        """
-        Calculate target daily calories to burn based on goal.
-
-        Args:
-            weight_kg: User weight in kg
-            goal: fitness goal (weight_loss, muscle_building, cardio_improvement, etc.)
-            duration_minutes: Target duration in minutes (overrides goal-based calculation)
-
-        Returns:
-            Target daily calories to burn
-        """
-        # If duration is provided, calculate calories based on MET and duration
         if duration_minutes is not None:
             goal_targets = {
                 "weight_loss": 400,
@@ -171,18 +126,6 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         goal: str = "maintenance",
         duration_minutes: int = None
     ) -> int:
-        """
-        Calculate target exercise duration in minutes based on fitness level and goal.
-
-        Args:
-            fitness_level: beginner, intermediate, advanced
-            goal: fitness goal (legacy, for backward compatibility)
-            duration_minutes: Target duration in minutes (overrides goal-based calculation)
-
-        Returns:
-            Target duration in minutes per session
-        """
-        # If duration is provided, return it directly
         if duration_minutes is not None:
             return duration_minutes
 
@@ -214,17 +157,6 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         fitness_level: str = "beginner",
         conditions: List[str] = None
     ) -> int:
-        """
-        Calculate recommended weekly exercise frequency.
-
-        Args:
-            fitness_level: User fitness level
-            conditions: Medical conditions
-
-        Returns:
-            Sessions per week
-        """
-        # Base frequency by fitness level
         base_freq = {
             "beginner": 3,
             "intermediate": 4,
@@ -267,15 +199,6 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         meal_timing: str = "",
         user_preference: str = None
     ) -> List[ExercisePlan]:
-        """
-        Generate exercise plan candidates with mandatory exercise injection.
-
-        Args:
-            input_data: User metadata, environment, requirements
-            num_candidates: Number of candidates to generate
-            meal_timing: When to exercise relative to meals
-            user_preference: User's string preference (e.g., "I want to focus on upper body exercises")
-        """
         # Parse input
         input_obj = ExerciseAgentInput(**input_data)
         self._input_meta = input_obj.user_metadata  # Store for condition access
@@ -330,11 +253,6 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         used_combinations = set()
 
         for i in range(num_candidates):
-            # 1. Randomly select meal timing
-            # meal_timing = random.choice(MEAL_TIMING_OPTIONS)
-
-            # 2. Select primary exercises - DISABLE random constraints when user_preference exists
-            # When user has a specific request, let LLM decide based on user intent
             if user_preference:
                 primary_cardio = None
                 primary_strength = None
@@ -342,34 +260,28 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
                 excluded = []
                 equipment = None
             else:
-                # Only use random injection to ensure variety when user has no preference
                 primary_cardio = random.choice(CARDIO_ACTIVITIES)
                 primary_strength = random.choice(STRENGTH_MOVEMENTS)
                 flexibility = random.choice(FLEXIBILITY_POSES)
 
-            # 3. Randomly exclude boring exercises (50% chance) - only when no user preference
             excluded = []
             if not user_preference and random.random() > 0.5:
                 excluded = random.sample(COMMON_BORING_EXERCISES, k=random.randint(1, 2))
 
-            # 4. Optionally add equipment constraint (30% chance) - only when no user preference
             equipment = None
             if not user_preference and random.random() > 0.7:
                 equipment = random.choice(EQUIPMENT_OPTIONS)
 
-            # 5. Optionally prioritize outdoor (based on weather/season) - only when no user preference
             outdoor = False
             if not user_preference and weather.get("condition") in ["clear", "sunny"] and random.random() > 0.5:
                 outdoor = True
 
-            # 6. Avoid duplicate combinations (only when using random constraints)
             combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
             if not user_preference and combo_key in used_combinations and num_candidates < len(CARDIO_ACTIVITIES):
                 primary_cardio = random.choice(CARDIO_ACTIVITIES)
                 combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
             used_combinations.add(combo_key)
 
-            # 7. Build constraint prompt
             constraint_prompt = build_exercise_constraint_prompt(
                 primary_cardio=primary_cardio,
                 primary_strength=primary_strength,
@@ -380,7 +292,6 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
                 meal_timing=meal_timing
             )
 
-            # 7. Combine prompts
             full_prompt = base_prompt + "\n" + constraint_prompt
 
             candidate = self._generate_single_candidate(
@@ -402,7 +313,6 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 
         parts = []
 
-        # Set maximum input length = 20
         maximum_inputs = 20
         if len(knowledge) > maximum_inputs:
             random.shuffle(knowledge)
@@ -496,9 +406,6 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         fitness_level = user_meta.get("fitness_level", "beginner")
         weight = user_meta.get("weight_kg", 70)
         goal = requirement.get("goal", "maintenance")
-
-        # Build prompt with "Instruction - Context - Constraint" structure
-        # User Preference is placed at top as HIGHEST PRIORITY
 
         prompt = f"""## TARGET TASK
 Generate an exercise plan for the following user.

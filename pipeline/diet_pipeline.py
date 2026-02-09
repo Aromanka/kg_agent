@@ -12,8 +12,6 @@ from agents.safeguard.models import SafetyAssessment
 import argparse
 
 
-# ================= Pipeline Output =================
-
 @dataclass
 class DietPipelineOutput:
     """Output from the diet pipeline"""
@@ -40,9 +38,6 @@ class DietPipelineOutput:
             "assessments": convert_datetime(self.assessments),
             "generated_at": self.generated_at
         }
-
-
-# ================= Diet Pipeline =================
 
 class DietPipeline:
     """
@@ -226,8 +221,6 @@ class DietPipeline:
                 for rec in assessment.get("recommendations", [])[:2]:
                     print(f"     - {rec}")
 
-
-# ================= Convenience Function =================
 
 def run_diet_pipeline(
     user_metadata: Dict[str, Any],

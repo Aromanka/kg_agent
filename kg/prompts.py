@@ -2,7 +2,7 @@
 Diet Knowledge Graph Schema & Prompt Configuration
 Revised to include Demographic Targeting, Composition, and Strict JSON Formatting.
 """
-
+import re
 
 diet_kg_rels = [
     "Indicated_For",
@@ -596,3 +596,79 @@ IMPORTANT:
 - meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".
 - Generate only ONE session per day (single morning/afternoon/evening block).
 """
+
+
+# Stop words to filter out from query
+STOP_WORDS = {
+    # --- Articles & Conjunctions ---
+    "a", "an", "the", "and", "or", "but", "nor", "so", "yet", "for",
+    "as", "because", "if", "while", "although", "though", "since", "unless",
+    "whether", "either", "neither",
+
+    # --- Prepositions ---
+    "in", "on", "at", "by", "from", "to", "with", "without", "within",
+    "of", "off", "up", "down", "out", "over", "under", "again", "further",
+    "then", "once", "here", "there", "when", "where", "why", "how",
+    "all", "any", "both", "each", "few", "more", "most", "other", "some",
+    "such", "no", "nor", "not", "only", "own", "same", "than", "too",
+    "very", "can", "will", "just", "don", "should", "now", "into",
+    "through", "during", "before", "after", "above", "below", "between",
+    "among", "against", "about", "around",
+
+    # --- Pronouns (Subject, Object, Possessive) ---
+    "i", "me", "my", "myself", "mine",
+    "we", "us", "our", "ours", "ourselves",
+    "you", "your", "yours", "yourself", "yourselves",
+    "he", "him", "his", "himself",
+    "she", "her", "hers", "herself",
+    "it", "its", "itself",
+    "they", "them", "their", "theirs", "themselves",
+    "this", "that", "these", "those",
+    "who", "whom", "whose", "which", "what",
+
+    # --- Verbs (Auxiliary & To Be) ---
+    "am", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "having",
+    "do", "does", "did", "doing",
+    "will", "would", "shall", "should",
+    "can", "could", "may", "might", "must", "ought",
+    
+    # --- Contractions (if you haven't stripped punctuation) ---
+    "isn't", "aren't", "wasn't", "weren't", "haven't", "hasn't", "hadn't",
+    "won't", "wouldn't", "don't", "doesn't", "didn't",
+    "can't", "couldn't", "shouldn't", "mightn't", "mustn't",
+
+    # --- Common Search/Intent Fillers (Useless for keywords) ---
+    "want", "wants", "wanted",
+    "need", "needs", "needed",
+    "look", "looking", "looks",
+    "search", "searching",
+    "find", "finding",
+    "get", "gets", "getting",
+    "make", "makes", "making",
+    "go", "going", "gone",
+    "know", "knows", "knew",
+    "take", "takes", "taking",
+    "please", "help", "thanks", "thank",
+    "like", "likes", "liked"
+
+    # --- others ---
+    "etc."
+}
+
+
+def get_keywords(text):
+    text = text.lower().split()
+    words = re.findall(r'\b[\w\'-]+\b', text)
+    
+    filtered = []
+    for word in words:
+        word = re.sub(r'[.,!?;:\'"]+$', '', word)
+        if not re.fullmatch(r'[A-Za-z]+(?:-[A-Za-z]+)*', word):
+            continue
+            
+        word_lower = word.lower()
+        if len(word) > 2 and word_lower not in STOP_WORDS:
+            filtered.append(word_lower)
+    
+    return filtered
