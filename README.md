@@ -46,10 +46,10 @@ python -m core.embed_kg
 ### Run Recommendation Pipelines
 ```bash
 # Diet recommendation with vector-based GraphRAG
-python -m pipeline.diet_pipeline --bn 1 --vn 1 --query "I want to have a sandwich with only vegetables, no meat." --use_vector --rag_topk 5
+python -m pipeline.diet_pipeline --bn 1 --vn 5 --query "I want to have a sandwich with only vegetables, no meat." --use_vector --rag_topk 5
 
 # Exercise recommendation with vector-based GraphRAG
-python -m pipeline.exer_pipeline --bn 1 --vn 1 --query "I want to do some exercise training back muscles in the gym." --use_vector --rag_topk 5
+python -m pipeline.exer_pipeline --bn 1 --vn 4 --query "I want to do some exercise training back muscles in the gym." --use_vector --rag_topk 5
 ```
 
 #### Pipeline Arguments

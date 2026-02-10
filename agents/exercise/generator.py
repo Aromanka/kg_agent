@@ -11,7 +11,7 @@ from agents.exercise.models import (
     ExerciseItem, ExerciseSession, ExercisePlan,
     ExerciseCandidatesResponse, ExerciseAgentInput
 )
-from agents.exercise.parser import ExercisePlanParser
+from agents.exercise.parser_var import ExercisePlanParser
 from core.llm import get_llm
 from core.llm.utils import parse_json_response
 from core.neo4j import get_kg_query
