@@ -185,7 +185,7 @@ class SafeguardAgent(BaseAgent):
                 return SafetyAssessment(
                     score=100,
                     is_safe=True,
-                    status=status,
+                    status=AssessmentStatus.PASSED,
                     risk_level=risk_level,
                     risk_factors=risk_factors,
                     safety_checks=checks,
@@ -196,7 +196,7 @@ class SafeguardAgent(BaseAgent):
                 return SafetyAssessment(
                     score=0,
                     is_safe=False,
-                    status=status,
+                    status=AssessmentStatus.FAILED,
                     risk_level=risk_level,
                     risk_factors=risk_factors,
                     safety_checks=checks,
@@ -215,7 +215,7 @@ class SafeguardAgent(BaseAgent):
                 return SafetyAssessment(
                     score=100,
                     is_safe=True,
-                    status=status,
+                    status=AssessmentStatus.PASSED,
                     risk_level=risk_level,
                     risk_factors=risk_factors,
                     safety_checks=checks,
@@ -226,7 +226,7 @@ class SafeguardAgent(BaseAgent):
                 return SafetyAssessment(
                     score=0,
                     is_safe=False,
-                    status=status,
+                    status=AssessmentStatus.FAILED,
                     risk_level=risk_level,
                     risk_factors=risk_factors,
                     safety_checks=checks,
