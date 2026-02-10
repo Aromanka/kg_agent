@@ -339,16 +339,32 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 
         return "## Knowledge Graph Context\n" + "\n".join(parts) + "\n"
 
-    def _format_exercise_entity_kg_context(self, entity_knowledge: Dict) -> str:
+    def _format_exercise_entity_kg_context(
+        self, entity_knowledge: Dict, kg_format_ver: int = 2
+    ) -> str:
         """Format entity-based KG knowledge for exercise prompt (matching diet agent pattern)"""
         if not entity_knowledge:
             return ""
 
         parts = []
 
-        KG_FORMAT_VER = 2
+        if kg_format_ver >= 3:
+            # Simplified: uniform pattern for all relations
+            matched_entities = entity_knowledge.get("matched_entities", [])
+            relations = entity_knowledge.get("relations", [])
 
-        if KG_FORMAT_VER == 1:
+            # Format matched entities
+            parts.append(f"Matched Entities: {', '.join(matched_entities)}")
+            parts.append("")  # Empty line for separation
+
+            # Format all relations uniformly: "- {head} {relation} {tail}"
+            parts.append("## Knowledge Graph Relations")
+            for rel in relations:
+                head = rel.get("head", "")
+                relation = rel.get("relation", "").replace("_", " ")
+                tail = rel.get("tail", "")
+                parts.append(f"- {head} {relation} {tail}")
+        elif kg_format_ver == 1:
             if entity_knowledge.get("matched_entities"):
                 entities = entity_knowledge["matched_entities"]
                 parts.append(f"- Matched Entities from KG: {', '.join(set(entities))}")
@@ -396,8 +412,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
                 if unique_frequencies:
                     freq_list = [f"{f.get('entity', '')}: {f.get('frequency', '')}" for f in unique_frequencies.values()]
                     parts.append(f"- Frequency Recommendations: {', '.join(freq_list)}")
-
-        elif KG_FORMAT_VER == 2:
+        elif kg_format_ver == 2:
             # Organize by entities instead of by categories
             matched_entities = entity_knowledge.get("matched_entities", [])
             entity_benefits = entity_knowledge.get("entity_benefits", [])
