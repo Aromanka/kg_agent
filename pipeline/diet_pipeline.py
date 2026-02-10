@@ -219,12 +219,14 @@ class DietPipeline:
 
             if assessment.get("risk_factors"):
                 print(f"   Risk Factors:")
-                for rf in assessment.get("risk_factors", [])[:3]:
+                # for rf in assessment.get("risk_factors", [])[:3]:
+                for rf in assessment.get("risk_factors", []):
                     print(f"     - {rf}")
 
             if assessment.get("recommendations"):
                 print(f"   Recommendations:")
-                for rec in assessment.get("recommendations", [])[:2]:
+                # for rec in assessment.get("recommendations", [])[:2]:
+                for rec in assessment.get("recommendations", []):
                     print(f"     - {rec}")
 
 

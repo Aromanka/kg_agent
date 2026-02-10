@@ -220,18 +220,21 @@ class ExercisePipeline:
                 print(f"     [{time_key.upper()}] {session.get('total_duration_minutes', 0)} min, "
                       f"{session.get('total_calories_burned', 0)} kcal, "
                       f"Intensity: {session.get('overall_intensity', 'N/A')}")
-                for ex in session.get("exercises", [])[:3]:
+                # for ex in session.get("exercises", [])[:3]:
+                for ex in session.get("exercises", []):
                     print(f"       - {ex.get('name', 'N/A')} ({ex.get('duration_minutes', 0)} min, "
                           f"{ex.get('intensity', 'N/A')})")
 
             if assessment.get("risk_factors"):
                 print(f"   Risk Factors:")
-                for rf in assessment.get("risk_factors", [])[:3]:
+                # for rf in assessment.get("risk_factors", [])[:3]:
+                for rf in assessment.get("risk_factors", []):
                     print(f"     - {rf}")
 
             if assessment.get("recommendations"):
                 print(f"   Recommendations:")
-                for rec in assessment.get("recommendations", [])[:2]:
+                # for rec in assessment.get("recommendations", [])[:2]:
+                for rec in assessment.get("recommendations", []):
                     print(f"     - {rec}")
 
 

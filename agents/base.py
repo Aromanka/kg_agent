@@ -383,6 +383,9 @@ class DietAgentMixin:
 
     def _format_entity_kg_context(self, entity_knowledge: Dict) -> str:
         """Format entity-based KG knowledge for diet prompt"""
+        from pprint import pprint
+        print(f"entity knowledge:")
+        pprint(entity_knowledge)
         if not entity_knowledge:
             return ""
 

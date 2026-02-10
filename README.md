@@ -43,7 +43,7 @@ python -m core.import_kg
 # Diet recommendation (4 base plans × 3 portion variants = 12 variants)
 python -m pipeline.diet_pipeline --bn 1 --vn 1 --query "I want to have a sandwich with only vegetables, no meat. "
 # Exercise recommendation (3 base plans × 3 intensity levels = 9 variants)
-python -m pipeline.exer_pipeline --bn 1 --vn 1 --query "I want to do some exercise about back muscles in the gym."
+python -m pipeline.exer_pipeline --bn 1 --vn 1 --query "I want to do some exercise training biceps in the gym." --use_vector --rag_topk 5
 ```
 
 ## Configuration
