@@ -244,6 +244,10 @@ def build_exercise_constraint_prompt(
 class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
     """Agent for generating exercise plan candidates"""
 
+    def __init__(self):
+        super().__init__()
+        self.parser = ExercisePlanParser()
+
     # ================= Target Calculation Methods =================
 
     def calculate_target_calories(
@@ -410,10 +414,33 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
     def generate(
         self,
         input_data: Dict[str, Any],
-        num_candidates: int = 3,
-        meal_timing: str = ""
+        num_variants: int = 3,
+        time_of_day: str = None,
+        temperature: float = 0.7,
+        top_p: float = 0.92,
+        top_k: int = 50
     ) -> List[ExercisePlan]:
-        """Generate exercise plan candidates with mandatory exercise injection"""
+        """
+        Generate exercise plan candidates using LLM + Parser pipeline.
+
+        Flow:
+        1. Calculate target calories from user profile
+        2. Query KG for exercise knowledge (conditions, restrictions)
+        3. Generate ONE base exercise plan via LLM
+        4. Use Parser to expand to Lite/Standard/Plus variants
+        5. Build candidates
+
+        Args:
+            input_data: User metadata, environment, requirements
+            num_variants: Number of portion variants (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)
+            time_of_day: Specific time of day (morning/afternoon/evening) or None for random
+            temperature: LLM temperature (0.0-1.0, default 0.7)
+            top_p: LLM top_p for nucleus sampling (0.0-1.0, default 0.92)
+            top_k: LLM top_k for top-k sampling (default 50)
+
+        Returns:
+            List of ExercisePlan candidates (one per variant)
+        """
         # Parse input
         input_obj = ExerciseAgentInput(**input_data)
         self._input_meta = input_obj.user_metadata  # Store for condition access
@@ -445,78 +472,111 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         weather = env.get("weather", {})
         season = env.get("time_context", {}).get("season", "any")
 
-        # Build base user prompt
-        base_prompt = self._build_exercise_prompt(
+        # Define diversity pools
+        available_strategies = ["balanced", "variety", "intensity_focus", "endurance", "recovery"]
+
+        # Select strategy
+        strategy = random.choice(available_strategies)
+
+        # Determine meal timing
+        if time_of_day:
+            meal_timing = time_of_day
+        else:
+            meal_timing = random.choice(MEAL_TIMING_OPTIONS)
+
+        # Randomly select primary exercises for mandatory injection
+        primary_cardio = random.choice(CARDIO_ACTIVITIES)
+        primary_strength = random.choice(STRENGTH_MOVEMENTS)
+        flexibility = random.choice(FLEXIBILITY_POSES)
+
+        # Randomly exclude boring exercises (50% chance)
+        excluded = []
+        if random.random() > 0.5:
+            excluded = random.sample(COMMON_BORING_EXERCISES, k=random.randint(1, 2))
+
+        # Optionally add equipment constraint (30% chance)
+        equipment = None
+        if random.random() > 0.7:
+            equipment = random.choice(EQUIPMENT_OPTIONS)
+
+        # Optionally prioritize outdoor (based on weather/season)
+        outdoor = False
+        if weather.get("condition") in ["clear", "sunny"] and random.random() > 0.5:
+            outdoor = True
+
+        # Build constraint prompt
+        constraint_prompt = build_exercise_constraint_prompt(
+            primary_cardio=primary_cardio,
+            primary_strength=primary_strength,
+            flexibility=flexibility,
+            excluded=excluded,
+            equipment=equipment,
+            outdoor=outdoor,
+            meal_timing=meal_timing
+        )
+
+        print(f"[DEBUG] Exercise: strategy={strategy}, meal_timing={meal_timing}")
+        print(f"[DEBUG]   cardio={primary_cardio}, strength={primary_strength}, flexibility={flexibility}")
+
+        # Generate ONE base plan
+        base_plan = self._generate_base_plan(
             user_meta=user_meta,
             environment=env,
             requirement=requirement,
             kg_context=kg_context,
             target_calories=target_calories,
             target_duration=target_duration,
-            target_frequency=target_frequency
+            target_frequency=target_frequency,
+            fitness_level=fitness_level,
+            weight=weight,
+            strategy=strategy,
+            meal_timing=meal_timing,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            constraint_prompt=constraint_prompt
         )
 
-        # Generate candidates with mandatory exercise injection
+        if not base_plan:
+            print("[WARN] No base plan generated")
+            return []
+
+        # Define variant names
+        variant_names = ["Lite", "Standard", "Plus"][:num_variants]
+
+        # Expand base plan to variants
+        expanded_variants = self.parser.expand_plan(base_plan, variant_names)
+
+        # Build candidates list with additional metadata
         candidates = []
-        used_combinations = set()
+        candidate_id = 1
+        target_calories_pct = round((target_calories - base_plan.total_calories_burned) / target_calories * 100, 1)
 
-        for i in range(num_candidates):
-            # 1. Randomly select meal timing
-            # meal_timing = random.choice(MEAL_TIMING_OPTIONS)
+        for variant_name in variant_names:
+            if variant_name not in expanded_variants:
+                continue
 
-            # 2. Randomly select primary exercises
-            primary_cardio = random.choice(CARDIO_ACTIVITIES)
-            primary_strength = random.choice(STRENGTH_MOVEMENTS)
-            flexibility = random.choice(FLEXIBILITY_POSES)
+            variant_plan = expanded_variants[variant_name]
 
-            # 3. Randomly exclude boring exercises (50% chance)
-            excluded = []
-            if random.random() > 0.5:
-                excluded = random.sample(COMMON_BORING_EXERCISES, k=random.randint(1, 2))
+            # Build safety notes with metadata
+            safety_notes = [
+                f"Variant: {variant_name}",
+                f"Strategy: {strategy}",
+                f"Meal Timing: {meal_timing}"
+            ]
+            if excluded:
+                safety_notes.append(f"Excluded: {', '.join(excluded)}")
+            if abs(target_calories_pct) > 10:
+                safety_notes.append(f"Calorie deviation: {target_calories_pct}%")
 
-            # 4. Optionally add equipment constraint (30% chance)
-            equipment = None
-            if random.random() > 0.7:
-                equipment = random.choice(EQUIPMENT_OPTIONS)
+            # Add safety notes to the variant
+            variant_plan.safety_notes = safety_notes
 
-            # 5. Optionally prioritize outdoor (based on weather/season)
-            outdoor = False
-            if weather.get("condition") in ["clear", "sunny"] and random.random() > 0.5:
-                outdoor = True
+            # Set ID
+            variant_plan.id = candidate_id
+            candidate_id += 1
 
-            # 6. Avoid duplicate combinations
-            combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
-            if combo_key in used_combinations and num_candidates < len(CARDIO_ACTIVITIES):
-                primary_cardio = random.choice(CARDIO_ACTIVITIES)
-                combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
-            used_combinations.add(combo_key)
-
-            # 7. Build constraint prompt
-            constraint_prompt = build_exercise_constraint_prompt(
-                primary_cardio=primary_cardio,
-                primary_strength=primary_strength,
-                flexibility=flexibility,
-                excluded=excluded,
-                equipment=equipment,
-                outdoor=outdoor,
-                meal_timing=meal_timing
-            )
-
-            # 7. Combine prompts
-            full_prompt = base_prompt + "\n" + constraint_prompt
-
-            # 8. Get strategy
-            strategy = strategies[i % len(strategies)] if strategies else "balanced"
-
-            candidate = self._generate_single_candidate(
-                user_prompt=full_prompt,
-                candidate_id=i + 1,
-                fitness_level=fitness_level,
-                weight=weight,
-                strategy=strategy
-            )
-            if candidate:
-                candidates.append(candidate)
+            candidates.append(variant_plan)
 
         return candidates
 
@@ -550,7 +610,8 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         kg_context: str,
         target_calories: int,
         target_duration: int,
-        target_frequency: int
+        target_frequency: int,
+        meal_timing: str = None
     ) -> str:
         """Build the user prompt for exercise generation"""
         conditions = user_meta.get("medical_conditions", [])
@@ -572,6 +633,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 **Target Daily Calories Burn**: {target_calories} kcal
 **Target Duration**: {target_duration} minutes per session
 **Weekly Frequency**: {target_frequency} sessions per week
+**Meal Timing**: {meal_timing if meal_timing else 'any'}
 
 ## Environment Context
 **Weather**: {environment.get('weather', {})}
@@ -663,35 +725,61 @@ Example format:
 
         return data
 
-    def _generate_single_candidate(
+    def _generate_base_plan(
         self,
-        user_prompt: str,
-        candidate_id: int,
+        user_meta: Dict[str, Any],
+        environment: Dict[str, Any],
+        requirement: Dict[str, Any],
+        kg_context: str,
+        target_calories: int,
+        target_duration: int,
+        target_frequency: int,
+        meal_timing: str = None,
         fitness_level: str,
         weight: float,
-        strategy: str = "balanced"
+        strategy: str = "balanced",
+        meal_timing: str = None,
+        temperature: float = 0.7,
+        top_p: float = 0.92,
+        top_k: int = 50,
+        constraint_prompt: str = ""
     ) -> Optional[ExercisePlan]:
-        """Generate a single exercise plan candidate"""
-        # Add strategy-specific guidance
+        """Generate a single base exercise plan with diversity injection"""
         strategy_guidance = {
             "balanced": "Focus on mix of cardio, strength, and flexibility.",
             "variety": "Include diverse exercises to prevent boredom and plateaus.",
-            "intensity_focus": "Emphasize appropriate intensity for fitness level."
+            "intensity_focus": "Emphasize appropriate intensity for fitness level.",
+            "endurance": "Focus on longer duration exercises for stamina building.",
+            "recovery": "Emphasize low-intensity, mobility-focused exercises."
         }
 
+        user_prompt = self._build_exercise_prompt(
+            user_meta=user_meta,
+            environment=environment,
+            requirement=requirement,
+            kg_context=kg_context,
+            target_calories=target_calories,
+            target_duration=target_duration,
+            target_frequency=target_frequency,
+            meal_timing=meal_timing
+        )
+
         full_prompt = user_prompt + f"\n\n### Strategy: {strategy.upper()}\n{strategy_guidance.get(strategy, 'Focus on balanced training.')}"
+        full_prompt += constraint_prompt
 
         # Call LLM
         try:
             response = self._call_llm(
                 system_prompt=EXERCISE_GENERATION_SYSTEM_PROMPT,
                 user_prompt=full_prompt,
-                temperature=0.7
+                temperature=temperature,
+                top_p=top_p,
+                top_k=top_k
             )
 
             # Handle empty response
             if not response or response == {}:
-                print(f"[WARN] LLM returned empty response for candidate {candidate_id}")
+                print("[WARN] LLM returned empty response for base plan")
                 return None
 
             try:
@@ -711,15 +799,14 @@ Example format:
             # Normalize enum values (LLM may return UPPERCASE)
             plan_data = self._normalize_enum_values(plan_data)
 
-            # Ensure ID is set
-            if "id" not in plan_data:
-                plan_data["id"] = candidate_id
+            # Ensure ID is set (will be reassigned when expanding to variants)
+            plan_data["id"] = 0
 
             # Create ExercisePlan object
             return ExercisePlan(**plan_data)
 
         except Exception as e:
-            print(f"Error generating exercise candidate {candidate_id}: {e}")
+            print(f"Error generating exercise base plan: {e}")
             return None
 
 
@@ -729,8 +816,11 @@ def generate_exercise_candidates(
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = {},
     user_requirement: Dict[str, Any] = {},
-    num_candidates: int = 3,
-    meal_timing: str = ""
+    num_variants: int = 3,
+    time_of_day: str = None,
+    temperature: float = 0.7,
+    top_p: float = 0.92,
+    top_k: int = 50
 ) -> List[ExercisePlan]:
     """
     Convenience function to generate exercise candidates.
@@ -739,27 +829,40 @@ def generate_exercise_candidates(
         user_metadata: User physiological data
         environment: Environmental context
         user_requirement: User goals
-        num_candidates: Number of candidates to generate
+        num_variants: Number of portion variants (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)
+        time_of_day: Specific time of day (morning/afternoon/evening) or None for random
+        temperature: LLM temperature (0.0-1.0, default 0.7)
+        top_p: LLM top_p for nucleus sampling (0.0-1.0, default 0.92)
+        top_k: LLM top_k for top-k sampling (default 50)
 
     Returns:
-        List of ExercisePlan objects
+        List of ExercisePlan objects (variants of a single base plan)
     """
     agent = ExerciseAgent()
     input_data = {
         "user_metadata": user_metadata,
         "environment": environment,
         "user_requirement": user_requirement,
-        "num_candidates": num_candidates
     }
-    return agent.generate(input_data, num_candidates, meal_timing=meal_timing)
+    return agent.generate(
+        input_data,
+        num_variants=num_variants,
+        time_of_day=time_of_day,
+        temperature=temperature,
+        top_p=top_p,
+        top_k=top_k
+    )
 
 
 def generate_exercise_variants(
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = {},
     user_requirement: Dict[str, Any] = {},
-    num_candidates: int = 3,
-    meal_timing: str = ""
+    num_variants: int = 3,
+    time_of_day: str = None,
+    temperature: float = 0.7,
+    top_p: float = 0.92,
+    top_k: int = 50
 ) -> Dict[str, List[ExercisePlan]]:
     """
     Generate exercise plans with intensity variants (Lite/Standard/Plus).
@@ -768,7 +871,11 @@ def generate_exercise_variants(
         user_metadata: User physiological data
         environment: Environmental context
         user_requirement: User goals
-        num_candidates: Number of base candidates to generate
+        num_variants: Number of portion variants (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)
+        time_of_day: Specific time of day (morning/afternoon/evening) or None for random
+        temperature: LLM temperature (0.0-1.0, default 0.7)
+        top_p: LLM top_p for nucleus sampling (0.0-1.0, default 0.92)
+        top_k: LLM top_k for top-k sampling (default 50)
 
     Returns:
         Dict mapping candidate_id to dict of variants:
@@ -778,20 +885,27 @@ def generate_exercise_variants(
             ...
         }
     """
-    # Generate base candidates
-    base_candidates = generate_exercise_candidates(
-        user_metadata, environment, user_requirement, num_candidates, meal_timing
+    # Generate base plan (single plan, not multiple candidates)
+    base_plan_candidates = generate_exercise_candidates(
+        user_metadata, environment, user_requirement,
+        num_variants=1,  # Get just one base plan
+        time_of_day=time_of_day,
+        temperature=temperature,
+        top_p=top_p,
+        top_k=top_k
     )
 
-    # Expand each candidate into variants
+    if not base_plan_candidates:
+        return {}
+
+    base_plan = base_plan_candidates[0]
+
+    # Expand the base plan into variants
     parser = ExercisePlanParser()
-    result = {}
+    variant_names = ["Lite", "Standard", "Plus"][:num_variants]
+    variants = parser.expand_plan(base_plan, variant_names)
 
-    for base_plan in base_candidates:
-        variants = parser.expand_plan(base_plan)
-        result[base_plan.id] = variants
-
-    return result
+    return {base_plan.id: variants}
 
 
 if __name__ == "__main__":
@@ -811,12 +925,17 @@ if __name__ == "__main__":
         },
         "user_requirement": {
             "goal": "weight_loss",
-            "intensity": "moderate",
-            "num_candidates": 2
+            "intensity": "moderate"
         }
     }
 
-    candidates = generate_exercise_candidates(**test_input)
-    print(f"Generated {len(candidates)} exercise candidates")
+    candidates = generate_exercise_candidates(
+        user_metadata=test_input["user_metadata"],
+        environment=test_input["environment"],
+        user_requirement=test_input["user_requirement"],
+        num_variants=3,
+        time_of_day="after_breakfast"
+    )
+    print(f"Generated {len(candidates)} exercise variants")
     for c in candidates:
         print(f"- {c.title}: {c.total_calories_burned} kcal, {c.total_duration_minutes} min")

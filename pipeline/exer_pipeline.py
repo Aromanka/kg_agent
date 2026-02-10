@@ -16,7 +16,7 @@ from typing import List, Dict, Any
 from datetime import datetime
 from dataclasses import dataclass
 
-from agents.exercise.generator import generate_exercise_variants
+from agents.exercise.generator import generate_exercise_candidates
 from agents.exercise.models import ExercisePlan
 from agents.safeguard.assessor import SafeguardAgent
 from agents.safeguard.models import SafetyAssessment
@@ -108,23 +108,34 @@ class ExercisePipeline:
 
         # Step 1: Generate exercise candidates with variants
         print(f"\n[1/4] Generating exercise candidates...")
-        all_variants = generate_exercise_variants(
-            user_metadata=user_metadata,
-            environment=env,
-            user_requirement=req,
-            num_candidates=num_base_plans,
-            meal_timing=meal_timing
-        )
+        exercise_candidates = []
+        for i in range(num_base_plans):
+            candidates = generate_exercise_candidates(
+                user_metadata=user_metadata,
+                environment=env,
+                user_requirement=req,
+                num_variants=3,  # Lite, Standard, Plus variants
+                time_of_day=meal_timing
+            )
+            exercise_candidates.extend(candidates)
+            print(f"      Base {i+1}/{num_base_plans}: {len(candidates)} variants")
 
-        # Flatten variants into a single list
+        # Convert to dicts with variant metadata
         all_plans_list = []
-        for base_id, variants in all_variants.items():
-            for variant_name, plan in variants.items():
-                plan_dict = plan.model_dump()
-                plan_dict["_variant"] = variant_name
-                plan_dict["_base_id"] = base_id
-                all_plans_list.append(plan_dict)
-                print(f"      Base {base_id}/{variant_name}: {plan.title}")
+        candidate_id = 1
+        variant_names = ["Lite", "Standard", "Plus"]
+        for base_idx in range(num_base_plans):
+            for variant_idx, variant_name in enumerate(variant_names):
+                idx = base_idx * 3 + variant_idx
+                if idx < len(exercise_candidates):
+                    plan = exercise_candidates[idx]
+                    plan_dict = plan.model_dump()
+                    plan_dict["_variant"] = variant_name
+                    plan_dict["_base_id"] = base_idx + 1
+                    plan_dict["id"] = candidate_id
+                    candidate_id += 1
+                    all_plans_list.append(plan_dict)
+                    print(f"      Base {base_idx+1}/{variant_name}: {plan.title}")
 
         print(f"      Found {len(all_plans_list)} exercise plan variants")
 
