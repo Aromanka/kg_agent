@@ -97,7 +97,7 @@ def main():
         pbar.update(len(nodes))
 
     pbar.close()
-    print("All nodes embedding injected！")
+    print("All nodes' embedding injected!")
 
     print(f"Creating vector index (dimension: {EMBEDDING_DIM})...")
     create_index_query = f"""
