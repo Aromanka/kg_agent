@@ -1,7 +1,3 @@
-"""
-Exercise Candidate Generator
-Generates personalized exercise plan candidates based on user metadata and knowledge graph.
-"""
 import json
 import os
 from typing import List, Dict, Any, Optional

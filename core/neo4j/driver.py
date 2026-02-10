@@ -1,14 +1,10 @@
-"""
-Neo4j Database Driver
-封装 Neo4j 数据库连接和常用操作
-"""
 from typing import List, Dict, Any, Optional
 from neo4j import GraphDatabase
 from config_loader import NEO4J_URI, NEO4J_AUTH, get_config
 
 
 def get_driver():
-    """获取 Neo4j 驱动实例"""
+    """Get Neo4j driver instance"""
     neo4j_config = get_config()["neo4j"]
     return GraphDatabase.driver(
         neo4j_config["uri"],
@@ -17,13 +13,13 @@ def get_driver():
 
 
 class Neo4jClient:
-    """Neo4j 客户端封装类"""
+    """Neo4j client wrapper"""
 
     def __init__(self, driver=None):
         self.driver = driver or get_driver()
 
     def close(self):
-        """关闭连接"""
+        """Close connection"""
         if self.driver:
             self.driver.close()
 
@@ -33,7 +29,7 @@ class Neo4jClient:
         parameters: Optional[Dict[str, Any]] = None,
         database: str = "neo4j"
     ):  # -> List[Record]:
-        """执行查询，返回记录列表"""
+        """Execute query, return record list"""
         with self.driver.session(database=database) as session:
             result = session.run(query, parameters)
             return list(result)
@@ -44,7 +40,7 @@ class Neo4jClient:
         parameters: Optional[Dict[str, Any]] = None,
         database: str = "neo4j"
     ):  # -> Optional[Record]:
-        """执行查询，返回单条记录"""
+        """Execute query, return single record"""
         results = self.query(query, parameters, database)
         return results[0] if results else None
 
@@ -54,7 +50,7 @@ class Neo4jClient:
         properties: Dict[str, Any],
         database: str = "neo4j"
     ) -> str:
-        """创建节点，返回创建语句"""
+        """Create node, return create statement"""
         props_str = ", ".join([f"{k}: ${k}" for k in properties.keys()])
         query = f"CREATE (n:{label} {{{props_str}}})"
         with self.driver.session(database=database) as session:
@@ -71,7 +67,7 @@ class Neo4jClient:
         rel_properties: Optional[Dict[str, Any]] = None,
         database: str = "neo4j"
     ) -> str:
-        """创建关系"""
+        """Create relationship"""
         from_str = " AND ".join([f"n.{k} = ${k}" for k in from_property.keys()])
         to_str = " AND ".join([f"m.{k} = ${k}" for k in to_property.keys()])
         props_str = ""
@@ -96,7 +92,7 @@ class Neo4jClient:
         score_threshold: float = 0.6,
         database: str = "neo4j"
     ) -> List[Dict[str, Any]]:
-        """使用全文索引搜索节点"""
+        """Use full-text index to search nodes"""
         lucene_query = f"*{keyword}*"
         query = """
         CALL db.index.fulltext.queryNodes("search_index", $word) YIELD node, score
@@ -113,7 +109,7 @@ class Neo4jClient:
         label: Optional[str] = None,
         database: str = "neo4j"
     ) -> Optional[Dict[str, Any]]:
-        """根据名称查找节点"""
+        """Find node by name"""
         if label:
             query = f"""
             MATCH (n:{label} {{name: $name}})
@@ -133,7 +129,7 @@ class Neo4jClient:
         rel_types: Optional[List[str]] = None,
         database: str = "neo4j"
     ) -> List[Dict[str, Any]]:
-        """获取节点的邻居节点"""
+        """Get neighbors of a node"""
         if rel_types:
             rel_filter = "|".join(rel_types)
             query = f"""
@@ -149,22 +145,22 @@ class Neo4jClient:
         return [dict(record) for record in results]
 
     def delete_all(self, database: str = "neo4j"):
-        """删除所有节点和关系（慎用）"""
+        """Delete all nodes and relations (use with caution)"""
         with self.driver.session(database=database) as session:
             session.run("MATCH (n) DETACH DELETE n")
 
 
-# 全局客户端实例
+# global client instance
 _neo4j_client: Optional[Neo4jClient] = None
 
 
 def get_neo4j() -> Neo4jClient:
-    """获取全局 Neo4j 客户端实例"""
+    """Get global Neo4j client instance"""
     global _neo4j_client
     if _neo4j_client is None:
         _neo4j_client = Neo4jClient()
     return _neo4j_client
 
 
-# 兼容旧代码的 driver 实例
+# compatible with old code driver instance
 driver = get_driver()

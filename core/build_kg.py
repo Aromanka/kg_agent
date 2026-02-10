@@ -63,7 +63,7 @@ def read_excel(file_path):
     """
     [New] Read Excel and convert each row into natural language sentences
     """
-    print(f"📊 Parsing Excel: {os.path.basename(file_path)}")
+    print(f"Parsing Excel: {os.path.basename(file_path)}")
     text_content = []
     try:
         # Read all worksheets (sheet_name=None returns a dictionary)
@@ -88,7 +88,7 @@ def read_excel(file_path):
                     text_content.append(sentence)
         return "\n".join(text_content)
     except Exception as e:
-        print(f"⚠️ Excel read failed {file_path}: {e}")
+        print(f"Excel read failed {file_path}: {e}")
         return ""
 
 
@@ -113,7 +113,7 @@ def read_docx(file_path):
                         text_content.append(", ".join(row_parts) + ".")
         return "\n".join(text_content)
     except Exception as e:
-        print(f"⚠️ Word read failed {file_path}: {e}")
+        print(f"Word read failed {file_path}: {e}")
         return ""
 
 
@@ -122,7 +122,7 @@ def read_pdf(file_path):
     try:
         return pymupdf4llm.to_markdown(file_path)
     except Exception as e:
-        print(f"⚠️ PDF read failed {file_path}: {e}")
+        print(f"PDF read failed {file_path}: {e}")
         return ""
 
 
@@ -325,15 +325,15 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
             else:
                 checkpoint_df_update.to_csv(checkpoint_csv_path, index=False)
         except Exception as e:
-            print(f"⚠️ Failed to update checkpoint for {file_name}: {e}")
+            print(f"Failed to update checkpoint for {file_name}: {e}")
     # Save results
     duration = time.time() - start_time
     output_json_path = os.path.join(current_output_dir, f"{kg_type}_quads.json")
     output_csv_path = os.path.join(current_output_dir, f"{kg_type}_quads.csv")
     log_path = os.path.join(current_output_dir, "process_log.txt")
     print("-" * 40)
-    print(f"✅ [{kg_name} KG] Extraction complete! Time: {duration:.2f} seconds")
-    print(f"🕸️ Obtained {len(all_quads)} unique quads.")
+    print(f"[{kg_name} KG] Extraction complete! Time: {duration:.2f} seconds")
+    print(f"Obtained {len(all_quads)} unique quads.")
     # Save JSON
     with open(output_json_path, 'w', encoding='utf-8') as f:
         json.dump(all_quads, f, indent=4, ensure_ascii=False)
@@ -354,7 +354,7 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
         f.write("\nList of processed files:\n")
         for fname in processed_files_log:
             f.write(f"- {fname}\n")
-    print(f"💾 [{kg_name} KG] Results saved to: {current_output_dir}")
+    print(f"[{kg_name} KG] Results saved to: {current_output_dir}")
     return {
         "status": "success",
         "kg_type": kg_type,
@@ -389,8 +389,8 @@ Default behavior:
     if kg_types_to_build is None or kg_types_to_build[0] == "all":
         kg_types_to_build = ["diet", "exercise"]
     print("=" * 50)
-    print(f"🚀 Starting to build knowledge graph...")
-    print(f"📋 Types: {', '.join(kg_types_to_build)}")
+    print(f"Starting to build knowledge graph...")
+    print(f"Types: {', '.join(kg_types_to_build)}")
     print("=" * 50)
     total_stats = {
         "total_quads": 0,
@@ -405,21 +405,21 @@ Default behavior:
             total_stats["total_quads"] += stats.get("quads", 0)
             total_stats["total_duration"] += stats.get("duration", 0)
         else:
-            print(f"⚠️ Unknown knowledge graph type: {kg_type}")
+            print(f" Unknown knowledge graph type: {kg_type}")
     # Summary
     print()
     print("=" * 50)
-    print("📊 Knowledge graph build summary")
+    print("Knowledge graph build summary")
     print("=" * 50)
     print(f"Total quads count: {total_stats['total_quads']}")
     print(f"Total time: {total_stats['total_duration']:.2f} seconds")
     print()
     # Display status for each KG
     for stats in total_stats["results"]:
-        status = "✅" if stats.get("status") == "success" else "⚠️"
+        status = "[pass]" if stats.get("status") == "success" else "[error]"
         print(f" {status} {stats.get('kg_name', 'Unknown')} KG: {stats.get('quads', 0)} quads")
     print()
-    print("📌 File locations:")
+    print("File locations:")
     for stats in total_stats["results"]:
         if stats.get("output_dir"):
             print(f" - {stats.get('kg_name', '')}: {stats['output_dir']}")

@@ -589,7 +589,7 @@ class SafeguardAgent(BaseAgent):
                     factor="high_temperature_exercise",
                     category="environmental",
                     severity=RiskLevel.HIGH,
-                    description=f"High temperature ({temperature}°C) increases heat stress risk",
+                    description=f"High temperature ({temperature} degrees Celsius) increases heat stress risk",
                     recommendation="Exercise indoors or in early morning/late evening"
                 ))
             elif temperature < 5:
@@ -597,7 +597,7 @@ class SafeguardAgent(BaseAgent):
                     factor="cold_temperature_exercise",
                     category="environmental",
                     severity=RiskLevel.MODERATE,
-                    description=f"Cold temperature ({temperature}°C) increases cardiovascular strain",
+                    description=f"Cold temperature ({temperature} degrees Celsius) increases cardiovascular strain",
                     recommendation="Warm up thoroughly, dress in layers"
                 ))
 
@@ -1120,7 +1120,7 @@ if __name__ == "__main__":
         "id": 1,
         "meal_plan": {
             "breakfast": [
-                {"food": "Oatmeal", "portion": "1碗", "calories": 150, "protein": 5, "carbs": 27, "fat": 3},
+                {"food": "Oatmeal", "portion": "1bowl", "calories": 150, "protein": 5, "carbs": 27, "fat": 3},
                 {"food": "Milk", "portion": "200ml", "calories": 120, "protein": 8, "carbs": 12, "fat": 5}
             ],
             "lunch": [
@@ -1220,8 +1220,8 @@ if __name__ == "__main__":
         "id": 2,
         "meal_plan": {
             "breakfast": [
-                {"food": "Chocolate Cake", "portion": "1块", "calories": 500, "protein": 5, "carbs": 60, "fat": 25},
-                {"food": "Ice Cream", "portion": "1碗", "calories": 300, "protein": 5, "carbs": 40, "fat": 15}
+                {"food": "Chocolate Cake", "portion": "1piece", "calories": 500, "protein": 5, "carbs": 60, "fat": 25},
+                {"food": "Ice Cream", "portion": "1bowl", "calories": 300, "protein": 5, "carbs": 40, "fat": 15}
             ]
         },
         "total_calories": 800,

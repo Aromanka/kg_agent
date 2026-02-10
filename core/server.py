@@ -13,10 +13,10 @@ from agents.exercise.generator import generate_exercise_candidates
 from pipeline.health_pipeline import HealthPlanPipeline, generate_health_plans
 from core.llm import get_unified_llm, get_llm_type
 
-# ================= 配置加载 =================
+# load config
 config = get_config()
 
-# ================= 核心逻辑 =================
+# core logic
 driver = GraphDatabase.driver(
     config["neo4j"]["uri"],
     auth=(config["neo4j"]["username"], config["neo4j"]["password"])
@@ -26,8 +26,8 @@ driver = GraphDatabase.driver(
 llm = get_unified_llm()
 print(f"[INFO] LLM initialized in mode: {get_llm_type()}")
 
-# ================= API 服务 =================
-app = FastAPI(title="Health KG Agent API", description="基于知识图谱的健康方案生成系统")
+# =api service
+app = FastAPI(title="Health KG Agent API", description="xlife kg agents")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # ================= Request Models =================
@@ -326,7 +326,6 @@ def llm_reload_endpoint(mode: str = None):
 
 @app.get("/", response_class=HTMLResponse)
 def root():
-    """Web UI入口"""
     with open("kg/templates/index.html", "r", encoding="utf-8") as f:
         return f.read()
 
