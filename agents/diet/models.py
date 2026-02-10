@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from enum import Enum
 
 
-# ================= Enums & Constants =================
+# Enums & Constants
 
 class MealType(str, Enum):
     """Types of meals in a day"""
@@ -17,11 +17,8 @@ class MealType(str, Enum):
     SNACKS = "snacks"
 
 
-# Allowed portion units for diet generation (must match Prompt)
 ALLOWED_UNITS = Literal["gram", "ml", "piece", "slice", "cup", "bowl", "spoon"]
 
-
-# ================= Base Food Models (for LLM → Parser pipeline) =================
 
 class BaseFoodItem(BaseModel):
     """LLM output: Base food item with standardized units for parser expansion"""

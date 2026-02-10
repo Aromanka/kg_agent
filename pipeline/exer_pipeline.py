@@ -62,7 +62,9 @@ class ExercisePipeline:
         user_requirement: Dict[str, Any] = None,
         user_query: str = None,
         num_base_plans: int = 3,
-        num_var_plans: int = 3,
+        num_variants: int = 3,
+        min_scale: float = 0.7,
+        max_scale: float = 1.3,
         temperature: float = 0.7,
         top_p: float = 0.92,
         top_k: int = 50,
@@ -108,7 +110,9 @@ class ExercisePipeline:
             environment=env,
             user_requirement=req,
             num_candidates=num_base_plans,
-            num_var=num_var_plans,
+            num_var=num_variants,
+            min_scale=min_scale,
+            max_scale=max_scale,
             meal_timing=meal_timing,
             user_preference=user_query,
             use_vector=use_vector,  # GraphRAG: use vector search instead of keyword matching
@@ -244,7 +248,9 @@ def run_exercise_pipeline(
     user_requirement: Dict[str, Any] = None,
     user_query: str = None,
     num_base_plans: int = 3,
-    num_var_plans: int = 3,
+    num_variants: int = 3,
+    min_scale: float = 0.7,
+    max_scale: float = 1.3,
     temperature: float = 0.7,
     top_p: float = 0.92,
     top_k: int = 50,
@@ -264,7 +270,7 @@ def run_exercise_pipeline(
         user_requirement: User requirements (intensity, duration in minutes)
         user_query: Free-form user preference query (e.g., "I want to focus on upper body exercises")
         num_base_plans: Number of LLM-generated base plans
-        num_var_plans: Number of intensity variants per base plan (Lite/Standard/Plus)
+        num_variants: Number of intensity variants per base plan (Lite/Standard/Plus)
         temperature: LLM temperature (0.0-1.0)
         top_p: LLM top_p for nucleus sampling (0.0-1.0)
         top_k: LLM top_k for top-k sampling
@@ -282,7 +288,9 @@ def run_exercise_pipeline(
         user_requirement=user_requirement,
         user_query=user_query,
         num_base_plans=num_base_plans,
-        num_var_plans=num_var_plans,
+        num_variants=num_variants,
+        min_scale=min_scale,
+        max_scale=max_scale,
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
@@ -308,6 +316,8 @@ if __name__ == "__main__":
     parser.add_argument('--topk', type=int, default=3, help='top k selection')
     parser.add_argument('--rag_topk', type=int, default=3, help='graph rag top_k similar entities')
     parser.add_argument('--use_vector', action='store_true', default=False, help='Use vector search (GraphRAG) instead of keyword matching')
+    parser.add_argument('--min_scale', type=float, default=0.7, help='minimum scale factor for variants (default: 0.7)')
+    parser.add_argument('--max_scale', type=float, default=1.3, help='maximum scale factor for variants (default: 1.3)')
     parser.add_argument('--meal_timing', type=str, default="before_breakfast", help='meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".')
     parser.add_argument('--query', type=str, default="I want to focus on upper body exercises with moderate intensity", help='user query (free-form text for KG entity matching)')
     args = parser.parse_args()
@@ -332,7 +342,9 @@ if __name__ == "__main__":
         "use_vector": args.use_vector,  # Use vector search (GraphRAG) instead of keyword matching
         "rag_topk": args.rag_topk,
         "num_base_plans": args.bn,
-        "num_var_plans": args.vn,
+        "num_variants": args.vn,
+        "min_scale": args.min_scale,
+        "max_scale": args.max_scale,
         "temperature": 0.7,
         "top_k_selection": args.topk,
         "output_path": "exer_plan.json",

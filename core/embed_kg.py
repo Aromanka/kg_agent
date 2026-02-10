@@ -3,75 +3,66 @@ import os
 import time
 from tqdm import tqdm
 
-# 添加项目根目录到路径，确保能导入 core 模块
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.neo4j.driver import Neo4jClient, get_neo4j
 from config_loader import get_config
 
-# === 配置区域 ===
-BATCH_SIZE = 100  # 每次处理100个节点
-USE_LOCAL_MODEL = True # True使用本地模型，False使用OpenAI
+BATCH_SIZE = 128  # 100 nodes each batch
+USE_LOCAL_MODEL = True # True for local embedding model
 
-# 全局 embedding 维度变量
-EMBEDDING_DIM = 768  # 默认值，会在下面被覆盖
+EMBEDDING_DIM = 768  # default value, will be replaced later
 
-# === 初始化模型 ===
+# Initialize model
 if USE_LOCAL_MODEL:
     from sentence_transformers import SentenceTransformer
     config = get_config()
     local_model_path = config.get("local_emb_path", None)
 
     if local_model_path and os.path.exists(local_model_path):
-        print(f"正在加载本地 Embedding 模型: {local_model_path}")
+        print(f"Loading local model: {local_model_path}")
         model = SentenceTransformer(local_model_path)
         # Try to get embedding dimension from model config
         EMBEDDING_DIM = model.get_sentence_embedding_dimension()
     else:
-        print("正在加载本地 Embedding 模型 (m3e-base 或 all-MiniLM-L6-v2)...")
-        # 推荐使用 m3e-base (中文效果好) 或 all-MiniLM-L6-v2 (轻量)
-        model = SentenceTransformer('moka-ai/m3e-base') 
-        EMBEDDING_DIM = model.get_sentence_embedding_dimension()
+        raise ValueError("No local model/ Invalid local model!")
 
-    print(f"✅ Embedding 模型加载完成，维度: {EMBEDDING_DIM}")
+    print(f"Embedding initialized, embedding dimension: {EMBEDDING_DIM}")
 
     def get_embedding(text):
         return model.encode(text).tolist()
 else:
     from openai import OpenAI
     client = OpenAI(api_key="sk-...", base_url="...")
-    EMBEDDING_DIM = 1536  # OpenAI text-embedding-3-small 默认维度
+    EMBEDDING_DIM = 1536
 
     def get_embedding(text):
         resp = client.embeddings.create(input=text, model="text-embedding-3-small")
         return resp.data[0].embedding
 
 def main():
-    # 1. 连接数据库
     client = Neo4jClient()
-    print("✅ 已连接 Neo4j 数据库")
+    print("Loading to Neo4j Database")
 
-    # 2. 统计需要处理的节点总数 (假设 Label 为 Entity，且没有 embedding 属性)
     count_query = "MATCH (n:Entity) WHERE n.embedding IS NULL RETURN count(n) as total"
     result = client.query(count_query)
     
-    # 增加健壮性检查，防止返回结果格式不同
     if result and isinstance(result, list) and len(result) > 0:
         total = result[0].get('total', 0)
     else:
         total = 0
         
-    print(f"📊 发现 {total} 个节点需要生成 Embedding")
+    print(f"Find {total} nodes that need to Embed")
 
     if total == 0:
-        print("所有节点均已有 Embedding，无需处理。")
+        print("All nodes embedded")
         return
 
-    # 3. 批量处理
+    # batch process
     pbar = tqdm(total=total)
     
     while True:
-        # 3.1 拉取一批未处理的节点
+        # get a batch of un-processed nodes
         fetch_query = """
         MATCH (n:Entity) 
         WHERE n.embedding IS NULL 
@@ -83,36 +74,32 @@ def main():
         if not nodes:
             break
 
-        # 3.2 计算 Embedding
         updates = []
         for node in nodes:
             text = node.get('text', '')
-            # 简单的错误处理，防止空文本报错
+            # avoid void text error
             if not text or len(str(text).strip()) == 0:
-                vector = [0.0] * EMBEDDING_DIM # 占位符
+                vector = [0.0] * EMBEDDING_DIM
             else:
                 vector = get_embedding(str(text))
             
             updates.append({"id": node['id'], "vector": vector})
 
-        # 3.3 批量写回 Neo4j (使用 UNWIND 语法一次性更新)
+        # batch rewrite
         update_query = """
         UNWIND $updates AS row
         MATCH (n) WHERE elementId(n) = row.id
         SET n.embedding = row.vector
         """
         
-        # === 修复点：将 updates 作为字典的值传递 ===
         client.query(update_query, {"updates": updates})
         
         pbar.update(len(nodes))
 
     pbar.close()
-    print("✅ 所有节点 Embedding 注入完成！")
+    print("All nodes' embedding injected!")
 
-    # 4. 创建向量索引 (如果不存在)
-    # 注意：vector.dimensions 必须与你使用的模型一致
-    print(f"正在创建向量索引 (维度: {EMBEDDING_DIM})...")
+    print(f"Creating vector index (dimension: {EMBEDDING_DIM})...")
     create_index_query = f"""
     CREATE VECTOR INDEX node_embedding_index IF NOT EXISTS
     FOR (n:Entity) ON (n.embedding)
@@ -123,9 +110,9 @@ def main():
     """
     try:
         client.query(create_index_query)
-        print("✅ 向量索引 'node_embedding_index' 创建成功/已存在")
+        print("Creates/Exists 'node_embedding_index'")
     except Exception as e:
-        print(f"⚠️ 创建索引时遇到警告（可能已存在）：{e}")
+        print(f" Warning appears when creating 'node_embedding_index' :{e}")
 
 if __name__ == "__main__":
     main()

@@ -58,6 +58,8 @@ class DietPipeline:
         user_query: str = None,
         num_base_plans: int = 3,
         num_variants: int = 3,
+        min_scale: float = 0.5,
+        max_scale: float = 1.5,
         meal_type: str = "lunch",
         temperature: float = 0.7,
         top_p: float = 0.92,
@@ -109,6 +111,8 @@ class DietPipeline:
                 environment=env,
                 user_requirement=req,
                 num_variants=num_variants,
+                min_scale=min_scale,
+                max_scale=max_scale,
                 meal_type=meal_type,
                 temperature=temperature,
                 top_p=top_p,
@@ -236,6 +240,8 @@ def run_diet_pipeline(
     rag_topk: int = 3,
     num_base_plans: int = 3,
     num_variants: int = 3,
+    min_scale: float = 0.5,
+    max_scale: float = 1.5,
     meal_type: str = "lunch",
     temperature: float = 0.7,
     top_p: float = 0.92,
@@ -275,6 +281,8 @@ def run_diet_pipeline(
         user_query=user_query,
         num_base_plans=num_base_plans,
         num_variants=num_variants,
+        min_scale=min_scale,
+        max_scale=max_scale,
         meal_type=meal_type,
         temperature=temperature,
         top_p=top_p,
@@ -297,9 +305,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Diet Pipeline with KG Entity Matching')
     parser.add_argument('--bn', type=int, default=3, help='base plan num')
     parser.add_argument('--vn', type=int, default=3, help='var plan num')
-    parser.add_argument('--topk', type=int, default=3, help='var plan num')
+    parser.add_argument('--topk', type=int, default=3, help='top k selection')
     parser.add_argument('--rag_topk', type=int, default=3, help='graph rag top_k similar entities')
     parser.add_argument('--use_vector', action='store_true', default=False, help='Use vector search (GraphRAG) instead of keyword matching')
+    parser.add_argument('--min_scale', type=float, default=0.5, help='minimum scale factor for variants (default: 0.5)')
+    parser.add_argument('--max_scale', type=float, default=1.5, help='maximum scale factor for variants (default: 1.5)')
     parser.add_argument('--query', type=str, default="I want a healthy tuna salad sandwich with fresh vegetables",
                        help='user query (free-form text for KG entity matching)')
     args = parser.parse_args()
@@ -323,6 +333,8 @@ if __name__ == "__main__":
         "rag_topk": args.rag_topk,
         "num_base_plans": args.bn,
         "num_variants": args.vn,
+        "min_scale": args.min_scale,
+        "max_scale": args.max_scale,
         "meal_type": "lunch",
         "temperature": 0.9,
         "top_k": args.topk,

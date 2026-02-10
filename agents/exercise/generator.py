@@ -1,7 +1,3 @@
-"""
-Exercise Candidate Generator
-Generates personalized exercise plan candidates based on user metadata and knowledge graph.
-"""
 import json
 import os
 from typing import List, Dict, Any, Optional
@@ -11,7 +7,7 @@ from agents.exercise.models import (
     ExerciseItem, ExerciseSession, ExercisePlan,
     ExerciseCandidatesResponse, ExerciseAgentInput
 )
-from agents.exercise.parser import ExercisePlanParser
+from agents.exercise.parser_var import ExercisePlanParser
 from core.llm import get_llm
 from core.llm.utils import parse_json_response
 from core.neo4j import get_kg_query
@@ -729,6 +725,8 @@ def generate_exercise_variants(
     user_requirement: Dict[str, Any] = {},
     num_candidates: int = 3,
     num_var: int = 3,
+    min_scale: float = 0.7,
+    max_scale: float = 1.3,
     meal_timing: str = "",
     user_preference: str = None,
     use_vector: bool = False,
@@ -759,21 +757,11 @@ def generate_exercise_variants(
     )
 
     # Expand each candidate into variants
-    parser = ExercisePlanParser()
+    parser = ExercisePlanParser(num_variants=num_var, min_scale=min_scale, max_scale=max_scale)
     result = {}
-    # print(f"num_var = {num_var}")
-    if num_var == 1:
-        var = ["Lite"]
-    elif num_var == 2:
-        var = ["Lite", "Standard"]
-    elif num_var == 3:
-        var = ["Lite", "Standard", "Plus"]
-    else:
-        # Default to all 3 variants for any other num_var value
-        var = ["Lite", "Standard", "Plus"]
 
     for base_plan in base_candidates:
-        variants = parser.expand_plan(base_plan, variants=var)
+        variants = parser.expand_plan(base_plan)
         result[base_plan.id] = variants
 
     return result

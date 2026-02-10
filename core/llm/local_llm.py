@@ -1,6 +1,3 @@
-"""
-Local LLM Implementation - Support for local HuggingFace/Transformers models
-"""
 import os
 import torch
 from typing import List, Dict, Optional, Any
@@ -223,7 +220,7 @@ class LocalLLM:
         import json
         import re
 
-        prompt = f"从以下问题中提取{max_count}个医学/健康实体关键词，只返回JSON列表格式：\n问题：{question}"
+        prompt = f"Extract {max_count} medical/health entity keywords from the following question, only return JSON list format:\nQuestion: {question}"
         messages = [{"role": "user", "content": prompt}]
 
         try:
@@ -233,7 +230,7 @@ class LocalLLM:
                 return json.loads(match.group())
             return []
         except Exception as e:
-            print(f"关键词提取失败: {e}")
+            print(f"Failed to extract keywords: {e}")
             return []
 
     def _messages_to_text(self, messages: List[Dict[str, str]]) -> List[Dict[str, str]]:

@@ -23,7 +23,7 @@ except ImportError:
 # Libraries for handling PDF and Word
 import pymupdf4llm
 from docx import Document
-# ================= Configuration Loading =================
+
 config = get_config()
 API_MODEL = config.get("api_model", {})
 DEEPSEEK_API_KEY = API_MODEL.get("api_key", "")
@@ -33,7 +33,7 @@ MODEL_NAME = API_MODEL.get("model", "deepseek-chat")
 USE_LOCAL = False
 print(f"[INFO] KG Builder LLM mode: api")
 print(f"[INFO] API Model: {MODEL_NAME} @ {DEEPSEEK_BASE_URL}")
-# ================= Core Configuration Area =================
+
 # Knowledge Graph Type Configuration
 KG_CONFIGS = {
     "diet": {
@@ -56,14 +56,14 @@ OUTPUT_BASE_DIR = "output_history"
 # Text splitting settings
 CHUNK_SIZE = 1000
 OVERLAP = 200
-# ===============================================
+
 
 
 def read_excel(file_path):
     """
     [New] Read Excel and convert each row into natural language sentences
     """
-    print(f"📊 Parsing Excel: {os.path.basename(file_path)}")
+    print(f"Parsing Excel: {os.path.basename(file_path)}")
     text_content = []
     try:
         # Read all worksheets (sheet_name=None returns a dictionary)
@@ -88,7 +88,7 @@ def read_excel(file_path):
                     text_content.append(sentence)
         return "\n".join(text_content)
     except Exception as e:
-        print(f"⚠️ Excel read failed {file_path}: {e}")
+        print(f"Excel read failed {file_path}: {e}")
         return ""
 
 
@@ -113,7 +113,7 @@ def read_docx(file_path):
                         text_content.append(", ".join(row_parts) + ".")
         return "\n".join(text_content)
     except Exception as e:
-        print(f"⚠️ Word read failed {file_path}: {e}")
+        print(f"Word read failed {file_path}: {e}")
         return ""
 
 
@@ -122,7 +122,7 @@ def read_pdf(file_path):
     try:
         return pymupdf4llm.to_markdown(file_path)
     except Exception as e:
-        print(f"⚠️ PDF read failed {file_path}: {e}")
+        print(f"PDF read failed {file_path}: {e}")
         return ""
 
 
@@ -135,12 +135,8 @@ def read_txt(file_path):
 
 
 def clean_text(text):
-    """Clean text by removing citations, page numbers, and other noise."""
-    # Remove source citations (e.g., [1], [2,3])
     text = re.sub(r'\[\d+(?:,\s*\d+)*\]', '', text)
-    # Remove page numbers (isolated numbers on their own line)
     text = re.sub(r'\n\s*\d+\s*\n', '\n', text)
-    # Remove multiple consecutive empty lines
     text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
 
@@ -148,13 +144,11 @@ def clean_text(text):
 def split_text_by_headers(text, chunk_size=CHUNK_SIZE):
     """Split text by Markdown headers (##) to keep sections together."""
     if not text: return []
-    # Split by Markdown headers (##)
     sections = re.split(r'(^##\s+.*)', text, flags=re.MULTILINE)
     chunks = []
     current_chunk = ""
     for part in sections:
         if not part: continue
-        # If adding this part exceeds limit, save current chunk
         if len(current_chunk) + len(part) > chunk_size:
             if current_chunk.strip():
                 chunks.append(current_chunk.strip())
@@ -186,13 +180,6 @@ def split_text(text, chunk_size=CHUNK_SIZE, overlap=OVERLAP):
 
 
 def extract_quads_with_llm(text_chunk, schema_prompt):
-    """
-    Extract quads using LLM (API mode) with JSON Object response format.
-    Prioritizes "quads" key from the response.
-    Args:
-        text_chunk: Text to extract from
-        schema_prompt: Schema prompt to use (DIET or EXER)
-    """
     if len(text_chunk.strip()) < 10: return []
     prompt = f"{schema_prompt}\n\n## Text to Process\n{text_chunk}"
     messages = [
@@ -212,26 +199,22 @@ def extract_quads_with_llm(text_chunk, schema_prompt):
         )
         content = response.choices[0].message.content.strip()
         data = parse_json_response(content)
-        # Priority 1: Look for "quads" key (required by new prompt)
         if isinstance(data, dict):
             if "quads" in data and isinstance(data["quads"], list):
                 return data["quads"]
-            # Priority 2: Look for "triplets" key (backwards compatibility)
             if "triplets" in data and isinstance(data["triplets"], list):
                 return data["triplets"]
-            # Priority 3: Look for any list value as fallback
             for val in data.values():
                 if isinstance(val, list):
                     return val
-        # Priority 4: Direct list response
         elif isinstance(data, list):
             return data
         return []
     except json.JSONDecodeError as e:
-        print(f"⚠️ JSON parsing failed: {e}, content snippet: {content[:100] if 'content' in dir() else 'N/A'}...")
+        print(f"JSON parsing failed: {e}, content snippet: {content[:100] if 'content' in dir() else 'N/A'}...")
         return []
     except Exception as e:
-        print(f"❌ LLM call failed: {e}")
+        print(f"LLM call failed: {e}")
         time.sleep(2)
         return []
 
@@ -259,14 +242,14 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
     current_output_dir = os.path.join(OUTPUT_BASE_DIR, f"{kg_type.capitalize()}_{timestamp}")
     # Create folder
     os.makedirs(current_output_dir, exist_ok=True)
-    print(f"📂 [{kg_name} KG] This result will be saved in: {current_output_dir}")
+    print(f"[{kg_name} KG] This result will be saved in: {current_output_dir}")
     # Scan files
     files = glob.glob(os.path.join(input_dir, "*.pdf")) + \
         glob.glob(os.path.join(input_dir, "*.docx")) + \
         glob.glob(os.path.join(input_dir, "*.txt")) + \
         glob.glob(os.path.join(input_dir, "*.xlsx"))
     if not files:
-        print(f"⚠️ [{kg_name} KG] '{input_dir}' folder is empty, no files found.")
+        print(f"[{kg_name} KG] '{input_dir}' folder is empty, no files found.")
         return {"status": "skipped", "reason": "no_files", "quads": 0}
     # Load checkpoint CSV to skip already processed files
     checkpoint_csv_path = os.path.join(OUTPUT_BASE_DIR, f"{kg_type}_processed_files.csv")
@@ -275,18 +258,18 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
         try:
             checkpoint_df = pd.read_csv(checkpoint_csv_path)
             processed_files_checkpoint = set(checkpoint_df["file_path"].tolist())
-            print(f"📋 [{kg_name} KG] Loaded checkpoint: {len(processed_files_checkpoint)} files already processed")
+            print(f"[{kg_name} KG] Loaded checkpoint: {len(processed_files_checkpoint)} files already processed")
         except Exception as e:
-            print(f"⚠️ [{kg_name} KG] Failed to load checkpoint: {e}")
+            print(f"[{kg_name} KG] Failed to load checkpoint: {e}")
     # Filter out already processed files
     new_files = [f for f in files if f not in processed_files_checkpoint]
     skipped_count = len(files) - len(new_files)
     if skipped_count > 0:
-        print(f"⏭️ [{kg_name} KG] Skipping {skipped_count} already processed files")
+        print(f"[{kg_name} KG] Skipping {skipped_count} already processed files")
     files = new_files
-    print(f"🔍 [{kg_name} KG] Found {len(files)} new files to process...")
+    print(f"[{kg_name} KG] Found {len(files)} new files to process...")
     if not files:
-        print(f"✅ [{kg_name} KG] All files have been processed. Nothing to do.")
+        print(f"[{kg_name} KG] All files have been processed. Nothing to do.")
         return {"status": "skipped", "reason": "all_files_processed", "quads": 0}
     all_quads = []
     seen_hashes = set()
@@ -342,15 +325,15 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
             else:
                 checkpoint_df_update.to_csv(checkpoint_csv_path, index=False)
         except Exception as e:
-            print(f"⚠️ Failed to update checkpoint for {file_name}: {e}")
+            print(f"Failed to update checkpoint for {file_name}: {e}")
     # Save results
     duration = time.time() - start_time
     output_json_path = os.path.join(current_output_dir, f"{kg_type}_quads.json")
     output_csv_path = os.path.join(current_output_dir, f"{kg_type}_quads.csv")
     log_path = os.path.join(current_output_dir, "process_log.txt")
     print("-" * 40)
-    print(f"✅ [{kg_name} KG] Extraction complete! Time: {duration:.2f} seconds")
-    print(f"🕸️ Obtained {len(all_quads)} unique quads.")
+    print(f"[{kg_name} KG] Extraction complete! Time: {duration:.2f} seconds")
+    print(f"Obtained {len(all_quads)} unique quads.")
     # Save JSON
     with open(output_json_path, 'w', encoding='utf-8') as f:
         json.dump(all_quads, f, indent=4, ensure_ascii=False)
@@ -371,7 +354,7 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
         f.write("\nList of processed files:\n")
         for fname in processed_files_log:
             f.write(f"- {fname}\n")
-    print(f"💾 [{kg_name} KG] Results saved to: {current_output_dir}")
+    print(f"[{kg_name} KG] Results saved to: {current_output_dir}")
     return {
         "status": "success",
         "kg_type": kg_type,
@@ -406,8 +389,8 @@ Default behavior:
     if kg_types_to_build is None or kg_types_to_build[0] == "all":
         kg_types_to_build = ["diet", "exercise"]
     print("=" * 50)
-    print(f"🚀 Starting to build knowledge graph...")
-    print(f"📋 Types: {', '.join(kg_types_to_build)}")
+    print(f"Starting to build knowledge graph...")
+    print(f"Types: {', '.join(kg_types_to_build)}")
     print("=" * 50)
     total_stats = {
         "total_quads": 0,
@@ -422,21 +405,21 @@ Default behavior:
             total_stats["total_quads"] += stats.get("quads", 0)
             total_stats["total_duration"] += stats.get("duration", 0)
         else:
-            print(f"⚠️ Unknown knowledge graph type: {kg_type}")
+            print(f" Unknown knowledge graph type: {kg_type}")
     # Summary
     print()
     print("=" * 50)
-    print("📊 Knowledge graph build summary")
+    print("Knowledge graph build summary")
     print("=" * 50)
     print(f"Total quads count: {total_stats['total_quads']}")
     print(f"Total time: {total_stats['total_duration']:.2f} seconds")
     print()
     # Display status for each KG
     for stats in total_stats["results"]:
-        status = "✅" if stats.get("status") == "success" else "⚠️"
+        status = "[pass]" if stats.get("status") == "success" else "[error]"
         print(f" {status} {stats.get('kg_name', 'Unknown')} KG: {stats.get('quads', 0)} quads")
     print()
-    print("📌 File locations:")
+    print("File locations:")
     for stats in total_stats["results"]:
         if stats.get("output_dir"):
             print(f" - {stats.get('kg_name', '')}: {stats['output_dir']}")

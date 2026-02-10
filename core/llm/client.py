@@ -1,7 +1,3 @@
-"""
-LLM Client Wrapper
-封装 OpenAI/DeepSeek 客户端，提供统一的调用接口
-"""
 import json
 import os
 from datetime import datetime
@@ -20,13 +16,11 @@ def get_llm_client() -> OpenAI:
 
 
 def get_model_name() -> str:
-    """获取模型名称"""
     config = get_config()
     return config.get("api_model", {}).get("model", "deepseek-chat")
 
 
 class LLMClient:
-    """LLM 客户端封装类"""
 
     def __init__(self, model: Optional[str] = None):
         self.client = get_llm_client()
@@ -34,18 +28,15 @@ class LLMClient:
         self._log_path = self._get_log_path()
 
     def _get_log_path(self) -> str:
-        """获取日志路径"""
         try:
             config = get_config()
             log_path = config.get("llm_log_path", "tests/llm.log")
-            # 确保目录存在
             os.makedirs(os.path.dirname(log_path), exist_ok=True)
             return log_path
         except Exception:
             return "tests/llm.log"
 
     def _log(self, messages: List[Dict[str, str]], response: Any, duration_ms: float = 0):
-        """记录 LLM 请求和响应到日志文件"""
         try:
             log_entry = {
                 "timestamp": datetime.now().isoformat(),
@@ -76,7 +67,6 @@ class LLMClient:
         max_tokens: Optional[int] = None,
         **kwargs
         ) -> str:
-        """发送对话请求，返回内容"""
         start_time = datetime.now()
         resp = self.client.chat.completions.create(
             model=self.model,
@@ -95,7 +85,6 @@ class LLMClient:
         temperature: float = 0.0,
         **kwargs
         ) -> dict:
-        """发送对话请求，返回解析后的 JSON"""
         start_time = datetime.now()
         # Filter out unsupported parameters that cause TypeError
         unsupported_params = ['temperature', 'top_p', 'top_k']
@@ -113,8 +102,7 @@ class LLMClient:
         return content
 
     def extract_keywords(self, question: str, max_count: int = 3) -> List[str]:
-        """提取问题中的关键词"""
-        prompt = f"从以下问题中提取{max_count}个医学/健康实体关键词，只返回JSON列表格式：\n问题：{question}"
+        prompt = f"Extract {max_count} medical/health entity keywords from the following question, only return JSON list format:\nQuestion: {question}"
         messages = [{"role": "user", "content": prompt}]
         try:
             content = self.chat(messages, temperature=0.1)
@@ -124,16 +112,15 @@ class LLMClient:
                 return json.loads(match.group())
             return []
         except Exception as e:
-            print(f"关键词提取失败: {e}")
+            print(f"Failed to extract keywords: {e}")
             return []
 
 
-# 全局客户端实例
 _llm_client: Optional[LLMClient] = None
 
 
 def get_llm():
-    """获取全局 LLM 客户端实例，优先使用api/本地模型"""
+    """Get global LLM client instance, use api/local model preferentially"""
     global _llm_client
     if _llm_client is None:
         from core.llm.local_llm import is_local_mode, get_local_llm
