@@ -114,7 +114,8 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
             # Using simple MET-based estimation (MET = 4-8 for moderate exercise)
             # Calories = MET * weight(kg) * duration(min) / 60
             met_avg = 6  # Average MET for moderate exercise
-            return int(met_avg * weight_kg * duration_minutes / 60)
+            default_duration = 30  # Default 30 minutes if not specified
+            return int(met_avg * weight_kg * default_duration / 60)
 
     def calculate_target_duration(
         self,
