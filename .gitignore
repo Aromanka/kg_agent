@@ -8,6 +8,7 @@ tests/llm.log
 .plan/
 .claude/
 .vscode/
+sample/
 
 *.json
 core/server.py
