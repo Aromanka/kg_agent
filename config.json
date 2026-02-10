@@ -1,0 +1,15 @@
+{
+    "neo4j": {
+        "uri": "bolt://127.0.0.1:7687",
+        "username": "neo4j",
+        "password": "a9iunice"
+    },
+    "api_model": {
+        "api_key": "sk-e7769d96ed994b92b2ab8454fdc8b7eb",
+        "base_url": "https://api.deepseek.com",
+        "model": "deepseek-chat"
+    },
+    "llm_log_path": "tests/llm.log",
+    "local_model_path": "/home/bml/storage/mnt/v-044d0fb740b04ad3/org/X_Life/food_agent/script_2/model/Qwen/Qwen3-VL-8B-Instruct",
+    "local_emb_path": "/home/bml/storage/mnt/v-044d0fb740b04ad3/org/X_Life/AudioTextEncoder/model/qwen3emb600m"
+}
