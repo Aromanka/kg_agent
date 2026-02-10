@@ -92,11 +92,11 @@ class DietPipeline:
         env = environment or {}
         req = user_requirement or {}
 
-        print("=" * 60)
-        print(f"DIET PIPELINE ({meal_type.upper()})")
-        print("=" * 60)
-        print(f"[INFO] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
-        print(f"[INFO] Selection: {num_base_plans} bases x {num_variants} variants -> top {top_k_selection}")
+        # print("=" * 60)
+        # print(f"DIET PIPELINE ({meal_type.upper()})")
+        # print("=" * 60)
+        # print(f"[INFO] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
+        # print(f"[INFO] Selection: {num_base_plans} bases x {num_variants} variants -> top {top_k_selection}")
 
         # Step 1: Generate meal candidates with variants
         print(f"\n[1/4] Generating {meal_type} candidates...")

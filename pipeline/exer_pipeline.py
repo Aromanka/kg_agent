@@ -93,11 +93,11 @@ class ExercisePipeline:
         env = environment or {}
         req = user_requirement or {}
 
-        print("=" * 60)
-        print("EXERCISE PIPELINE")
-        print("=" * 60)
-        print(f"[INFO] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
-        print(f"[INFO] Selection: {num_base_plans} bases -> top {top_k_selection}")
+        # print("=" * 60)
+        # print("EXERCISE PIPELINE")
+        # print("=" * 60)
+        # print(f"[INFO] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
+        # print(f"[INFO] Selection: {num_base_plans} bases -> top {top_k_selection}")
 
         # Step 1: Generate exercise candidates with variants
         print(f"\n[1/4] Generating exercise candidates...")
