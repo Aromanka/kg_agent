@@ -24,10 +24,12 @@
 pip install -r requirements.txt
 
 # Install jdk on linux
+# config java
 export JAVA_HOME=/home/bml/storage/mnt/v-044d0fb740b04ad3/org/X_Life/kg_agents/packages/jdk-17.0.18
 export JRE_HOME=${JAVA_HOME}/jre
 export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
 export PATH=${JAVA_HOME}/bin:$PATH
+# check java version
 java -version
 
 # Start Neo4j
@@ -37,6 +39,8 @@ net start Neo4j # windows
 python -m core.build_kg
 # Import knowledge graph
 python -m core.import_kg
+# (Optional) Embedding knowledge graph
+python -m core.embed_kg
 ```
 
 ### Run Recommendation Pipelines
@@ -45,7 +49,7 @@ python -m core.import_kg
 python -m pipeline.diet_pipeline --bn 1 --vn 1 --query "I want to have a sandwich with only vegetables, no meat." --use_vector --rag_topk 5
 
 # Exercise recommendation with vector-based GraphRAG
-python -m pipeline.exer_pipeline --bn 1 --vn 1 --query "I want to do some exercise training biceps in the gym." --use_vector --rag_topk 5
+python -m pipeline.exer_pipeline --bn 1 --vn 1 --query "I want to do some exercise training back muscles in the gym." --use_vector --rag_topk 5
 ```
 
 #### Pipeline Arguments
@@ -66,9 +70,10 @@ Configure in `config.json`:
     },
     "api_model": { # Remote LLM API for knowledge graph setup
         "api_key": "your_api_key",
-        "base_url": "https://api.deepseek.com",
-        "model": "deepseek-chat"
+        "base_url": "",
+        "model": ""
     },
-    "local_model_path": "" # Local LLM path for generation
+    "local_model_path": "", # Local LLM path for generation
+    "local_emb_path": ""    # Local Embedding model path
 }
 ```
