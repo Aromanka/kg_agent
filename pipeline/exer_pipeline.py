@@ -128,12 +128,14 @@ class ExercisePipeline:
             )
             # Flatten variants into a single list
             for base_id, variants in variants_dict.items():
+                variants_cnt = 0
                 for variant_name, plan in variants.items():
                     plan_dict = plan.model_dump()
                     plan_dict["_variant"] = variant_name
                     plan_dict["_base_id"] = base_id
                     all_plans_list.append(plan_dict)
-                print(f"      Base {i+1}/{num_base_plans}: (base_id={base_id}){len(variants.get(base_id, {}))} variants")
+                    variants_cnt += 1
+                print(f"      Base {i+1}/{num_base_plans}: (base_id={base_id}){variants_cnt} variants")
 
         if not all_plans_list:
             print("[WARN] No candidates generated!")
