@@ -35,7 +35,7 @@ def handle_exception(e):
 
 # --- Endpoint 1: Generate Diet Plans ---
 @app.route('/api/v1/diet/generate', methods=['POST'])
-def generate_diet():
+def generate_assess_diet():
     data = request.json
     if not data:
         return jsonify({"error": "Missing JSON body"}), 400
@@ -69,7 +69,7 @@ def generate_diet():
 
 # --- Endpoint 2: Generate Exercise Plans ---
 @app.route('/api/v1/exercise/generate', methods=['POST'])
-def generate_exercise():
+def generate_assess_exercise():
     data = request.json
     if not data:
         return jsonify({"error": "Missing JSON body"}), 400
@@ -97,6 +97,76 @@ def generate_exercise():
 
     except Exception as e:
         logger.error(f"Exercise Generation Failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# --- Endpoint 1b: Generate Diet Plans Only (No Assessment) ---
+@app.route('/api/v1/diet/generate-only', methods=['POST'])
+def generate_diet_only():
+    """
+    Generate diet plans WITHOUT safety assessment.
+    Returns plans that can be assessed separately via /api/v1/safety/evaluate
+    """
+    data = request.json
+    if not data:
+        return jsonify({"error": "Missing JSON body"}), 400
+
+    try:
+        output = diet_service.generate_only(
+            user_metadata=data.get("user_metadata", {}),
+            environment=data.get("environment", {}),
+            user_requirement=data.get("user_requirement", {}),
+            user_query=data.get("user_query", None),
+            num_base_plans=data.get("num_base_plans", 3),
+            num_variants=data.get("num_variants", 3),
+            min_scale=data.get("min_scale", 0.5),
+            max_scale=data.get("max_scale", 1.5),
+            meal_type=data.get("meal_type", "lunch"),
+            temperature=data.get("temperature", 0.7),
+            top_p=data.get("top_p", 0.92),
+            top_k=data.get("top_k", 50),
+            use_vector=data.get("use_vector", False),
+            rag_topk=data.get("rag_topk", 3)
+        )
+        return jsonify(output.to_dict())
+
+    except Exception as e:
+        logger.error(f"Diet Generate-Only Failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# --- Endpoint 2b: Generate Exercise Plans Only (No Assessment) ---
+@app.route('/api/v1/exercise/generate-only', methods=['POST'])
+def generate_exercise_only():
+    """
+    Generate exercise plans WITHOUT safety assessment.
+    Returns plans that can be assessed separately via /api/v1/safety/evaluate
+    """
+    data = request.json
+    if not data:
+        return jsonify({"error": "Missing JSON body"}), 400
+
+    try:
+        output = exercise_service.generate_only(
+            user_metadata=data.get("user_metadata", {}),
+            environment=data.get("environment", {}),
+            user_requirement=data.get("user_requirement", {}),
+            user_query=data.get("user_query", None),
+            num_base_plans=data.get("num_base_plans", 3),
+            num_variants=data.get("num_variants", 3),
+            min_scale=data.get("min_scale", 0.7),
+            max_scale=data.get("max_scale", 1.3),
+            temperature=data.get("temperature", 0.7),
+            top_p=data.get("top_p", 0.92),
+            top_k=data.get("top_k", 50),
+            meal_timing=data.get("meal_timing", ""),
+            use_vector=data.get("use_vector", False),
+            rag_topk=data.get("rag_topk", 3)
+        )
+        return jsonify(output.to_dict())
+
+    except Exception as e:
+        logger.error(f"Exercise Generate-Only Failed: {e}")
         return jsonify({"error": str(e)}), 500
 
 
