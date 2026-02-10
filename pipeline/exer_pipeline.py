@@ -11,7 +11,7 @@ from agents.safeguard.models import SafetyAssessment
 import argparse
 
 
-# ================= Pipeline Output =================
+# Pipeline Output
 
 @dataclass
 class ExercisePipelineOutput:
@@ -39,9 +39,61 @@ class ExercisePipelineOutput:
             "assessments": convert_datetime(self.assessments),
             "generated_at": self.generated_at
         }
+    
+
+def exercise_generate(
+        user_metadata: Dict[str, Any],
+        environment: Dict[str, Any] = None,
+        user_requirement: Dict[str, Any] = None,
+        user_query: str = None,
+        num_base_plans: int = 3,
+        num_variants: int = 3,
+        min_scale: float = 0.7,
+        max_scale: float = 1.3,
+        temperature: float = 0.7,
+        top_p: float = 0.92,
+        top_k: int = 50,
+        top_k_selection: int = 3,
+        output_path: str = "exer_plan.json",
+        meal_timing: str = "",
+        use_vector: bool = False,
+        rag_topk: int = 3,
+        verbose_on: bool = True
+    ):
+    all_plans_list = []
+    kg_context = None
+    if verbose_on and user_query:
+        print(f"      User Query: \"{user_query}\"")
+    for i in range(num_base_plans):
+        variants_dict, kg_context = generate_exercise_variants(
+            user_metadata=user_metadata,
+            environment=environment,
+            user_requirement=user_requirement,
+            num_base_plans=1,
+            num_var_plans=num_variants,
+            min_scale=min_scale,
+            max_scale=max_scale,
+            meal_timing=meal_timing,
+            user_preference=user_query,
+            use_vector=use_vector,
+            rag_topk=rag_topk,
+            kg_context=kg_context
+        )
+        # Flatten variants into a single list
+        for base_id, variants in variants_dict.items():
+            variants_cnt = 0
+            for variant_name, plan in variants.items():
+                plan_dict = plan.model_dump()
+                plan_dict["_variant"] = variant_name
+                plan_dict["_base_id"] = base_id
+                all_plans_list.append(plan_dict)
+                variants_cnt += 1
+            if verbose_on:
+                print(f"      Base {i+1}/{num_base_plans}: (base_id={base_id}){variants_cnt} variants")
+    return all_plans_list
 
 
-# ================= Exercise Pipeline =================
+# Exercise Pipeline
 
 class ExercisePipeline:
     """
@@ -96,8 +148,6 @@ class ExercisePipeline:
         Returns:
             ExercisePipelineOutput with all plans, top plans, and assessments
         """
-        env = environment or {}
-        req = user_requirement or {}
 
         # print("=" * 60)
         # print("EXERCISE PIPELINE")
@@ -107,35 +157,26 @@ class ExercisePipeline:
 
         # Step 1: Generate exercise candidates with variants
         print(f"\n[1/4] Generating exercise candidates...")
-        if user_query:
-            print(f"      User Query: \"{user_query}\"")
-        all_plans_list = []
-        kg_context = None
-        for i in range(num_base_plans):
-            variants_dict, kg_context = generate_exercise_variants(
-                user_metadata=user_metadata,
-                environment=env,
-                user_requirement=req,
-                num_base_plans=1,
-                num_var_plans=num_variants,
-                min_scale=min_scale,
-                max_scale=max_scale,
-                meal_timing=meal_timing,
-                user_preference=user_query,
-                use_vector=use_vector,
-                rag_topk=rag_topk,
-                kg_context=kg_context
-            )
-            # Flatten variants into a single list
-            for base_id, variants in variants_dict.items():
-                variants_cnt = 0
-                for variant_name, plan in variants.items():
-                    plan_dict = plan.model_dump()
-                    plan_dict["_variant"] = variant_name
-                    plan_dict["_base_id"] = base_id
-                    all_plans_list.append(plan_dict)
-                    variants_cnt += 1
-                print(f"      Base {i+1}/{num_base_plans}: (base_id={base_id}){variants_cnt} variants")
+        env = environment or {}
+        req = user_requirement or {}
+        all_plans_list = exercise_generate(
+            user_metadata=user_metadata,
+            environment=env,
+            user_requirement=req,
+            user_query=user_query,
+            num_base_plans=num_base_plans,
+            num_variants=num_variants,
+            min_scale=min_scale,
+            max_scale=max_scale,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            top_k_selection=top_k_selection,
+            output_path=output_path,
+            meal_timing=meal_timing,
+            use_vector=use_vector,
+            rag_topk=rag_topk,
+        )
 
         if not all_plans_list:
             print("[WARN] No candidates generated!")

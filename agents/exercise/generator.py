@@ -738,26 +738,6 @@ def generate_exercise_variants(
     rag_topk: int = 3,
     kg_context: str = None
 ) -> Dict[str, List[ExercisePlan]]:
-    """
-    Generate exercise plans with intensity variants (Lite/Standard/Plus).
-
-    Args:
-        user_metadata: User physiological data
-        environment: Environmental context
-        user_requirement: User requirements (intensity, duration in minutes)
-        num_base_plans: Number of base candidates to generate by LLM
-        num_var_plans: Number of expand variation for each generated base candidate
-        user_preference: User's string preference (e.g., "I want to focus on upper body exercises")
-        use_vector: Use vector search (GraphRAG) instead of keyword matching
-
-    Returns:
-        Dict mapping candidate_id to dict of variants:
-        {
-            1: {"Lite": ExercisePlan, "Standard": ExercisePlan, "Plus": ExercisePlan},
-            2: {...},
-            ...
-        }
-    """
     agent = ExerciseAgent()
     input_data = {
         "user_metadata": user_metadata,
