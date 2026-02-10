@@ -474,10 +474,11 @@ if __name__ == "__main__":
     }
 
     candidates = generate_diet_candidates(**test_input)
-    print(f"Generated {len(candidates)} diet candidates")
-    for c in candidates:
-        print(f"\n[ID:{c.id}] {c.meal_type.upper()} - {c.variant}")
-        print(f"  Target: {c.target_calories} kcal | Actual: {c.total_calories} kcal | Deviation: {c.calories_deviation}%")
-        for item in c.items:
-            print(f"  - {item.food}: {item.portion} ({item.calories} kcal)")
+    # DEBUG print
+    # print(f"Generated {len(candidates)} diet candidates")
+    # for c in candidates:
+    #     print(f"\n[ID:{c.id}] {c.meal_type.upper()} - {c.variant}")
+    #     print(f"  Target: {c.target_calories} kcal | Actual: {c.total_calories} kcal | Deviation: {c.calories_deviation}%")
+    #     for item in c.items:
+    #         print(f"  - {item.food}: {item.portion} ({item.calories} kcal)")
 
