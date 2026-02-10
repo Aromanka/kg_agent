@@ -9,6 +9,7 @@ from agents.safeguard.models import (
     SafeguardInput, SafeguardResponse
 )
 from core.llm import get_llm
+from core.llm.utils import parse_json_response
 from core.neo4j import get_kg_query
 from agents.safeguard.config import *
 from kg.prompts import (
@@ -719,7 +720,7 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
             )
 
             if isinstance(response, str):
-                return json.loads(response)
+                return parse_json_response(response)
             return response
 
         except Exception as e:

@@ -6,6 +6,7 @@ import torch
 from typing import List, Dict, Optional, Any
 from datetime import datetime
 from config_loader import get_config
+from core.llm.utils import parse_json_response
 
 # Lazy imports to avoid heavy dependencies when using API mode
 _local_model = None
@@ -209,7 +210,7 @@ class LocalLLM:
 
         # Parse JSON
         try:
-            result = json.loads(content.strip())
+            result = parse_json_response(content)
             _log_to_file(messages, result, duration_ms)
             return result
         except json.JSONDecodeError as e:
