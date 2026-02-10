@@ -62,7 +62,7 @@ class ExercisePipeline:
         user_requirement: Dict[str, Any] = None,
         user_query: str = None,
         num_base_plans: int = 3,
-        num_var_plans: int = 3,
+        num_variants: int = 3,
         temperature: float = 0.7,
         top_p: float = 0.92,
         top_k: int = 50,
@@ -108,7 +108,7 @@ class ExercisePipeline:
             environment=env,
             user_requirement=req,
             num_candidates=num_base_plans,
-            num_var=num_var_plans,
+            num_var=num_variants,
             meal_timing=meal_timing,
             user_preference=user_query,
             use_vector=use_vector,  # GraphRAG: use vector search instead of keyword matching
@@ -244,7 +244,7 @@ def run_exercise_pipeline(
     user_requirement: Dict[str, Any] = None,
     user_query: str = None,
     num_base_plans: int = 3,
-    num_var_plans: int = 3,
+    num_variants: int = 3,
     temperature: float = 0.7,
     top_p: float = 0.92,
     top_k: int = 50,
@@ -264,7 +264,7 @@ def run_exercise_pipeline(
         user_requirement: User requirements (intensity, duration in minutes)
         user_query: Free-form user preference query (e.g., "I want to focus on upper body exercises")
         num_base_plans: Number of LLM-generated base plans
-        num_var_plans: Number of intensity variants per base plan (Lite/Standard/Plus)
+        num_variants: Number of intensity variants per base plan (Lite/Standard/Plus)
         temperature: LLM temperature (0.0-1.0)
         top_p: LLM top_p for nucleus sampling (0.0-1.0)
         top_k: LLM top_k for top-k sampling
@@ -282,7 +282,7 @@ def run_exercise_pipeline(
         user_requirement=user_requirement,
         user_query=user_query,
         num_base_plans=num_base_plans,
-        num_var_plans=num_var_plans,
+        num_variants=num_variants,
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
@@ -332,7 +332,7 @@ if __name__ == "__main__":
         "use_vector": args.use_vector,  # Use vector search (GraphRAG) instead of keyword matching
         "rag_topk": args.rag_topk,
         "num_base_plans": args.bn,
-        "num_var_plans": args.vn,
+        "num_variants": args.vn,
         "temperature": 0.7,
         "top_k_selection": args.topk,
         "output_path": "exer_plan.json",
