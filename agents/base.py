@@ -265,6 +265,7 @@ class DietAgentMixin:
 
                     # Collect benefits, risks, and conflicts from neighbors
                     for neighbor in neighbors:
+                        print(f"neighbor= {neighbor}")
                         entity_name = neighbor.get("neighbor", "")
                         rel_type = neighbor.get("rel_type", "")
 
