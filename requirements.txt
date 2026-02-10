@@ -5,3 +5,4 @@ neo4j
 pandas
 docx
 pymupdf4llm
+flask
