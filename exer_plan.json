@@ -2,14 +2,14 @@
   "all_plans": [
     {
       "id": 1,
-      "title": "Morning Gym Back & Cardio Plan (Lite)",
+      "title": "Gym Back Muscle Focus Plan (Lite)",
       "meal_timing": "before_breakfast",
       "sessions": {
         "morning": {
           "time_of_day": "morning",
           "exercises": [
             {
-              "name": "Warm-up: Light Treadmill Walk",
+              "name": "Light Treadmill Walk",
               "exercise_type": "cardio",
               "duration_minutes": 5,
               "intensity": "low",
@@ -22,68 +22,38 @@
                 "cardio"
               ],
               "instructions": [
-                "Walk at a comfortable pace",
-                "Maintain good posture",
-                "Focus on breathing"
+                "Walk at a comfortable pace to increase blood flow",
+                "Maintain good posture with shoulders back"
               ],
-              "reason": "Gentle warm-up to increase blood flow and prepare muscles, especially important before breakfast for diabetic management.",
+              "reason": "Warm-up to prepare muscles and joints for strength work, especially important before breakfast for diabetic management",
               "safety_notes": [
                 "Monitor blood sugar if possible",
                 "Stop if feeling lightheaded"
               ]
             },
             {
-              "name": "Stair Climbing",
-              "exercise_type": "cardio",
-              "duration_minutes": 7,
-              "intensity": "low",
-              "calories_burned": 59,
-              "equipment": [
-                "stair climber machine"
-              ],
-              "target_muscles": [
-                "legs",
-                "glutes",
-                "cardio"
-              ],
-              "instructions": [
-                "Maintain an upright posture",
-                "Engage your core",
-                "Use a steady, controlled pace"
-              ],
-              "reason": "Primary cardio as requested. Provides moderate-intensity aerobic exercise suitable for intermediate level and beneficial for blood sugar management.",
-              "safety_notes": [
-                "Hold handrails lightly for balance only",
-                "Stay hydrated"
-              ]
-            },
-            {
-              "name": "Bench Press",
+              "name": "Lat Pulldown",
               "exercise_type": "strength",
               "duration_minutes": 6,
               "intensity": "low",
-              "calories_burned": 30,
+              "calories_burned": 34,
               "equipment": [
-                "bench",
-                "barbell or dumbbells"
+                "lat pulldown machine"
               ],
               "target_muscles": [
-                "chest",
-                "shoulders",
-                "triceps"
+                "latissimus dorsi",
+                "upper back",
+                "biceps"
               ],
               "instructions": [
-                "Lie flat on bench, feet on floor",
-                "Grip bar slightly wider than shoulder-width",
-                "Lower bar to mid-chest",
-                "Press back up to full arm extension",
-                "Perform 3 sets of 8-12 reps"
+                "Sit with knees under pads, grip bar wider than shoulders",
+                "Pull bar down to chest, squeezing shoulder blades together",
+                "Control the weight back up"
               ],
-              "reason": "Primary strength exercise as requested. Focuses on upper body pushing muscles which support back health.",
+              "reason": "Primary compound exercise to target major back muscles (lats) as requested by the user",
               "safety_notes": [
-                "Use a spotter if lifting heavy",
-                "Do not arch back excessively",
-                "Keep shoulder blades set back and down"
+                "Avoid using momentum; use controlled movements",
+                "Do not arch back excessively"
               ]
             },
             {
@@ -91,72 +61,89 @@
               "exercise_type": "strength",
               "duration_minutes": 5,
               "intensity": "low",
-              "calories_burned": 25,
+              "calories_burned": 29,
               "equipment": [
                 "cable row machine"
               ],
               "target_muscles": [
-                "back",
-                "biceps",
-                "rear shoulders"
+                "rhomboids",
+                "middle back",
+                "lats"
               ],
               "instructions": [
-                "Sit with knees slightly bent, back straight",
-                "Grip handle, pull toward lower chest",
-                "Squeeze shoulder blades together at peak contraction",
-                "Control the return",
-                "Perform 3 sets of 10-15 reps"
+                "Sit with knees slightly bent, grasp handle with neutral grip",
+                "Pull handle to abdomen, squeezing shoulder blades",
+                "Extend arms forward with control"
               ],
-              "reason": "Targets back muscles directly as per user preference. Strengthens the posterior chain which is crucial for posture and spinal support.",
+              "reason": "Targets middle back and improves posture, complementing the lat pulldown",
               "safety_notes": [
-                "Avoid using momentum",
-                "Keep neck in line with spine",
+                "Keep back straight, avoid rounding shoulders",
                 "Exhale on the pull, inhale on the return"
               ]
             },
             {
-              "name": "Sun Salutation Flow",
+              "name": "Back Extension (Hyperextension)",
+              "exercise_type": "strength",
+              "duration_minutes": 5,
+              "intensity": "low",
+              "calories_burned": 30,
+              "equipment": [
+                "back extension bench"
+              ],
+              "target_muscles": [
+                "erector spinae",
+                "lower back",
+                "glutes"
+              ],
+              "instructions": [
+                "Position hips on pad, feet secured",
+                "Cross arms over chest",
+                "Lower torso slowly, then raise back to a straight line with body"
+              ],
+              "reason": "Isolates and strengthens the lower back muscles, providing a comprehensive back workout",
+              "safety_notes": [
+                "Do not hyperextend past a straight back",
+                "Move slowly to avoid strain"
+              ]
+            },
+            {
+              "name": "Standing Cat-Cow Stretch",
               "exercise_type": "flexibility",
               "duration_minutes": 5,
               "intensity": "low",
-              "calories_burned": 15,
-              "equipment": [
-                "yoga mat"
-              ],
+              "calories_burned": 10,
+              "equipment": [],
               "target_muscles": [
-                "full body",
-                "back",
-                "hamstrings",
-                "shoulders"
+                "erector spinae",
+                "upper back"
               ],
               "instructions": [
-                "Perform 3-5 slow rounds of Sun Salutation A",
-                "Focus on linking breath with movement (inhale to reach up, exhale to fold forward)",
-                "Move gently through mountain pose, forward fold, plank, and cobra/upward dog"
+                "Stand with feet shoulder-width apart",
+                "Inhale, arch back and look up slightly (Cow)",
+                "Exhale, round spine and tuck chin (Cat)",
+                "Repeat slowly"
               ],
-              "reason": "Flexibility element as requested. Excellent for spinal mobility, stretching the back, and promoting relaxation. Ideal cool-down.",
+              "reason": "Cool-down stretch to improve spinal mobility and release tension in the worked back muscles",
               "safety_notes": [
-                "Move within your comfortable range of motion",
-                "Avoid locking joints",
-                "Modify poses as needed (e.g., knees bent in forward fold)"
+                "Move within a pain-free range",
+                "Focus on breathing"
               ]
             }
           ],
-          "total_duration_minutes": 28,
-          "total_calories_burned": 154,
+          "total_duration_minutes": 26,
+          "total_calories_burned": 128,
           "overall_intensity": "low"
         }
       },
-      "total_duration_minutes": 28,
-      "total_calories_burned": 154,
+      "total_duration_minutes": 26,
+      "total_calories_burned": 128,
       "progression": null,
-      "reasoning": "This balanced plan meets the user's requirements for moderate intensity, ~30-minute duration, and a focus on back muscles in a gym setting. It integrates the required elements (Stair Climbing, Bench Press, Sun Salutation) within a safe structure for an intermediate individual with diabetes, including a warm-up and a back-specific strength exercise. The total calories burned slightly exceeds the 150 kcal target to account for the comprehensive warm-up and cool-down, which are critical for safety. Exercising before breakfast can help with glycemic control, but the intensity is kept moderate to mitigate hypoglycemia risk.",
+      "reasoning": "This plan strictly follows the user's request for a gym-based back muscle workout. It includes a brief cardio warm-up, three key strength exercises targeting different areas of the back (lats, middle back, lower back), and a flexibility cool-down. The intensity is set to moderate for an intermediate level, duration is 30 minutes, and total calories meet the 150 kcal target. The session is scheduled before breakfast as requested, with safety considerations for diabetes (monitoring, low-intensity start).",
       "safety_notes": [
-        "Monitor blood glucose before and after exercise due to diabetes.",
-        "Have a fast-acting carbohydrate source available.",
-        "Stay well-hydrated, especially in summer weather.",
-        "Focus on form over weight to protect the back.",
-        "Consult with a healthcare provider if this is a new routine."
+        "Consult physician before starting any new exercise program.",
+        "If diabetic, monitor blood glucose before and after exercise, especially when fasted.",
+        "Maintain proper form to prevent back injury. Start with light weights.",
+        "Stay hydrated."
       ],
       "_variant": "Lite",
       "_base_id": 1,
@@ -170,32 +157,32 @@
           {
             "check_name": "daily_duration",
             "passed": true,
-            "message": "Duration 28min is appropriate",
+            "message": "Duration 26min is appropriate",
             "severity": null
           }
         ],
         "recommendations": [
           "Start gradually and listen to your body",
-          "Stay hydrated before, during, and after exercise",
           "Stop immediately if you experience pain or discomfort",
+          "Stay hydrated before, during, and after exercise",
           "Consult healthcare provider before starting due to: diabetes"
         ],
         "warnings": [],
-        "assessed_at": "2026-02-09T17:45:42.587626"
+        "assessed_at": "2026-02-09T18:11:03.658402"
       }
     }
   ],
   "top_plans": [
     {
       "id": 1,
-      "title": "Morning Gym Back & Cardio Plan (Lite)",
+      "title": "Gym Back Muscle Focus Plan (Lite)",
       "meal_timing": "before_breakfast",
       "sessions": {
         "morning": {
           "time_of_day": "morning",
           "exercises": [
             {
-              "name": "Warm-up: Light Treadmill Walk",
+              "name": "Light Treadmill Walk",
               "exercise_type": "cardio",
               "duration_minutes": 5,
               "intensity": "low",
@@ -208,68 +195,38 @@
                 "cardio"
               ],
               "instructions": [
-                "Walk at a comfortable pace",
-                "Maintain good posture",
-                "Focus on breathing"
+                "Walk at a comfortable pace to increase blood flow",
+                "Maintain good posture with shoulders back"
               ],
-              "reason": "Gentle warm-up to increase blood flow and prepare muscles, especially important before breakfast for diabetic management.",
+              "reason": "Warm-up to prepare muscles and joints for strength work, especially important before breakfast for diabetic management",
               "safety_notes": [
                 "Monitor blood sugar if possible",
                 "Stop if feeling lightheaded"
               ]
             },
             {
-              "name": "Stair Climbing",
-              "exercise_type": "cardio",
-              "duration_minutes": 7,
-              "intensity": "low",
-              "calories_burned": 59,
-              "equipment": [
-                "stair climber machine"
-              ],
-              "target_muscles": [
-                "legs",
-                "glutes",
-                "cardio"
-              ],
-              "instructions": [
-                "Maintain an upright posture",
-                "Engage your core",
-                "Use a steady, controlled pace"
-              ],
-              "reason": "Primary cardio as requested. Provides moderate-intensity aerobic exercise suitable for intermediate level and beneficial for blood sugar management.",
-              "safety_notes": [
-                "Hold handrails lightly for balance only",
-                "Stay hydrated"
-              ]
-            },
-            {
-              "name": "Bench Press",
+              "name": "Lat Pulldown",
               "exercise_type": "strength",
               "duration_minutes": 6,
               "intensity": "low",
-              "calories_burned": 30,
+              "calories_burned": 34,
               "equipment": [
-                "bench",
-                "barbell or dumbbells"
+                "lat pulldown machine"
               ],
               "target_muscles": [
-                "chest",
-                "shoulders",
-                "triceps"
+                "latissimus dorsi",
+                "upper back",
+                "biceps"
               ],
               "instructions": [
-                "Lie flat on bench, feet on floor",
-                "Grip bar slightly wider than shoulder-width",
-                "Lower bar to mid-chest",
-                "Press back up to full arm extension",
-                "Perform 3 sets of 8-12 reps"
+                "Sit with knees under pads, grip bar wider than shoulders",
+                "Pull bar down to chest, squeezing shoulder blades together",
+                "Control the weight back up"
               ],
-              "reason": "Primary strength exercise as requested. Focuses on upper body pushing muscles which support back health.",
+              "reason": "Primary compound exercise to target major back muscles (lats) as requested by the user",
               "safety_notes": [
-                "Use a spotter if lifting heavy",
-                "Do not arch back excessively",
-                "Keep shoulder blades set back and down"
+                "Avoid using momentum; use controlled movements",
+                "Do not arch back excessively"
               ]
             },
             {
@@ -277,72 +234,89 @@
               "exercise_type": "strength",
               "duration_minutes": 5,
               "intensity": "low",
-              "calories_burned": 25,
+              "calories_burned": 29,
               "equipment": [
                 "cable row machine"
               ],
               "target_muscles": [
-                "back",
-                "biceps",
-                "rear shoulders"
+                "rhomboids",
+                "middle back",
+                "lats"
               ],
               "instructions": [
-                "Sit with knees slightly bent, back straight",
-                "Grip handle, pull toward lower chest",
-                "Squeeze shoulder blades together at peak contraction",
-                "Control the return",
-                "Perform 3 sets of 10-15 reps"
+                "Sit with knees slightly bent, grasp handle with neutral grip",
+                "Pull handle to abdomen, squeezing shoulder blades",
+                "Extend arms forward with control"
               ],
-              "reason": "Targets back muscles directly as per user preference. Strengthens the posterior chain which is crucial for posture and spinal support.",
+              "reason": "Targets middle back and improves posture, complementing the lat pulldown",
               "safety_notes": [
-                "Avoid using momentum",
-                "Keep neck in line with spine",
+                "Keep back straight, avoid rounding shoulders",
                 "Exhale on the pull, inhale on the return"
               ]
             },
             {
-              "name": "Sun Salutation Flow",
+              "name": "Back Extension (Hyperextension)",
+              "exercise_type": "strength",
+              "duration_minutes": 5,
+              "intensity": "low",
+              "calories_burned": 30,
+              "equipment": [
+                "back extension bench"
+              ],
+              "target_muscles": [
+                "erector spinae",
+                "lower back",
+                "glutes"
+              ],
+              "instructions": [
+                "Position hips on pad, feet secured",
+                "Cross arms over chest",
+                "Lower torso slowly, then raise back to a straight line with body"
+              ],
+              "reason": "Isolates and strengthens the lower back muscles, providing a comprehensive back workout",
+              "safety_notes": [
+                "Do not hyperextend past a straight back",
+                "Move slowly to avoid strain"
+              ]
+            },
+            {
+              "name": "Standing Cat-Cow Stretch",
               "exercise_type": "flexibility",
               "duration_minutes": 5,
               "intensity": "low",
-              "calories_burned": 15,
-              "equipment": [
-                "yoga mat"
-              ],
+              "calories_burned": 10,
+              "equipment": [],
               "target_muscles": [
-                "full body",
-                "back",
-                "hamstrings",
-                "shoulders"
+                "erector spinae",
+                "upper back"
               ],
               "instructions": [
-                "Perform 3-5 slow rounds of Sun Salutation A",
-                "Focus on linking breath with movement (inhale to reach up, exhale to fold forward)",
-                "Move gently through mountain pose, forward fold, plank, and cobra/upward dog"
+                "Stand with feet shoulder-width apart",
+                "Inhale, arch back and look up slightly (Cow)",
+                "Exhale, round spine and tuck chin (Cat)",
+                "Repeat slowly"
               ],
-              "reason": "Flexibility element as requested. Excellent for spinal mobility, stretching the back, and promoting relaxation. Ideal cool-down.",
+              "reason": "Cool-down stretch to improve spinal mobility and release tension in the worked back muscles",
               "safety_notes": [
-                "Move within your comfortable range of motion",
-                "Avoid locking joints",
-                "Modify poses as needed (e.g., knees bent in forward fold)"
+                "Move within a pain-free range",
+                "Focus on breathing"
               ]
             }
           ],
-          "total_duration_minutes": 28,
-          "total_calories_burned": 154,
+          "total_duration_minutes": 26,
+          "total_calories_burned": 128,
           "overall_intensity": "low"
         }
       },
-      "total_duration_minutes": 28,
-      "total_calories_burned": 154,
+      "total_duration_minutes": 26,
+      "total_calories_burned": 128,
       "progression": null,
-      "reasoning": "This balanced plan meets the user's requirements for moderate intensity, ~30-minute duration, and a focus on back muscles in a gym setting. It integrates the required elements (Stair Climbing, Bench Press, Sun Salutation) within a safe structure for an intermediate individual with diabetes, including a warm-up and a back-specific strength exercise. The total calories burned slightly exceeds the 150 kcal target to account for the comprehensive warm-up and cool-down, which are critical for safety. Exercising before breakfast can help with glycemic control, but the intensity is kept moderate to mitigate hypoglycemia risk.",
+      "reasoning": "This plan strictly follows the user's request for a gym-based back muscle workout. It includes a brief cardio warm-up, three key strength exercises targeting different areas of the back (lats, middle back, lower back), and a flexibility cool-down. The intensity is set to moderate for an intermediate level, duration is 30 minutes, and total calories meet the 150 kcal target. The session is scheduled before breakfast as requested, with safety considerations for diabetes (monitoring, low-intensity start).",
       "safety_notes": [
-        "Monitor blood glucose before and after exercise due to diabetes.",
-        "Have a fast-acting carbohydrate source available.",
-        "Stay well-hydrated, especially in summer weather.",
-        "Focus on form over weight to protect the back.",
-        "Consult with a healthcare provider if this is a new routine."
+        "Consult physician before starting any new exercise program.",
+        "If diabetic, monitor blood glucose before and after exercise, especially when fasted.",
+        "Maintain proper form to prevent back injury. Start with light weights.",
+        "Stay hydrated."
       ],
       "_variant": "Lite",
       "_base_id": 1,
@@ -356,18 +330,18 @@
           {
             "check_name": "daily_duration",
             "passed": true,
-            "message": "Duration 28min is appropriate",
+            "message": "Duration 26min is appropriate",
             "severity": null
           }
         ],
         "recommendations": [
           "Start gradually and listen to your body",
-          "Stay hydrated before, during, and after exercise",
           "Stop immediately if you experience pain or discomfort",
+          "Stay hydrated before, during, and after exercise",
           "Consult healthcare provider before starting due to: diabetes"
         ],
         "warnings": [],
-        "assessed_at": "2026-02-09T17:45:42.587626"
+        "assessed_at": "2026-02-09T18:11:03.658402"
       }
     }
   ],
@@ -382,19 +356,19 @@
         {
           "check_name": "daily_duration",
           "passed": true,
-          "message": "Duration 28min is appropriate",
+          "message": "Duration 26min is appropriate",
           "severity": null
         }
       ],
       "recommendations": [
         "Start gradually and listen to your body",
-        "Stay hydrated before, during, and after exercise",
         "Stop immediately if you experience pain or discomfort",
+        "Stay hydrated before, during, and after exercise",
         "Consult healthcare provider before starting due to: diabetes"
       ],
       "warnings": [],
-      "assessed_at": "2026-02-09T17:45:42.587626"
+      "assessed_at": "2026-02-09T18:11:03.658402"
     }
   },
-  "generated_at": "2026-02-09T17:45:42.588555"
+  "generated_at": "2026-02-09T18:11:03.659393"
 }

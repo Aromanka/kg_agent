@@ -12,8 +12,6 @@ from agents.safeguard.models import SafetyAssessment
 import argparse
 
 
-# ================= Pipeline Output =================
-
 @dataclass
 class DietPipelineOutput:
     """Output from the diet pipeline"""
@@ -41,9 +39,6 @@ class DietPipelineOutput:
             "generated_at": self.generated_at
         }
 
-
-# ================= Diet Pipeline =================
-
 class DietPipeline:
     """
     Pipeline for generating and evaluating lunch options.
@@ -68,7 +63,9 @@ class DietPipeline:
         top_p: float = 0.92,
         top_k: int = 50,
         top_k_selection: int = 3,
-        output_path: str = "plan.json"
+        output_path: str = "plan.json",
+        use_vector: bool = False,
+        rag_topk: str = 3
     ) -> DietPipelineOutput:
         """
         Generate meal options with safety assessment.
@@ -86,6 +83,8 @@ class DietPipeline:
             top_k: LLM top_k for top-k sampling
             top_k_selection: Number of top plans to select by safety score
             output_path: Path to save all plans JSON
+            use_vector: Use vector search (GraphRAG) instead of keyword matching
+            rag_topk: top_k similar enetities for GraphRAG
 
         Returns:
             DietPipelineOutput with all plans, top plans, and assessments
@@ -114,7 +113,9 @@ class DietPipeline:
                 temperature=temperature,
                 top_p=top_p,
                 top_k=top_k,
-                user_preference=user_query
+                user_preference=user_query,
+                use_vector=use_vector,  # GraphRAG: use vector search instead of keyword matching
+                rag_topk=rag_topk
             )
             meal_candidates.extend(candidates)
             print(f"      Base {i+1}/{num_base_plans}: {len(candidates)} variants")
@@ -218,22 +219,23 @@ class DietPipeline:
 
             if assessment.get("risk_factors"):
                 print(f"   Risk Factors:")
-                for rf in assessment.get("risk_factors", [])[:3]:
+                # for rf in assessment.get("risk_factors", [])[:3]:
+                for rf in assessment.get("risk_factors", []):
                     print(f"     - {rf}")
 
             if assessment.get("recommendations"):
                 print(f"   Recommendations:")
-                for rec in assessment.get("recommendations", [])[:2]:
+                # for rec in assessment.get("recommendations", [])[:2]:
+                for rec in assessment.get("recommendations", []):
                     print(f"     - {rec}")
 
-
-# ================= Convenience Function =================
 
 def run_diet_pipeline(
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = None,
     user_requirement: Dict[str, Any] = None,
     user_query: str = None,
+    rag_topk: int = 3,
     num_base_plans: int = 3,
     num_variants: int = 3,
     meal_type: str = "lunch",
@@ -242,7 +244,8 @@ def run_diet_pipeline(
     top_k: int = 50,
     top_k_selection: int = 3,
     output_path: str = "plan.json",
-    print_results: bool = True
+    print_results: bool = True,
+    use_vector: bool = False
 ) -> DietPipelineOutput:
     """
     Run the diet pipeline and optionally print results.
@@ -261,6 +264,7 @@ def run_diet_pipeline(
         top_k_selection: Number of top plans to select by safety score
         output_path: Path to save all plans JSON
         print_results: Whether to print top plans to terminal
+        use_vector: Use vector search (GraphRAG) instead of keyword matching
 
     Returns:
         DietPipelineOutput object
@@ -278,7 +282,9 @@ def run_diet_pipeline(
         top_p=top_p,
         top_k=top_k,
         top_k_selection=top_k_selection,
-        output_path=output_path
+        output_path=output_path,
+        use_vector=use_vector,
+        rag_topk=rag_topk
     )
 
     if print_results:
@@ -294,6 +300,8 @@ if __name__ == "__main__":
     parser.add_argument('--bn', type=int, default=3, help='base plan num')
     parser.add_argument('--vn', type=int, default=3, help='var plan num')
     parser.add_argument('--topk', type=int, default=3, help='var plan num')
+    parser.add_argument('--rag_topk', type=int, default=3, help='graph rag top_k similar entities')
+    parser.add_argument('--use_vector', action='store_true', default=False, help='Use vector search (GraphRAG) instead of keyword matching')
     parser.add_argument('--query', type=str, default="I want a healthy tuna salad sandwich with fresh vegetables",
                        help='user query (free-form text for KG entity matching)')
     args = parser.parse_args()
@@ -313,6 +321,8 @@ if __name__ == "__main__":
         },
         "user_requirement": {},  # Empty, use user_query instead
         "user_query": args.query,  # Free-form query for KG entity matching
+        "use_vector": args.use_vector,  # Use vector search (GraphRAG) instead of keyword matching
+        "rag_topk": args.rag_topk,
         "num_base_plans": args.bn,
         "num_variants": args.vn,
         "meal_type": "lunch",

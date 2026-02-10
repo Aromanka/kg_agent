@@ -11,65 +11,10 @@ from agents.diet.models import (
 from agents.diet.parser import DietPlanParser
 from core.llm.utils import parse_json_response
 from agents.diet.config import *
+from kg.prompts import (
+    available_strategies, available_cuisines, DIET_GENERATION_SYSTEM_PROMPT
+)
 
-
-DIET_GENERATION_SYSTEM_PROMPT = f"""You are a professional nutritionist. Generate BASE meal plans with standardized portions.
-
-## Output Format
-Output MUST be a valid JSON list of objects. Each object is a food item with these fields:
-- "food_name": string (Name of the food, e.g., "Grilled Salmon")
-- "portion_number": number (Numeric quantity, e.g., 150, 1.5)
-- "portion_unit": string (MUST be one of: {UNIT_LIST_STR} - "spoon" is for teaspoons, NOT "teaspoon")
-- "total_calories": number (TOTAL calories for the ENTIRE portion. E.g., 150g salmon = ~200 kcal total, 1 bowl rice = ~250 kcal total)
-
-## Rules
-1. Use ONLY the allowed units listed above - "spoon" means teaspoon (5ml), NOT "teaspoon"
-2. STRICTLY follow the "Mandatory Ingredients" and "Excluded Ingredients" in the user prompt
-3. "total_calories" must be the TOTAL calories for the whole portion, NOT per unit
-4. Realistic calorie references:
-   - 100g meat/fish: ~150-200 kcal total
-   - 100g vegetables: ~20-50 kcal total
-   - 100g carbs (rice/potato): ~130-150 kcal total
-   - 1 bowl (300g): ~200-300 kcal total
-   - 1 piece fruit: ~50-100 kcal total
-   - 5ml oil: ~45 kcal total
-5. CRITICAL: If you output 120g Tempeh, total_calories should be ~200-250, NOT 14000
-6. Output food items for ONE meal type as a JSON LIST
-7. Do NOT wrap in extra keys like "meal_plan" or "items"
-8. Do NOT output markdown code blocks
-
-## Example Output:
-[
-  {{
-    "food_name": "Pan-Seared White Fish",
-    "portion_number": 150,
-    "portion_unit": "gram",
-    "total_calories": 180
-  }},
-  {{
-    "food_name": "Whole Grain Bowl",
-    "portion_number": 1,
-    "portion_unit": "bowl",
-    "total_calories": 250
-  }},
-  {{
-    "food_name": "Olive Oil",
-    "portion_number": 5,
-    "portion_unit": "ml",
-    "total_calories": 45
-  }},
-  {{
-    "food_name": "Mixed Greens",
-    "portion_number": 1,
-    "portion_unit": "bowl",
-    "total_calories": 25
-  }}
-]
-
-## Task
-Generate a single meal's base food items suitable for the user's profile.
-The output will be expanded by a parser into Lite/Standard/Plus portions.
-"""
 
 
 def _to_food_item(item_dict: Dict[str, Any]) -> FoodItem:
@@ -78,9 +23,9 @@ def _to_food_item(item_dict: Dict[str, Any]) -> FoodItem:
         food=item_dict.get("food_name", ""),
         portion=f"{item_dict.get('portion_number', '')}{item_dict.get('portion_unit', '')}",
         calories=int(round(item_dict.get("total_calories", 0))),
-        protein=0.0,  # Placeholder - not tracked in new format
-        carbs=0.0,    # Placeholder
-        fat=0.0        # Placeholder
+        # protein=0.0,  # Placeholder - not tracked in new format
+        # carbs=0.0,    # Placeholder
+        # fat=0.0        # Placeholder
     )
 
 
@@ -123,29 +68,10 @@ class DietAgent(BaseAgent, DietAgentMixin):
         temperature: float = 0.7,
         top_p: float = 0.92,
         top_k: int = 50,
-        user_preference: str = None
+        user_preference: str = None,
+        use_vector: bool = True,  # GraphRAG: use vector search instead of keyword matching
+        rag_topk: int = 3
     ) -> List[DietRecommendation]:
-        """
-        Generate diet plan candidates using LLM + Parser pipeline.
-
-        Flow:
-        1. Calculate target calories from user profile
-        2. Query KG for dietary knowledge (conditions, restrictions)
-        3. For each meal type (or specified meal_type):
-           - Call LLM to get base food items
-           - Use Parser to expand to Lite/Standard/Plus
-        4. Build candidates
-
-        Args:
-            input_data: User metadata, environment, requirements
-            num_variants: Number of portion variants (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)
-            meal_type: Specific meal type (breakfast/lunch/dinner/snacks) or None for all
-            temperature: LLM temperature (0.0-1.0, default 0.7)
-            user_preference: User's string preference (e.g., "I want a tuna sandwich with vegetable")
-
-        Returns:
-            List of DietRecommendation candidates
-        """
         # Parse input
         input_obj = DietAgentInput(**input_data)
 
@@ -153,7 +79,6 @@ class DietAgent(BaseAgent, DietAgentMixin):
         env = input_obj.environment
         requirement = input_obj.user_requirement
 
-        # Calculate target calories
         target_calories = self.calculate_target_calories(
             age=user_meta.get("age", 30),
             gender=user_meta.get("gender", "male"),
@@ -176,8 +101,8 @@ class DietAgent(BaseAgent, DietAgentMixin):
 
         # Query entity-based KG context when user_preference is provided
         if user_preference:
-            entity_knowledge = self.query_dietary_by_entity(user_preference)
-            entity_context = self._format_entity_kg_context(entity_knowledge)
+            entity_knowledge = self.query_dietary_by_entity(user_preference, use_vector_search=use_vector)
+            entity_context = self._format_dietary_entity_kg_context(entity_knowledge)
             kg_context += entity_context
 
         # Define meal types to generate
@@ -187,54 +112,34 @@ class DietAgent(BaseAgent, DietAgentMixin):
             meal_types = ["breakfast", "lunch", "dinner", "snacks"]
 
         variant_names = ["Lite", "Standard", "Plus"][:num_variants]
-
-        # [新增] 定义多样性池
-        available_strategies = ["balanced", "protein_focus", "variety", "low_carb", "fiber_rich"]
-        available_cuisines = ["Mediterranean", "Asian", "Western", "Fusion", "Local Home-style", "Simple & Quick"]
-        used_strategies = set()  # 避免单次生成中策略过度重复
-        used_combinations = set()  # 避免蛋白质+碳水组合重复
+        
+        used_strategies = set()
+        used_combinations = set()
 
         # Collect base plans for each meal type
         meal_base_plans: Dict[str, Dict[str, Any]] = {}
 
         for mt in meal_types:
-            # [改进] 随机选择策略，尽量不重复
-            remaining_strategies = [s for s in available_strategies if s not in used_strategies]
-            if not remaining_strategies:
-                remaining_strategies = available_strategies
+            # Select strategy and cuisine - DISABLE random constraints when user_preference exists
+            # When user has a specific request, let LLM decide based on user intent
+            if user_preference:
+                strategy = "User-Directed"  # Tell Prompt this is a user-directed task
+                cuisine = "As Requested"   # Let LLM infer from query
+                excluded = []
+            else:
+                remaining_strategies = [s for s in available_strategies if s not in used_strategies]
+                if not remaining_strategies:
+                    remaining_strategies = available_strategies
 
-            strategy = random.choice(remaining_strategies)
-            used_strategies.add(strategy)
+                strategy = random.choice(remaining_strategies)
+                used_strategies.add(strategy)
 
-            # [改进] 随机选择菜系/风格
-            cuisine = random.choice(available_cuisines)
+                cuisine = random.choice(available_cuisines)
 
-            # # [新增] 随机抽取核心食材 (Hero Ingredients)
-            # protein = random.choice(PROTEIN_SOURCES)
-            # carb = random.choice(CARB_SOURCES)
-            # veg = random.choice(VEG_SOURCES)
-
-            # # [新增] 避免重复组合
-            # combo_key = f"{protein}-{carb}"
-            # max_attempts = 3
-            # attempts = 0
-            # while combo_key in used_combinations and attempts < max_attempts:
-            #     protein = random.choice(PROTEIN_SOURCES)
-            #     carb = random.choice(CARB_SOURCES)
-            #     combo_key = f"{protein}-{carb}"
-            #     attempts += 1
-            # used_combinations.add(combo_key)
-
-            # [新增] 随机禁用"无聊"食材 (50% 概率)
-            excluded = []
-            if random.random() > 0.5:
-                excluded = random.sample(COMMON_BORING_FOODS, k=random.randint(1, 2))
-
-            # [新增] 构建约束 Prompt
-            # constraint_prompt = build_constraint_prompt(protein, carb, veg, excluded)
-
-            # print(f"[DEBUG] {mt}: protein={protein}, carb={carb}, veg={veg}, excluded={excluded}")
-
+                excluded = []
+                if random.random() > 0.5:
+                    excluded = random.sample(COMMON_BORING_FOODS, k=random.randint(1, 2))
+                    
             base_items = self._generate_base_plan(
                 user_meta=user_meta,
                 environment=env,
@@ -268,8 +173,6 @@ class DietAgent(BaseAgent, DietAgentMixin):
         for meal_type, plan_info in meal_base_plans.items():
             expanded_meals[meal_type] = self.parser.expand_plan(plan_info["items"], variant_names)
 
-        # Build candidates: one DietRecommendation per meal with variants
-        # Output structure: [breakfast_lite, breakfast_std, breakfast_plus, lunch_lite, ...]
         candidates = []
         candidate_id = 1
 
@@ -308,7 +211,6 @@ class DietAgent(BaseAgent, DietAgentMixin):
                 # Build safety notes
                 safety_notes = [f"Meal: {meal_type}", f"Variant: {variant_name}"]
                 safety_notes.append(f"Style: {cuisine}, Strategy: {strategy}")
-                # [新增] 记录食材约束
                 excluded = plan_info.get("excluded", [])
                 if excluded:
                     safety_notes.append(f"Excluded: {', '.join(excluded)}")
@@ -341,7 +243,7 @@ class DietAgent(BaseAgent, DietAgentMixin):
         target_calories: int,
         meal_type: str,
         kg_context: str = "",
-        temperature: float = 0.85,  # [改进] 提高温度增加随机性
+        temperature: float = 0.85,
         top_p: float = 0.92,
         top_k: int = 50,
         strategy: str = "balanced",
@@ -369,10 +271,9 @@ class DietAgent(BaseAgent, DietAgentMixin):
             user_preference=user_preference
         )
 
-        # [改进] 构建更具独特性的 Prompt
         full_prompt = user_prompt + f"\n\n### Optimization Strategy: {strategy.upper()}\n{strategy_guidance.get(strategy, '')}"
         full_prompt += f"\n\n### Culinary Style: {cuisine}\nPLEASE strictly follow this style. Use ingredients and cooking methods typical for {cuisine} cuisine."
-        full_prompt += constraint_prompt  # [新增] 注入强制食材约束
+        full_prompt += constraint_prompt
 
         response = self._call_llm(
             system_prompt=DIET_GENERATION_SYSTEM_PROMPT,
@@ -463,6 +364,21 @@ class DietAgent(BaseAgent, DietAgentMixin):
         }
         target = meal_targets.get(meal_type, int(target_calories * 0.25))
 
+        # Build prompt with "Instruction - Context - Constraint" structure
+        # User Preference is placed at top as HIGHEST PRIORITY
+
+        prompt = f"""## TARGET TASK
+Generate a meal plan for the following user.
+"""
+
+        # User Preference at the TOP with HIGHEST PRIORITY
+        if user_preference:
+            prompt += f"""
+### USER REQUEST (HIGHEST PRIORITY)
+The user strictly explicitly wants: "{user_preference}"
+Ensure the generated meal focuses PRIMARILY on this request.
+"""
+
         # Build user profile section
         profile_parts = [
             f"Age: {user_meta.get('age', 30)}",
@@ -473,17 +389,16 @@ class DietAgent(BaseAgent, DietAgentMixin):
         if restrictions:
             profile_parts.append(f"Restrictions: {', '.join(restrictions)}")
 
-        prompt = f"""## Profile
+        prompt += f"""
+## Profile
 {chr(10).join(profile_parts)}
 
 ## Target
 Goal: {requirement.get('goal', 'maintenance')}
 {meal_type.capitalize()}: {target} kcal (max)
-{chr(10)}{kg_context}"""
 
-        # Add user preference if provided
-        if user_preference:
-            prompt += f"\n## User Preference\n{user_preference}\n"
+## Knowledge Graph Insights (Use these to optimize safety and effectiveness, but do not deviate from the USER REQUEST)
+{kg_context}"""
 
         prompt += f"""## Output Format
 JSON list of foods. Each item:
@@ -515,32 +430,17 @@ def generate_diet_candidates(
     temperature: float = 0.7,
     top_p: float = 0.92,
     top_k: int = 50,
-    user_preference: str = None
+    user_preference: str = None,
+    use_vector: bool = False,
+    rag_topk: str = 3
 ) -> List[DietRecommendation]:
-    """
-    Convenience function to generate diet candidates.
-
-    Args:
-        user_metadata: User physiological data
-        environment: Environmental context
-        user_requirement: User goals
-        num_variants: Number of portion variants (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)
-        meal_type: Specific meal type (breakfast/lunch/dinner/snacks) or None for all
-        temperature: LLM temperature (0.0-1.0, default 0.7)
-        top_p: LLM top_p for nucleus sampling (0.0-1.0, default 0.92)
-        top_k: LLM top_k for top-k sampling (default 50)
-        user_preference: User's string preference (e.g., "I want a tuna sandwich with vegetable")
-
-    Returns:
-        List of DietRecommendation objects
-    """
     agent = DietAgent()
     input_data = {
         "user_metadata": user_metadata,
         "environment": environment,
         "user_requirement": user_requirement,
     }
-    return agent.generate(input_data, num_variants, meal_type, temperature, top_p, top_k, user_preference)
+    return agent.generate(input_data, num_variants, meal_type, temperature, top_p, top_k, user_preference, use_vector, rag_topk)
 
 
 if __name__ == "__main__":

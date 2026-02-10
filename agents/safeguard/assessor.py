@@ -11,7 +11,10 @@ from agents.safeguard.models import (
 from core.llm import get_llm
 from core.neo4j import get_kg_query
 from agents.safeguard.config import *
-from kg.prompts import prioritized_risk_kg_rels, DIETARY_QUERY_ENTITIES
+from kg.prompts import (
+    prioritized_risk_kg_rels, DIETARY_QUERY_ENTITIES,
+    get_keywords
+)
 
 
 DIET_SAFETY_RULES = get_DIET_SAFETY_RULES(RiskLevel)
@@ -19,11 +22,9 @@ EXERCISE_SAFETY_RULES = get_EXERCISE_SAFETY_RULES(RiskLevel)
 CONDITION_RESTRICTIONS = get_CONDITION_RESTRICTIONS()
 
 
-# ================= Safeguard Agent =================
+# security agent
 
 class SafeguardAgent(BaseAgent):
-    """Agent for safety assessment of diet and exercise plans"""
-
     def get_agent_name(self) -> str:
         return "safeguard"
 
@@ -38,16 +39,6 @@ class SafeguardAgent(BaseAgent):
         input_data: Dict[str, Any],
         num_candidates: int = 1
     ) -> List[SafetyAssessment]:
-        """
-        Generate safety assessments for plans.
-
-        Args:
-            input_data: Dictionary containing plan, plan_type, user_metadata, environment
-            num_candidates: Number of assessments to generate (ignored, always returns 1)
-
-        Returns:
-            List of SafetyAssessment objects
-        """
         plan = input_data.get("plan", {})
         plan_type = input_data.get("plan_type", "diet")
         user_metadata = input_data.get("user_metadata", {})
@@ -63,19 +54,6 @@ class SafeguardAgent(BaseAgent):
         user_metadata: Dict[str, Any],
         environment: Dict[str, Any] = {}
     ) -> SafetyAssessment:
-        """
-        Assess safety of a plan.
-
-        Args:
-            plan: The plan to assess (dict)
-            plan_type: 'diet' or 'exercise'
-            user_metadata: User physiological data
-            environment: Environmental context
-
-        Returns:
-            SafetyAssessment object with score and risk factors
-        """
-        # Initialize checks and risk factors
         checks = []
         risk_factors = []
 
@@ -128,7 +106,6 @@ class SafeguardAgent(BaseAgent):
 
         # Merge LLM findings
         if llm_assessment:
-            # Convert dicts to model objects
             for rf_dict in llm_assessment.get("risk_factors", []):
                 if isinstance(rf_dict, dict):
                     risk_factors.append(RiskFactor(**rf_dict))
@@ -186,7 +163,6 @@ class SafeguardAgent(BaseAgent):
         plan: Dict[str, Any],
         user_metadata: Dict[str, Any]
     ) -> tuple:
-        """Run diet-specific safety checks - adapted for DietRecommendation model"""
         checks = []
         risk_factors = []
 
@@ -222,16 +198,12 @@ class SafeguardAgent(BaseAgent):
                 message="Calorie intake within acceptable range"
             ))
 
-        # Macro ratio checks - DietRecommendation.macro_nutrients is MacroNutrients (dict)
-        # Structure: {protein, carbs, fat, protein_ratio, carbs_ratio, fat_ratio}
         macros = plan.get("macro_nutrients", {})
         if macros:
-            # Handle both dict and object formats
             if isinstance(macros, dict):
                 protein_ratio = macros.get("protein_ratio", 0)
                 fat_ratio = macros.get("fat_ratio", 0)
             else:
-                # Object format
                 protein_ratio = getattr(macros, "protein_ratio", 0)
                 fat_ratio = getattr(macros, "fat_ratio", 0)
 
@@ -253,7 +225,6 @@ class SafeguardAgent(BaseAgent):
                     recommendation="Reduce high-fat foods"
                 ))
 
-        # Single meal calorie check - check meals in meal_plan
         meal_plan = plan.get("meal_plan", {})
         if meal_plan:
             for meal_type, items in meal_plan.items():
@@ -280,7 +251,6 @@ class SafeguardAgent(BaseAgent):
         plan: Dict[str, Any],
         user_metadata: Dict[str, Any]
     ) -> tuple:
-        """Run exercise-specific safety checks - adapted for ExercisePlan model"""
         checks = []
         risk_factors = []
 
@@ -452,18 +422,15 @@ class SafeguardAgent(BaseAgent):
         plan_type: str,
         user_metadata: Dict[str, Any]
     ) -> tuple:
-        """Check plan against condition-specific restrictions"""
         checks = []
         risk_factors = []
 
         conditions = user_metadata.get("medical_conditions", [])
 
-        # Extract plan content for checking
         plan_content = self._extract_plan_content_text(plan, plan_type)
 
         for condition in conditions:
             condition_lower = condition.lower()
-            # Match condition (handle variations)
             matched_condition = None
             for known_condition in CONDITION_RESTRICTIONS:
                 if condition_lower == known_condition or condition_lower.replace("_", "") == known_condition.replace("_", ""):
@@ -503,7 +470,6 @@ class SafeguardAgent(BaseAgent):
 
                     for rule_key, rule_desc in ex_rules.items():
                         if "avoid" in rule_key or "max" in rule_key or "isometric" in rule_key:
-                            # Check for forbidden exercise types
                             forbidden_exercises = {
                                 "isometric": ["plank", "wall sit", "static hold"],
                                 "high_intensity": ["hiit", "sprint", "burpee", "jump"],
@@ -641,86 +607,153 @@ Return JSON with:
     def _query_diet_kg_for_assessment(
         self,
         plan: Dict[str, Any],
-        user_metadata: Dict[str, Any]
+        user_metadata: Dict[str, Any],
+        use_vector_search: bool = True  # GraphRAG: use vector search instead of keyword matching
     ) -> str:
-        """Query knowledge graph for diet plan safety assessment"""
+        """
+        Query knowledge graph for diet plan safety assessment using GraphRAG approach
+
+        Args:
+            plan: Diet plan with food items
+            user_metadata: User metadata including conditions
+            use_vector_search: If True, use vector search (GraphRAG); else use keyword matching
+        """
         kg = get_kg_query()
         results = []
 
         # Extract food items from plan
         food_items = []
+        meal_plan_str = ""
+        meal_plan_names = ""
         meal_plan = plan.get("meal_plan", {})
         if isinstance(meal_plan, dict):
-            for meal_type, items in meal_plan.items():
-                if isinstance(items, list):
-                    for item in items:
-                        if isinstance(item, dict):
-                            food_name = item.get("food", "")
-                            if food_name:
-                                food_items.append(food_name)
-                        elif hasattr(item, 'food'):
-                            food_items.append(item.food)
+            items = meal_plan.get("items", [])
+            for item in items:
+                food = item.get("food", "")
+                portion = item.get("portion", "")
+                meal_plan_names += food
+                meal_plan_str += f"{portion} of {food}; "
 
         # Get user conditions and restrictions
         conditions = user_metadata.get("medical_conditions", [])
         restrictions = user_metadata.get("dietary_restrictions", [])
 
-        # Define stop words for keyword filtering
-        stop_words = {
-            "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
-            "of", "with", "by", "from", "as", "is", "are", "was", "were", "be",
-            "been", "being", "have", "has", "had", "do", "does", "did", "will",
-            "would", "could", "should", "may", "might", "must", "can", "need",
-            "this", "that", "these", "those", "i", "you", "he", "she", "it", "we",
-            "they", "what", "which", "who", "whom", "whose", "where", "when", "why",
-            "how", "all", "each", "every", "both", "few", "more", "most", "other",
-            "some", "such", "no", "not", "only", "own", "same", "so", "than",
-            "too", "very", "just", "also", "now", "here", "there", "then", "once"
-        }
-
-        # Build query entities: food items + conditions + restrictions + default entities
-        # Apply keyword split logic to each entity
-        all_entities = []
-        for entity in food_items:
-            words = entity.lower().split()
-            keywords = [w.strip(".,!?;:\"'()[]{}") for w in words if w.lower() not in stop_words and len(w) > 2]
-            all_entities.extend(keywords)
-        all_entities.extend(conditions + restrictions + list(DIETARY_QUERY_ENTITIES))
-
-        # Remove duplicates while preserving order
-        all_entities = list(dict.fromkeys(all_entities))
-
-        # Query KG for each entity, filtering by prioritized risk relations
-        for entity in all_entities[:15]:  # Limit to 15 entities for performance
+        # === GraphRAG Approach: Vector Search + Graph Traversal ===
+        use_vector_search = False
+        if use_vector_search:
             try:
-                search_results = kg.search_entities(entity)
+                # 1. For each food item, use vector search to find similar entities
+                seen_entities = set()
+                for food_item in food_items[:5]:  # Limit to 5 food items
+                    anchors = kg.search_similar_entities(food_item, top_k=2)
 
-                for result in search_results:
-                    entity_name = result.get("head", "")
-                    tail = result.get("tail", "")
-                    rel_type = result.get("rel_type", "")
+                    for anchor in anchors:
+                        anchor_name = anchor.get("name", "")
+                        if not anchor_name:
+                            continue
 
-                    # Filter by prioritized risk relations
-                    if rel_type not in prioritized_risk_kg_rels:
-                        continue
+                        if anchor_name not in seen_entities:
+                            seen_entities.add(anchor_name)
+                            # Get neighbors for graph traversal (1-hop)
+                            neighbors = kg.client.get_neighbors(anchor_name)
 
-                    if not tail:
-                        continue
+                            for neighbor in neighbors:
+                                entity_name = neighbor.get("neighbor", "")
+                                rel_type = neighbor.get("rel_type", "")
 
-                    results.append({
-                        "entity": entity_name,
-                        "relation": rel_type,
-                        "related_to": tail
-                    })
+                                if not entity_name:
+                                    continue
+
+                                # Filter by prioritized risk relations
+                                if rel_type not in prioritized_risk_kg_rels:
+                                    continue
+
+                                results.append({
+                                    "entity": anchor_name,
+                                    "relation": rel_type,
+                                    "related_to": entity_name
+                                })
+
+                # 2. Also add conditions and restrictions
+                for condition in conditions + restrictions:
+                    anchors = kg.search_similar_entities(condition, top_k=2)
+                    for anchor in anchors:
+                        anchor_name = anchor.get("name", "")
+                        if not anchor_name:
+                            continue
+
+                        neighbors = kg.client.get_neighbors(anchor_name)
+                        for neighbor in neighbors:
+                            entity_name = neighbor.get("neighbor", "")
+                            rel_type = neighbor.get("rel_type", "")
+
+                            if not entity_name:
+                                continue
+
+                            if rel_type not in prioritized_risk_kg_rels:
+                                continue
+
+                            results.append({
+                                "entity": anchor_name,
+                                "relation": rel_type,
+                                "related_to": entity_name
+                            })
+
             except Exception as e:
-                print(f"[WARN] Failed to query entity {entity}: {e}")
+                print(f"[WARN] GraphRAG search failed, falling back to keyword search: {e}")
+                use_vector_search = False
+
+        # === Fallback: Keyword-based Search (original logic) ===
+        if not use_vector_search:
+            # Build query entities: food items + conditions + restrictions + default entities
+            all_entities = []
+            keywords = get_keywords(meal_plan_names)
+            all_entities.extend(keywords)
+            all_entities.extend(conditions + conditions + restrictions + list(DIETARY_QUERY_ENTITIES))
+
+            # Remove duplicates while preserving order
+            all_entities = list(dict.fromkeys(all_entities))
+
+            # Query KG for each entity, filtering by prioritized risk relations
+            for entity in all_entities[:15]:  # Limit to 15 entities for performance
+                try:
+                    search_results = kg.search_entities(entity)
+
+                    for result in search_results:
+                        entity_name = result.get("head", "")
+                        tail = result.get("tail", "")
+                        rel_type = result.get("rel_type", "")
+
+                        # Filter by prioritized risk relations
+                        if rel_type not in prioritized_risk_kg_rels:
+                            continue
+
+                        if not tail:
+                            continue
+
+                        results.append({
+                            "entity": entity_name,
+                            "relation": rel_type,
+                            "related_to": tail
+                        })
+                except Exception as e:
+                    print(f"[WARN] Failed to query entity {entity}: {e}")
 
         # Format results for prompt
         if not results:
             return "No relevant KG data found."
 
         context_lines = ["## Relevant Knowledge Graph Relationships"]
-        for r in results[:20]:  # Limit to 20 most relevant results
+        # Deduplicate results
+        seen_relations = set()
+        unique_results = []
+        for r in results:
+            key = f"{r['entity']}-{r['relation']}-{r['related_to']}"
+            if key not in seen_relations:
+                seen_relations.add(key)
+                unique_results.append(r)
+
+        for r in unique_results[:20]:  # Limit to 20 most relevant results
             context_lines.append(f"- {r['entity']} --[{r['relation']}]--> {r['related_to']}")
 
         return "\n".join(context_lines)
@@ -728,9 +761,17 @@ Return JSON with:
     def _query_exercise_kg_for_assessment(
         self,
         plan: Dict[str, Any],
-        user_metadata: Dict[str, Any]
+        user_metadata: Dict[str, Any],
+        use_vector_search: bool = True  # GraphRAG: use vector search instead of keyword matching
     ) -> str:
-        """Query knowledge graph for exercise plan safety assessment"""
+        """
+        Query knowledge graph for exercise plan safety assessment using GraphRAG approach
+
+        Args:
+            plan: Exercise plan with exercises
+            user_metadata: User metadata including conditions
+            use_vector_search: If True, use vector search (GraphRAG); else use keyword matching
+        """
         kg = get_kg_query()
         results = []
 
@@ -750,71 +791,110 @@ Return JSON with:
                     for ex in session.exercises:
                         if hasattr(ex, 'name'):
                             exercise_names.append(ex.name)
+        
+        print(f"[DEBUG] assessor judging exercise names = {exercise_names}")
 
         # Get user conditions
         conditions = user_metadata.get("medical_conditions", [])
 
-        # Define stop words for keyword filtering
-        stop_words = {
-            "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
-            "of", "with", "by", "from", "as", "is", "are", "was", "were", "be",
-            "been", "being", "have", "has", "had", "do", "does", "did", "will",
-            "would", "could", "should", "may", "might", "must", "can", "need",
-            "this", "that", "these", "those", "i", "you", "he", "she", "it", "we",
-            "they", "what", "which", "who", "whom", "whose", "where", "when", "why",
-            "how", "all", "each", "every", "both", "few", "more", "most", "other",
-            "some", "such", "no", "not", "only", "own", "same", "so", "than",
-            "too", "very", "just", "also", "now", "here", "there", "then", "once"
-        }
-
-        # Build query entities: exercise names + conditions
-        # Apply keyword split logic to each entity
-        all_entities = []
-        for entity_list in [exercise_names, conditions]:
-            for entity in entity_list:
-                # Extract words from entity
-                words = entity.lower().split()
-                # Filter out stop words and short words (<3 chars)
-                keywords = [w.strip(".,!?;:\"'()[]{}") for w in words if w.lower() not in stop_words and len(w) > 2]
-                all_entities.extend(keywords)
-
-        # Remove duplicates while preserving order
-        all_entities = list(dict.fromkeys(all_entities))
-
-        # Exercise-specific risk relations
-        # exercise_risk_rels = [
-        #     "Contraindicated_For",
-        #     "Has_Risk",
-        #     "Antagonism_With",
-        #     "Disease_Management",
-        #     "Targets_Entity"
-        # ]
-        exercise_risk_rels = None
-
-        # Query KG for each entity
-        for entity in all_entities[:15]:
+        # === GraphRAG Approach: Vector Search + Graph Traversal ===
+        use_vector_search = False
+        if use_vector_search:
             try:
-                search_results = kg.search_entities(entity)
+                # 1. For each exercise, use vector search to find similar entities
+                seen_entities = set()
+                for exercise_name in exercise_names[:5]:  # Limit to 5 exercises
+                    anchors = kg.search_similar_entities(exercise_name, top_k=2)
 
-                for result in search_results:
-                    entity_name = result.get("head", "")
-                    tail = result.get("tail", "")
-                    rel_type = result.get("rel_type", "")
+                    for anchor in anchors:
+                        anchor_name = anchor.get("name", "")
+                        if not anchor_name:
+                            continue
 
-                    # Filter by exercise risk relations
-                    if exercise_risk_rels is not None and rel_type not in exercise_risk_rels:
-                        continue
+                        if anchor_name not in seen_entities:
+                            seen_entities.add(anchor_name)
+                            # Get neighbors for graph traversal (1-hop)
+                            neighbors = kg.client.get_neighbors(anchor_name)
 
-                    if not tail:
-                        continue
+                            for neighbor in neighbors:
+                                entity_name = neighbor.get("neighbor", "")
+                                rel_type = neighbor.get("rel_type", "")
 
-                    results.append({
-                        "entity": entity_name,
-                        "relation": rel_type,
-                        "related_to": tail
-                    })
+                                if not entity_name:
+                                    continue
+
+                                # Filter by prioritized exercise risk relations
+                                # All relation types are accepted for exercise (None filter)
+                                results.append({
+                                    "entity": anchor_name,
+                                    "relation": rel_type,
+                                    "related_to": entity_name
+                                })
+
+                # 2. Also add conditions
+                for condition in conditions:
+                    anchors = kg.search_similar_entities(condition, top_k=2)
+                    for anchor in anchors:
+                        anchor_name = anchor.get("name", "")
+                        if not anchor_name:
+                            continue
+
+                        neighbors = kg.client.get_neighbors(anchor_name)
+                        for neighbor in neighbors:
+                            entity_name = neighbor.get("neighbor", "")
+                            rel_type = neighbor.get("rel_type", "")
+
+                            if not entity_name:
+                                continue
+
+                            results.append({
+                                "entity": anchor_name,
+                                "relation": rel_type,
+                                "related_to": entity_name
+                            })
+
             except Exception as e:
-                print(f"[WARN] Failed to query entity {entity}: {e}")
+                print(f"[WARN] GraphRAG search failed, falling back to keyword search: {e}")
+                use_vector_search = False
+
+        # === Fallback: Keyword-based Search (original logic) ===
+        if not use_vector_search:
+            all_entities = []
+            for entity_list in [exercise_names, conditions]:
+                for entity in entity_list:
+                    keywords = get_keywords(entity)
+                    all_entities.extend(keywords)
+
+            # Remove duplicates while preserving order
+            all_entities = list(dict.fromkeys(all_entities))
+
+            # Exercise-specific risk relations (None = accept all relations)
+            exercise_risk_rels = None
+
+            # Query KG for each entity
+            for entity in all_entities[:15]:
+                try:
+                    search_results = kg.search_entities(entity)
+
+                    for result in search_results:
+                        entity_name = result.get("head", "")
+                        tail = result.get("tail", "")
+                        rel_type = result.get("rel_type", "")
+
+                        # Filter by exercise risk relations
+                        if exercise_risk_rels is not None and rel_type not in exercise_risk_rels:
+                            continue
+
+                        if not tail:
+                            continue
+
+                        results.append({
+                            "entity": entity_name,
+                            "relation": rel_type,
+                            "related_to": tail
+                        })
+                except Exception as e:
+                    print(f"[WARN] Failed to query entity {entity}: {e}")
 
         # Format results for prompt
         if not results:
@@ -822,7 +902,16 @@ Return JSON with:
 
         # context_lines = ["## Relevant Knowledge Graph Relationships"]
         context_lines = []
-        for r in results[:20]:
+        # Deduplicate results
+        seen_relations = set()
+        unique_results = []
+        for r in results:
+            key = f"{r['entity']}-{r['relation']}-{r['related_to']}"
+            if key not in seen_relations:
+                seen_relations.add(key)
+                unique_results.append(r)
+
+        for r in unique_results[:20]:
             context_lines.append(f"- {r['entity']} --[{r['relation']}]--> {r['related_to']}")
 
         return "\n".join(context_lines)
@@ -855,26 +944,12 @@ Return JSON with:
         return list(set(recommendations))  # Remove duplicates
 
 
-# ================= Convenience Functions =================
-
 def assess_plan_safety(
     plan: Dict[str, Any],
     plan_type: str,
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = {}
 ) -> SafetyAssessment:
-    """
-    Convenience function to assess plan safety.
-
-    Args:
-        plan: The plan to assess
-        plan_type: 'diet' or 'exercise'
-        user_metadata: User physiological data
-        environment: Environmental context
-
-    Returns:
-        SafetyAssessment object
-    """
     agent = SafeguardAgent()
     return agent.assess(plan, plan_type, user_metadata, environment)
 
@@ -918,7 +993,6 @@ def combined_assessment(
 
 
 if __name__ == "__main__":
-    # Test the safeguard agent with DietRecommendation-like structure
     diet_plan = {
         "id": 1,
         "meal_plan": {
