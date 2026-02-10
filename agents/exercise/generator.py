@@ -350,7 +350,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
                 if key not in unique_benefits:
                     unique_benefits[key] = b
             if unique_benefits:
-                benefit_list = [f"{b.get('entity', '')} has {b.get('benefit', '')}" for b in unique_benefits.values()]
+                benefit_list = [f"{b.get('entity', '')} (has benefit of)/(is good for) {b.get('benefit', '')}" for b in unique_benefits.values()]
                 parts.append(f"- Exercise Benefits: {', '.join(benefit_list)}")
 
         if entity_knowledge.get("target_muscles"):

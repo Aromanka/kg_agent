@@ -623,23 +623,23 @@ Return JSON with:
 
         # Extract food items from plan
         food_items = []
+        meal_plan_str = ""
+        meal_plan_names = ""
         meal_plan = plan.get("meal_plan", {})
         if isinstance(meal_plan, dict):
-            for meal_type, items in meal_plan.items():
-                if isinstance(items, list):
-                    for item in items:
-                        if isinstance(item, dict):
-                            food_name = item.get("food", "")
-                            if food_name:
-                                food_items.append(food_name)
-                        elif hasattr(item, 'food'):
-                            food_items.append(item.food)
+            items = meal_plan.get("items", [])
+            for item in items:
+                food = item.get("food", "")
+                portion = item.get("portion", "")
+                meal_plan_names += food
+                meal_plan_str += f"{portion} of {food}; "
 
         # Get user conditions and restrictions
         conditions = user_metadata.get("medical_conditions", [])
         restrictions = user_metadata.get("dietary_restrictions", [])
 
         # === GraphRAG Approach: Vector Search + Graph Traversal ===
+        use_vector_search = False
         if use_vector_search:
             try:
                 # 1. For each food item, use vector search to find similar entities
@@ -707,10 +707,9 @@ Return JSON with:
         if not use_vector_search:
             # Build query entities: food items + conditions + restrictions + default entities
             all_entities = []
-            for entity in food_items:
-                keywords = get_keywords(entity)
-                all_entities.extend(keywords)
-            all_entities.extend(conditions + restrictions + list(DIETARY_QUERY_ENTITIES))
+            keywords = get_keywords(meal_plan_names)
+            all_entities.extend(keywords)
+            all_entities.extend(conditions + conditions + restrictions + list(DIETARY_QUERY_ENTITIES))
 
             # Remove duplicates while preserving order
             all_entities = list(dict.fromkeys(all_entities))
@@ -792,11 +791,14 @@ Return JSON with:
                     for ex in session.exercises:
                         if hasattr(ex, 'name'):
                             exercise_names.append(ex.name)
+        
+        print(f"[DEBUG] assessor judging exercise names = {exercise_names}")
 
         # Get user conditions
         conditions = user_metadata.get("medical_conditions", [])
 
         # === GraphRAG Approach: Vector Search + Graph Traversal ===
+        use_vector_search = False
         if use_vector_search:
             try:
                 # 1. For each exercise, use vector search to find similar entities

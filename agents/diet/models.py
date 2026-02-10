@@ -49,10 +49,10 @@ class FoodItem(BaseModel):
     food: str = Field(..., description="Name of the food dish")
     portion: str = Field(..., description="Portion size (e.g., '100g', '1bowl', '2piece')")
     calories: int = Field(..., description="Estimated calories per serving")
-    protein: float = Field(..., description="Protein content in grams")
-    carbs: float = Field(..., description="Carbohydrate content in grams")
-    fat: float = Field(..., description="Fat content in grams")
-    fiber: Optional[float] = Field(None, description="Fiber content in grams")
+    # protein: float = Field(..., description="Protein content in grams")
+    # carbs: float = Field(..., description="Carbohydrate content in grams")
+    # fat: float = Field(..., description="Fat content in grams")
+    # fiber: Optional[float] = Field(None, description="Fiber content in grams")
 
 
 class MealPlanItem(BaseModel):
