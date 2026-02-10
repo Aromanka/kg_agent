@@ -191,11 +191,12 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
     def generate(
         self,
         input_data: Dict[str, Any],
-        num_candidates: int = 3,
+        num_base_plans: int = 3,
         meal_timing: str = "",
         user_preference: str = None,
         use_vector: bool = True,  # GraphRAG: use vector search instead of keyword matching
-        rag_topk: int = 3
+        rag_topk: int = 3,
+        kg_context: str = None
     ) -> List[ExercisePlan]:
         # KG Format Version
         KG_FORMAT_VER = 3
@@ -220,22 +221,25 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         target_duration = self.calculate_target_duration(fitness_level, goal="maintenance", duration_minutes=duration)
         target_frequency = self.calculate_target_weekly_frequency(fitness_level, conditions)
 
-        # Get knowledge graph context using mixin
-        kg_context = ""
-        if conditions:
-            exercise_knowledge = self.query_exercise_knowledge(conditions, fitness_level)
-            kg_context = self._format_kg_context(exercise_knowledge)
+        if kg_context is None:
+            # Get knowledge graph context using mixin
+            kg_context = ""
+            if conditions:
+                exercise_knowledge = self.query_exercise_knowledge(conditions, fitness_level)
+                kg_context = self._format_kg_context(exercise_knowledge)
 
-        # Query entity-based KG context when user_preference is provided
-        if user_preference:
-            entity_knowledge = self.query_exercise_by_entity(
-                user_preference,
-                use_vector_search=use_vector,
-                rag_topk=rag_topk,
-                kg_format_ver=KG_FORMAT_VER
-            )
-            entity_context = self._format_exercise_entity_kg_context(entity_knowledge, kg_format_ver=KG_FORMAT_VER)
-            kg_context += entity_context
+            # Query entity-based KG context when user_preference is provided
+            if user_preference:
+                entity_knowledge = self.query_exercise_by_entity(
+                    user_preference,
+                    use_vector_search=use_vector,
+                    rag_topk=rag_topk,
+                    kg_format_ver=KG_FORMAT_VER
+                )
+                entity_context = self._format_exercise_entity_kg_context(entity_knowledge, kg_format_ver=KG_FORMAT_VER)
+                kg_context += entity_context
+        else:
+            pass
 
         # Get environment context
         weather = env.get("weather", {})
@@ -258,7 +262,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         candidates = []
         used_combinations = set()
 
-        for i in range(num_candidates):
+        for i in range(num_base_plans):
             if user_preference:
                 primary_cardio = None
                 primary_strength = None
@@ -283,9 +287,9 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
                 outdoor = True
 
             combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
-            if not user_preference and combo_key in used_combinations and num_candidates < len(CARDIO_ACTIVITIES):
-                primary_cardio = random.choice(CARDIO_ACTIVITIES)
-                combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
+            # if not user_preference and combo_key in used_combinations and num_candidates < len(CARDIO_ACTIVITIES):
+            #     primary_cardio = random.choice(CARDIO_ACTIVITIES)
+            #     combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
             used_combinations.add(combo_key)
 
             constraint_prompt = build_exercise_constraint_prompt(
@@ -310,7 +314,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
             if candidate:
                 candidates.append(candidate)
 
-        return candidates
+        return candidates, kg_context
 
     def _format_kg_context(self, knowledge: List) -> str:
         """Format KG knowledge for prompt inclusion (matching diet agent pattern)"""
@@ -685,86 +689,80 @@ Generate ONLY ONE session per day (single morning/afternoon/evening block).
 
 # ================= Convenience Functions =================
 
-def generate_exercise_candidates(
-    user_metadata: Dict[str, Any],
-    environment: Dict[str, Any] = {},
-    user_requirement: Dict[str, Any] = {},
-    num_candidates: int = 3,
-    meal_timing: str = "",
-    user_preference: str = None,
-    use_vector: bool = False,
-    rag_topk: int = 3
-) -> List[ExercisePlan]:
-    """
-    Convenience function to generate exercise candidates.
+# def generate_exercise_candidates(
+#     user_metadata: Dict[str, Any],
+#     environment: Dict[str, Any] = {},
+#     user_requirement: Dict[str, Any] = {},
+#     num_base_plans: int = 3,
+#     meal_timing: str = "",
+#     user_preference: str = None,
+#     use_vector: bool = False,
+#     rag_topk: int = 3,
+#     kg_context: str = None
+# ) -> List[ExercisePlan]:
+#     """
+#     Convenience function to generate exercise candidates.
 
-    Args:
-        user_metadata: User physiological data
-        environment: Environmental context
-        user_requirement: User requirements (intensity, duration in minutes)
-        num_candidates: Number of candidates to generate
-        user_preference: User's string preference (e.g., "I want to focus on upper body exercises")
-        use_vector: Use vector search (GraphRAG) instead of keyword matching
+#     Args:
+#         user_metadata: User physiological data
+#         environment: Environmental context
+#         user_requirement: User requirements (intensity, duration in minutes)
+#         num_candidates: Number of candidates to generate
+#         user_preference: User's string preference (e.g., "I want to focus on upper body exercises")
+#         use_vector: Use vector search (GraphRAG) instead of keyword matching
 
-    Returns:
-        List of ExercisePlan objects
-    """
-    agent = ExerciseAgent()
-    input_data = {
-        "user_metadata": user_metadata,
-        "environment": environment,
-        "user_requirement": user_requirement,
-        "num_candidates": num_candidates
-    }
-    return agent.generate(input_data, num_candidates, meal_timing=meal_timing, user_preference=user_preference, use_vector=use_vector, rag_topk=rag_topk)
+#     Returns:
+#         List of ExercisePlan objects
+#     """
+#     agent = ExerciseAgent()
+#     input_data = {
+#         "user_metadata": user_metadata,
+#         "environment": environment,
+#         "user_requirement": user_requirement,
+#         # "num_candidates": num_candidates
+#     }
+#     return agent.generate(input_data, num_base_plans, meal_timing=meal_timing, user_preference=user_preference, use_vector=use_vector, rag_topk=rag_topk)
 
 
 def generate_exercise_variants(
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = {},
     user_requirement: Dict[str, Any] = {},
-    num_candidates: int = 3,
-    num_var: int = 3,
+    num_base_plans: int = 3,
+    num_var_plans: int = 3,
     min_scale: float = 0.7,
     max_scale: float = 1.3,
     meal_timing: str = "",
     user_preference: str = None,
     use_vector: bool = False,
-    rag_topk: int = 3
+    rag_topk: int = 3,
+    kg_context: str = None
 ) -> Dict[str, List[ExercisePlan]]:
-    """
-    Generate exercise plans with intensity variants (Lite/Standard/Plus).
-
-    Args:
-        user_metadata: User physiological data
-        environment: Environmental context
-        user_requirement: User requirements (intensity, duration in minutes)
-        num_candidates: Number of base candidates to generate
-        user_preference: User's string preference (e.g., "I want to focus on upper body exercises")
-        use_vector: Use vector search (GraphRAG) instead of keyword matching
-
-    Returns:
-        Dict mapping candidate_id to dict of variants:
-        {
-            1: {"Lite": ExercisePlan, "Standard": ExercisePlan, "Plus": ExercisePlan},
-            2: {...},
-            ...
-        }
-    """
-    # Generate base candidates
-    base_candidates = generate_exercise_candidates(
-        user_metadata, environment, user_requirement, num_candidates, meal_timing, user_preference, use_vector, rag_topk
+    agent = ExerciseAgent()
+    input_data = {
+        "user_metadata": user_metadata,
+        "environment": environment,
+        "user_requirement": user_requirement,
+        # "num_candidates": num_candidates
+    }
+    base_candidates, kg_context = agent.generate(
+        input_data,
+        num_base_plans,
+        meal_timing=meal_timing,
+        user_preference=user_preference,
+        use_vector=use_vector,
+        rag_topk=rag_topk,
+        kg_context=kg_context
     )
-
     # Expand each candidate into variants
-    parser = ExercisePlanParser(num_variants=num_var, min_scale=min_scale, max_scale=max_scale)
+    parser = ExercisePlanParser(num_variants=num_var_plans, min_scale=min_scale, max_scale=max_scale)
     result = {}
 
     for base_plan in base_candidates:
         variants = parser.expand_plan(base_plan)
         result[base_plan.id] = variants
 
-    return result
+    return result, kg_context
 
 
 if __name__ == "__main__":

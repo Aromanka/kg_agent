@@ -5,14 +5,13 @@ from datetime import datetime
 from dataclasses import dataclass
 
 from agents.exercise.generator import generate_exercise_variants
-from agents.exercise.models import ExercisePlan
 from agents.safeguard.assessor import SafeguardAgent
 from agents.safeguard.models import SafetyAssessment
 
 import argparse
 
 
-# ================= Pipeline Output =================
+# Pipeline Output
 
 @dataclass
 class ExercisePipelineOutput:
@@ -40,9 +39,61 @@ class ExercisePipelineOutput:
             "assessments": convert_datetime(self.assessments),
             "generated_at": self.generated_at
         }
+    
+
+def exercise_generate(
+        user_metadata: Dict[str, Any],
+        environment: Dict[str, Any] = None,
+        user_requirement: Dict[str, Any] = None,
+        user_query: str = None,
+        num_base_plans: int = 3,
+        num_variants: int = 3,
+        min_scale: float = 0.7,
+        max_scale: float = 1.3,
+        temperature: float = 0.7,
+        top_p: float = 0.92,
+        top_k: int = 50,
+        top_k_selection: int = 3,
+        output_path: str = "exer_plan.json",
+        meal_timing: str = "",
+        use_vector: bool = False,
+        rag_topk: int = 3,
+        verbose_on: bool = True
+    ):
+    all_plans_list = []
+    kg_context = None
+    if verbose_on and user_query:
+        print(f"      User Query: \"{user_query}\"")
+    for i in range(num_base_plans):
+        variants_dict, kg_context = generate_exercise_variants(
+            user_metadata=user_metadata,
+            environment=environment,
+            user_requirement=user_requirement,
+            num_base_plans=1,
+            num_var_plans=num_variants,
+            min_scale=min_scale,
+            max_scale=max_scale,
+            meal_timing=meal_timing,
+            user_preference=user_query,
+            use_vector=use_vector,
+            rag_topk=rag_topk,
+            kg_context=kg_context
+        )
+        # Flatten variants into a single list
+        for base_id, variants in variants_dict.items():
+            variants_cnt = 0
+            for variant_name, plan in variants.items():
+                plan_dict = plan.model_dump()
+                plan_dict["_variant"] = variant_name
+                plan_dict["_base_id"] = base_id
+                all_plans_list.append(plan_dict)
+                variants_cnt += 1
+            if verbose_on:
+                print(f"      Base {i+1}/{num_base_plans}: (base_id={base_id}){variants_cnt} variants")
+    return all_plans_list
 
 
-# ================= Exercise Pipeline =================
+# Exercise Pipeline
 
 class ExercisePipeline:
     """
@@ -83,55 +134,49 @@ class ExercisePipeline:
             user_requirement: User requirements (intensity, duration in minutes)
             user_query: Free-form user preference query (e.g., "I want to focus on upper body exercises")
             num_base_plans: Number of LLM-generated base plans
+            num_variants: Number of intensity variants per base (Lite/Standard/Plus)
+            min_scale: Minimum scale factor for variants
+            max_scale: Maximum scale factor for variants
             temperature: LLM temperature (0.0-1.0)
             top_p: LLM top_p for nucleus sampling (0.0-1.0)
-            top_k: LLM top_k for top-k sampling
-            top_k_selection: Number of top plans to select by safety score
+            top_k: Number of top plans to select by safety score
             output_path: Path to save all plans JSON
+            meal_timing: Meal timing context
+            use_vector: Use vector search (GraphRAG) instead of keyword matching
+            rag_topk: Top-k similar entities for GraphRAG
 
         Returns:
             ExercisePipelineOutput with all plans, top plans, and assessments
         """
-        env = environment or {}
-        req = user_requirement or {}
 
         # print("=" * 60)
         # print("EXERCISE PIPELINE")
         # print("=" * 60)
         # print(f"[INFO] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
-        # print(f"[INFO] Selection: {num_base_plans} bases -> top {top_k_selection}")
+        # print(f"[INFO] Selection: {num_base_plans} bases x {num_variants} variants -> top {top_k}")
 
         # Step 1: Generate exercise candidates with variants
         print(f"\n[1/4] Generating exercise candidates...")
-        if user_query:
-            print(f"      User Query: \"{user_query}\"")
-        all_variants = generate_exercise_variants(
+        env = environment or {}
+        req = user_requirement or {}
+        all_plans_list = exercise_generate(
             user_metadata=user_metadata,
             environment=env,
             user_requirement=req,
-            num_candidates=num_base_plans,
-            num_var=num_variants,
+            user_query=user_query,
+            num_base_plans=num_base_plans,
+            num_variants=num_variants,
             min_scale=min_scale,
             max_scale=max_scale,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            top_k_selection=top_k_selection,
+            output_path=output_path,
             meal_timing=meal_timing,
-            user_preference=user_query,
-            use_vector=use_vector,  # GraphRAG: use vector search instead of keyword matching
-            rag_topk=rag_topk
+            use_vector=use_vector,
+            rag_topk=rag_topk,
         )
-
-        # Flatten variants into a single list
-        all_plans_list = []
-        # print(f"[DEBUG] all_variants = {all_variants}")
-        for base_id, variants in all_variants.items():
-            # print(f"[DEBUG] base_id={base_id}, variants={variants}")
-            for variant_name, plan in variants.items():
-                plan_dict = plan.model_dump()
-                plan_dict["_variant"] = variant_name
-                plan_dict["_base_id"] = base_id
-                all_plans_list.append(plan_dict)
-                # print(f"      Base {base_id}/{variant_name}: {plan.title}")
-
-        # print(f"      Found {len(all_plans_list)} exercise plan variants")
 
         if not all_plans_list:
             print("[WARN] No candidates generated!")
@@ -167,7 +212,7 @@ class ExercisePipeline:
             if plan_id in assessments:
                 plan["_assessment"] = assessments[plan_id]
 
-        # Step 3: Select top_k by safety score
+        # Step 3: Select top_k_selection by safety score
         print(f"\n[3/4] Selecting top {top_k_selection} plans by safety score...")
 
         # Sort by score (higher first)
@@ -251,13 +296,13 @@ def run_exercise_pipeline(
     num_variants: int = 3,
     min_scale: float = 0.7,
     max_scale: float = 1.3,
+    meal_timing: str = "",
     temperature: float = 0.7,
     top_p: float = 0.92,
     top_k: int = 50,
     top_k_selection: int = 3,
     output_path: str = "exer_plan.json",
     print_results: bool = True,
-    meal_timing: str = "",
     use_vector: bool = False,
     rag_topk: int = 3
 ) -> ExercisePipelineOutput:
@@ -270,13 +315,17 @@ def run_exercise_pipeline(
         user_requirement: User requirements (intensity, duration in minutes)
         user_query: Free-form user preference query (e.g., "I want to focus on upper body exercises")
         num_base_plans: Number of LLM-generated base plans
-        num_variants: Number of intensity variants per base plan (Lite/Standard/Plus)
+        num_variants: Number of intensity variants per base (Lite/Standard/Plus)
+        min_scale: Minimum scale factor for variants
+        max_scale: Maximum scale factor for variants
+        meal_timing: Meal timing context
         temperature: LLM temperature (0.0-1.0)
         top_p: LLM top_p for nucleus sampling (0.0-1.0)
-        top_k: LLM top_k for top-k sampling
-        top_k_selection: Number of top plans to select by safety score
+        top_k: Number of top plans to select by safety score
         output_path: Path to save all plans JSON
         print_results: Whether to print top plans to terminal
+        use_vector: Use vector search (GraphRAG) instead of keyword matching
+        rag_topk: Top-k similar entities for GraphRAG
 
     Returns:
         ExercisePipelineOutput object
@@ -338,14 +387,15 @@ if __name__ == "__main__":
             "intensity": "moderate",
             "duration": 30
         },
-        "user_query": args.query,  # Free-form query for KG entity matching
-        "use_vector": args.use_vector,  # Use vector search (GraphRAG) instead of keyword matching
+        "user_query": args.query,
+        "use_vector": args.use_vector,
         "rag_topk": args.rag_topk,
         "num_base_plans": args.bn,
         "num_variants": args.vn,
         "min_scale": args.min_scale,
         "max_scale": args.max_scale,
         "temperature": 0.7,
+        "top_k": 10,
         "top_k_selection": args.topk,
         "output_path": "exer_plan.json",
         "meal_timing": args.meal_timing

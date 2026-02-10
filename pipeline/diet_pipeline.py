@@ -105,8 +105,12 @@ class DietPipeline:
         if user_query:
             print(f"      User Query: \"{user_query}\"")
         meal_candidates = []
+        kg_context = None
         for i in range(num_base_plans):
-            candidates = generate_diet_candidates(
+            print("generate with kg_context=")
+            print(kg_context)
+            print("")
+            candidates, kg_context = generate_diet_candidates(
                 user_metadata=user_metadata,
                 environment=env,
                 user_requirement=req,
@@ -119,7 +123,8 @@ class DietPipeline:
                 top_k=top_k,
                 user_preference=user_query,
                 use_vector=use_vector,  # GraphRAG: use vector search instead of keyword matching
-                rag_topk=rag_topk
+                rag_topk=rag_topk,
+                kg_context=kg_context
             )
             meal_candidates.extend(candidates)
             print(f"      Base {i+1}/{num_base_plans}: {len(candidates)} variants")
