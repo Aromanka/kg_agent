@@ -100,3 +100,5 @@ def get_CONDITION_RESTRICTIONS():
         }
     }
 }
+
+ENABLE_RULE_BASED_CHECKS = False

@@ -1,100 +1,154 @@
-基于该代码仓库（`kg_agent`）目前的架构，引入 **GraphRAG（Graph Retrieval-Augmented Generation）** 最简单、侵入性最小的方案是实现 **“基于向量检索的局部子图 RAG” (Vector-based Local Graph RAG)**。
+Based on the code analysis of `agents/safeguard/assessor.py`, here is the breakdown of the current evaluation metrics and the improvement plan.
 
-目前的检索逻辑是基于“关键词精确匹配” (`keyword matching`)，这导致无法处理语义相关但不含关键词的查询（例如用户说“血糖高”，但图谱里存的是“糖尿病”）。
+### 1. Current Assessor Evaluation Metrics
 
-以下是分三步走的**最简 Plan**,请在保留当前纯粹关键字检索的机制上，完成基于embedding模型的检索。
+The `SafeguardAgent` currently evaluates safety using a hybrid approach combining four distinct layers. The final safety score is currently calculated **before** the LLM assessment is fully integrated, meaning the current scoring relies heavily on the first three rule-based layers.
 
----
-
-### 第一步：数据层改造（引入向量索引）
-
-**目标**：让 Neo4j 支持对节点（Node）的语义搜索，而不仅仅是名字匹配。
-
-1.1. **实现core/embed_kg.py脚本：对现有图谱注入 Embedding**：
-* 调用本地 Embedding 模型，将节点的 `name` 或 `description` 处理为向量属性（ `embedding`）存储在 Neo4j 的节点上。
+1. **Rule-Based Logic (Deterministic):**
+* **Diet:** Checks calorie limits (min 1200, max 4000), macro ratios (protein > 10%, fat < 40%), and single meal caps (1500 kcal).
+* **Exercise:** Checks daily duration caps based on fitness level (e.g., Beginners < 30 mins), rest day requirements (max 7 sessions/week), and HIIT frequency limits (max 3/week).
 
 
-1.2. **在 Neo4j 中创建向量索引**：
-* 在 `core/neo4j/driver.py` 或初始化脚本中，执行 Cypher 语句创建 Vector Index。
-* *Cypher 示例*:
-```cypher
-CREATE VECTOR INDEX node_embedding_index IF NOT EXISTS
-FOR (n:Entity) ON (n.embedding)
-OPTIONS {indexConfig: {
- `vector.dimensions`: 1536,
- `vector.similarity_function`: 'cosine'
-}}
+2. **Condition-Specific Restrictions (Deterministic):**
+* Matches user medical conditions (e.g., Diabetes, Hypertension) against a hardcoded list of forbidden keywords in `CONDITION_RESTRICTIONS` (e.g., "sugar", "sprint", "isometric").
 
-```
+
+3. **Environmental Safety (Deterministic):**
+* Checks weather conditions (Temperature > 35°C or < 5°C, Rain/Ice) against the plan type to flag environmental risks.
+
+
+4. **LLM Semantic Assessment (Probabilistic):**
+* Uses an LLM with Knowledge Graph context to find semantic risks (e.g., "hidden contraindications", "nutrient deficiencies") that keyword matching might miss.
+* *Critique:* Currently, the code calculates the `base_score` and `severity_penalty` **before** merging the LLM results. This means the LLM's findings currently generate text warnings but **do not impact the numerical safety score**.
 
 
 
+### 2. Improvement Plan
 
+To achieve your goal of relying primarily on the LLM judge by default, we need to:
 
-### 第二步：检索层改造（由关键词匹配改为向量检索）
+1. Introduce a global toggle `ENABLE_RULE_BASED_CHECKS`.
+2. Refactor the `assess` method to skip deterministic checks when this flag is `False`.
+3. **Crucial Fix:** Move the scoring logic to **after** the LLM assessment so the LLM's findings actually determine the score.
 
-**目标**：修改 `core/neo4j/query.py`，增加向量检索功能。
+#### **Step 1: Modify `agents/safeguard/config.py**` [DONE]
 
-1. **新增 `vector_search` 方法**：
-* 在 `QueryHandler` 类中增加一个函数，接受用户 Query（自然语言），将其转化为向量，然后在 Neo4j 中搜索相似节点（Top-K）。
-* *代码逻辑示意*:
+Add the global control parameter.
+
 ```python
-# core/neo4j/query.py
-
-def search_similar_entities(self, query_text, top_k=5):
-    query_vector = get_embedding(query_text) # 调用你的 embedding 函数
-    cypher = """
-    CALL db.index.vector.queryNodes('node_embedding_index', $top_k, $query_vector)
-    YIELD node, score
-    RETURN node.name AS name, score
-    """
-    return self.driver.execute_query(cypher, query_vector=query_vector, top_k=top_k)
+ENABLE_RULE_BASED_CHECKS = False
 
 ```
 
+#### **Step 2: Modify `agents/safeguard/assessor.py**`
 
+Update the `assess` method to respect the flag and fix the scoring order.
 
+**Current Logic (Abstracted):**
 
-
-### 第三步：应用层接入（替换 Agent 中的检索逻辑）
-
-**目标**：修改 `agents/diet/generator.py` 和 `agents/safeguard/assessor.py`，使用新的检索方法获取“锚点”，并扩展上下文。
-
-1. **修改 `_query_dietary_by_entity` (在 `generator.py`)**：
-* **原逻辑**：直接用用户 Query 中的词去图谱里 `MATCH (n {name: keyword})`。
-* **新逻辑 (GraphRAG)**：
-1. **Anchor Search (锚点搜索)**: 调用 `search_similar_entities(user_preference)` 找到语义最相关的 Top-5 节点（例如用户搜“想吃清淡的”，找到“低脂饮食”、“蒸菜”节点）。
-2. **Graph Traversal (图遍历/上下文扩展)**: 对这 5 个锚点节点，查询它们的 **1-hop 或 2-hop** 邻居关系（例如“低脂饮食” --推荐--> “鸡胸肉”）。
-3. **Context Construction**: 将检索到的 `(Head) -> [Relation] -> (Tail)` 三元组格式化为文本。
-
-
-
-
-2. **代码变更点示例**：
 ```python
+# 1. Run Rules -> checks/risks
+# 2. Run Conditions -> checks/risks
+# 3. Run Environment -> checks/risks
+# 4. Calculate Score (based on 1-3)
+# 5. Run LLM -> merge results (doesn't affect score)
 
-# 旧代码：
-# entity_knowledge = self.query_dietary_by_entity(user_preference) 
+```
 
-# 新代码 (GraphRAG 流程)：
-# 1. 向量检索找到入口实体
-anchors = self.kg.search_similar_entities(user_preference, top_k=3)
+**New Logic:**
 
-# 2. 扩展子图 (Retrieval)
-entity_knowledge = []
-for anchor in anchors:
-    # 获取该实体的邻居（即 GraphRAG 中的 "Local Context"）
-    neighbors = self.kg.get_neighbors(anchor['name'], hop=1) 
-    entity_knowledge.extend(neighbors)
+```python
+# 1. If ENABLE_RULE_BASED_CHECKS: Run Rules/Conditions/Environment
+# 2. Run LLM -> merge results
+# 3. Calculate Score (based on everything collected)
+
+```
+
+**Detailed Implementation Plan:**
+
+1. **Import Config:**
+```python
+from agents.safeguard.config import ENABLE_RULE_BASED_CHECKS, get_DIET_SAFETY_RULES, ...
 
 ```
 
 
+2. **Update `SafeguardAgent.assess` method:**
 
----
+```python
+    def assess(
+        self,
+        plan: Dict[str, Any],
+        plan_type: str,
+        user_metadata: Dict[str, Any],
+        environment: Dict[str, Any] = {}
+    ) -> SafetyAssessment:
+        checks = []
+        risk_factors = []
 
-### 总结：为什么这是最简单的 Plan？
+        # --- MODIFICATION START: Conditional Rule Execution ---
+        if ENABLE_RULE_BASED_CHECKS:
+            # 1. Run rule-based checks
+            if plan_type == "diet":
+                rule_checks, rule_risks = self._check_diet_safety(plan, user_metadata)
+            elif plan_type == "exercise":
+                rule_checks, rule_risks = self._check_exercise_safety(plan, user_metadata)
+            else:
+                rule_checks, rule_risks = [], []
+            checks.extend(rule_checks)
+            risk_factors.extend(rule_risks)
 
-1. **不需要重构图构建流程**：目前的 `build_kg.py` 已经生成了三元组，你只需要在存储时（或者事后）“挂”上向量即可，不需要引入微软 GraphRAG 那种复杂的社区检出（Community Detection）算法。
-2. **利用现有架构**：仓库已经有了 Neo4j 连接 (`core/neo4j`) 和 Agent 编排 (`agents/*`)，只需要在中间的 `query` 层做一个替换。
-3. **效果立竿见影**：这种“基于向量找锚点 + 基于图结构找上下文”的方法，能直接解决 Prompt 中“用户表述与知识库实体名称不一致”的问题，是 GraphRAG 的核心价值所在。
+            # 2. Run condition-specific checks
+            condition_checks, condition_risks = self._check_condition_restrictions(
+                plan, plan_type, user_metadata
+            )
+            checks.extend(condition_checks)
+            risk_factors.extend(condition_risks)
+
+            # 3. Run environment checks
+            env_checks, env_risks = self._check_environment_safety(
+                plan, plan_type, environment
+            )
+            checks.extend(env_checks)
+            risk_factors.extend(env_risks)
+        # --- MODIFICATION END ---
+
+        # 4. LLM semantic assessment (Always run or run if rules disabled)
+        llm_assessment = self._llm_semantic_assessment(
+            plan, plan_type, user_metadata, environment
+        )
+
+        # Merge LLM findings BEFORE scoring
+        if llm_assessment:
+            for rf_dict in llm_assessment.get("risk_factors", []):
+                if isinstance(rf_dict, dict):
+                    risk_factors.append(RiskFactor(**rf_dict))
+            for check_dict in llm_assessment.get("checks", []):
+                if isinstance(check_dict, dict):
+                    checks.append(SafetyCheck(**check_dict))
+
+        # --- MOVED SCORING LOGIC HERE ---
+        
+        # Calculate score based on ALL checks (Rules + LLM)
+        passed_checks = sum(1 for c in checks if c.passed)
+        total_checks = len(checks) if checks else 1 # Avoid div by zero
+
+        # Base score
+        if not checks:
+            # If no checks ran at all (e.g. LLM failed and rules disabled), assume neutral/safe
+            base_score = 100 
+        else:
+            base_score = (passed_checks / total_checks) * 100
+
+        # Apply severity penalties from ALL risk factors (Rules + LLM)
+        severity_penalty = 0
+        for rf in risk_factors:
+            penalty = {"low": 5, "moderate": 15, "high": 30, "very_high": 50}
+            severity_penalty += penalty.get(rf.severity.value, 0)
+
+        # Final score calculation
+        final_score = max(0, min(100, base_score - severity_penalty))
+        
+        # ... remainder of the function (is_safe determination, status, return) ...
+
+```

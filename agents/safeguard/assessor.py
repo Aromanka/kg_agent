@@ -9,6 +9,7 @@ from agents.safeguard.models import (
     SafeguardInput, SafeguardResponse
 )
 from core.llm import get_llm
+from core.llm.utils import parse_json_response
 from core.neo4j import get_kg_query
 from agents.safeguard.config import *
 from kg.prompts import (
@@ -20,6 +21,11 @@ from kg.prompts import (
 DIET_SAFETY_RULES = get_DIET_SAFETY_RULES(RiskLevel)
 EXERCISE_SAFETY_RULES = get_EXERCISE_SAFETY_RULES(RiskLevel)
 CONDITION_RESTRICTIONS = get_CONDITION_RESTRICTIONS()
+
+SAFETY_MEASURE = 2
+# SAFETY_MEASURE = 1: score based (current implementation)
+# SAFETY_MEASURE = 2: LLM risk_factors.severity based 
+# SAFETY_MEASURE = 3: LLM checks.passed based 
 
 
 # security agent
@@ -57,54 +63,44 @@ class SafeguardAgent(BaseAgent):
         checks = []
         risk_factors = []
 
-        # Run rule-based checks
-        if plan_type == "diet":
-            rule_checks, rule_risks = self._check_diet_safety(
-                plan, user_metadata
+        # --- MODIFICATION START: Conditional Rule Execution ---
+        if ENABLE_RULE_BASED_CHECKS:
+            # 1. Run rule-based checks
+            if plan_type == "diet":
+                rule_checks, rule_risks = self._check_diet_safety(
+                    plan, user_metadata
+                )
+            elif plan_type == "exercise":
+                rule_checks, rule_risks = self._check_exercise_safety(
+                    plan, user_metadata
+                )
+            else:
+                rule_checks, rule_risks = [], []
+            checks.extend(rule_checks)
+            risk_factors.extend(rule_risks)
+
+            # 2. Run condition-specific checks
+            condition_checks, condition_risks = self._check_condition_restrictions(
+                plan, plan_type, user_metadata
             )
-        elif plan_type == "exercise":
-            rule_checks, rule_risks = self._check_exercise_safety(
-                plan, user_metadata
+            checks.extend(condition_checks)
+            risk_factors.extend(condition_risks)
+
+            # 3. Run environment checks
+            env_checks, env_risks = self._check_environment_safety(
+                plan, plan_type, environment
             )
-        else:
-            rule_checks, rule_risks = [], []
+            checks.extend(env_checks)
+            risk_factors.extend(env_risks)
+        # --- MODIFICATION END ---
 
-        checks.extend(rule_checks)
-        risk_factors.extend(rule_risks)
-
-        # Run condition-specific checks
-        condition_checks, condition_risks = self._check_condition_restrictions(
-            plan, plan_type, user_metadata
-        )
-        checks.extend(condition_checks)
-        risk_factors.extend(condition_risks)
-
-        # Run environment checks
-        env_checks, env_risks = self._check_environment_safety(
-            plan, plan_type, environment
-        )
-        checks.extend(env_checks)
-        risk_factors.extend(env_risks)
-
-        # Calculate score
-        passed_checks = sum(1 for c in checks if c.passed)
-        total_checks = len(checks) if checks else 1
-
-        # Base score from rule checks
-        base_score = (passed_checks / total_checks) * 100 if total_checks > 0 else 100
-
-        # Apply severity penalties
-        severity_penalty = 0
-        for rf in risk_factors:
-            penalty = {"low": 5, "moderate": 15, "high": 30, "very_high": 50}
-            severity_penalty += penalty.get(rf.severity.value, 0)
-
-        # LLM semantic assessment for additional insights
+        # LLM semantic assessment (Always run or run if rules disabled)
+        # print(f"LLM Assessing...")
         llm_assessment = self._llm_semantic_assessment(
             plan, plan_type, user_metadata, environment
         )
 
-        # Merge LLM findings
+        # Merge LLM findings BEFORE scoring
         if llm_assessment:
             for rf_dict in llm_assessment.get("risk_factors", []):
                 if isinstance(rf_dict, dict):
@@ -113,50 +109,133 @@ class SafeguardAgent(BaseAgent):
                 if isinstance(check_dict, dict):
                     checks.append(SafetyCheck(**check_dict))
 
-        # Final score calculation
-        final_score = max(0, min(100, base_score - severity_penalty))
+        # --- MOVED SCORING LOGIC HERE ---
 
-        # Determine if safe
-        is_safe = final_score >= 60 and not any(
-            rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]
-            for rf in risk_factors
-        )
+        if ENABLE_RULE_BASED_CHECKS and SAFETY_MEASURE == 1:
+            # Calculate score based on ALL checks (Rules + LLM)
+            passed_checks = sum(1 for c in checks if c.passed)
+            total_checks = len(checks) if checks else 1  # Avoid div by zero
 
-        # Determine status
-        if final_score >= 80:
-            status = AssessmentStatus.PASSED
-        elif final_score >= 60:
-            status = AssessmentStatus.WARNING
-        elif final_score >= 40:
-            status = AssessmentStatus.REVIEW
+            # Base score
+            if not checks:
+                # If no checks ran at all (e.g. LLM failed and rules disabled), assume neutral/safe
+                base_score = 100
+            else:
+                base_score = (passed_checks / total_checks) * 100
+
+            # Apply severity penalties from ALL risk factors (Rules + LLM)
+            severity_penalty = 0
+            for rf in risk_factors:
+                penalty = {"low": 5, "moderate": 15, "high": 30, "very_high": 50}
+                severity_penalty += penalty.get(rf.severity.value, 0)
+
+            # Final score calculation
+            final_score = max(0, min(100, base_score - severity_penalty))
+
+            # Determine if safe
+            is_safe = final_score >= 60 and not any(
+                rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]
+                for rf in risk_factors
+            )
+
+            # Determine status
+            if final_score >= 80:
+                status = AssessmentStatus.PASSED
+            elif final_score >= 60:
+                status = AssessmentStatus.WARNING
+            elif final_score >= 40:
+                status = AssessmentStatus.REVIEW
+            else:
+                status = AssessmentStatus.FAILED
+
+            # Determine risk level
+            if final_score >= 80:
+                risk_level = RiskLevel.LOW
+            elif final_score >= 60:
+                risk_level = RiskLevel.MODERATE
+            elif final_score >= 40:
+                risk_level = RiskLevel.HIGH
+            else:
+                risk_level = RiskLevel.VERY_HIGH
+
+            # Generate recommendations
+            recommendations = self._generate_recommendations(
+                risk_factors, plan_type, user_metadata
+            )
+
+            return SafetyAssessment(
+                score=final_score,
+                is_safe=is_safe,
+                status=status,
+                risk_level=RiskLevel.LOW,
+                risk_factors=risk_factors,
+                safety_checks=checks,
+                recommendations=recommendations,
+                warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
+            )
+        elif SAFETY_MEASURE == 2:
+            # print(f"Evaluate LLM Assessment by risk factors...")
+            passed = True
+            for rf in risk_factors:
+                penalty_values = ["high", "very high"]
+                # penalty_values = ["very high"]
+                if rf.severity.value in penalty_values:
+                    passed = False
+                    break
+            if passed:
+                return SafetyAssessment(
+                    score=100,
+                    is_safe=True,
+                    status=AssessmentStatus.PASSED,
+                    risk_level=RiskLevel.LOW,
+                    risk_factors=risk_factors,
+                    safety_checks=checks,
+                    recommendations=[],
+                    warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
+                )
+            else:
+                return SafetyAssessment(
+                    score=0,
+                    is_safe=False,
+                    status=AssessmentStatus.FAILED,
+                    risk_level=RiskLevel.VERY_HIGH,
+                    risk_factors=risk_factors,
+                    safety_checks=checks,
+                    recommendations=[],
+                    warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
+                )
+
+        elif SAFETY_MEASURE == 3:
+            print(f"Evaluate LLM Assessment by checks...")
+            passed = True
+            for c in checks:
+                if not c.passed:
+                    passed = False
+                    break
+            if passed:
+                return SafetyAssessment(
+                    score=100,
+                    is_safe=True,
+                    status=AssessmentStatus.PASSED,
+                    risk_level=RiskLevel.LOW,
+                    risk_factors=risk_factors,
+                    safety_checks=checks,
+                    recommendations=[],
+                    warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
+                )
+            else:
+                return SafetyAssessment(
+                    score=0,
+                    is_safe=False,
+                    status=AssessmentStatus.FAILED,
+                    risk_level=RiskLevel.VERY_HIGH,
+                    risk_factors=risk_factors,
+                    safety_checks=checks,
+                    recommendations=[],
+                    warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
+                )
         else:
-            status = AssessmentStatus.FAILED
-
-        # Determine risk level
-        if final_score >= 80:
-            risk_level = RiskLevel.LOW
-        elif final_score >= 60:
-            risk_level = RiskLevel.MODERATE
-        elif final_score >= 40:
-            risk_level = RiskLevel.HIGH
-        else:
-            risk_level = RiskLevel.VERY_HIGH
-
-        # Generate recommendations
-        recommendations = self._generate_recommendations(
-            risk_factors, plan_type, user_metadata
-        )
-
-        return SafetyAssessment(
-            score=final_score,
-            is_safe=is_safe,
-            status=status,
-            risk_level=risk_level,
-            risk_factors=risk_factors,
-            safety_checks=checks,
-            recommendations=recommendations,
-            warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
-        )
+            raise ValueError("Invalid ENABLE_RULE_BASED_CHECKS")
 
     def _check_diet_safety(
         self,
@@ -559,6 +638,36 @@ class SafeguardAgent(BaseAgent):
             elif plan_type == "exercise":
                 kg_context = self._query_exercise_kg_for_assessment(plan, user_metadata)
 
+#             prompt = f"""Analyze the following {plan_type} plan for safety issues.
+
+# ## User Profile
+# - Age: {user_metadata.get('age', 'unknown')}
+# - Conditions: {', '.join(user_metadata.get('medical_conditions', ['none']))}
+# - Fitness Level: {user_metadata.get('fitness_level', 'unknown')}
+
+# ## Environment
+# {environment}
+
+# ## Knowledge Graph Context
+# {kg_context if kg_context else "No KG data available"}
+
+# ## Plan
+# {json.dumps(plan, ensure_ascii=False, indent=2)}
+
+# ## Task
+# Identify any safety concerns that rule-based checks might miss:
+# 1. Hidden contraindications
+# 2. Unrealistic progression
+# 3. Nutrient deficiencies
+# 4. Overtraining signs
+# 5. Environmental mismatches
+# 6. Conflicts with user's medical conditions
+
+# Use the Knowledge Graph context to identify potential risks, contraindications, and interactions.
+
+# Return JSON with:
+# - "risk_factors": array of {{factor, description, severity}}
+# - "checks": array of {{check_name, passed, message}}"""
             prompt = f"""Analyze the following {plan_type} plan for safety issues.
 
 ## User Profile
@@ -576,7 +685,7 @@ class SafeguardAgent(BaseAgent):
 {json.dumps(plan, ensure_ascii=False, indent=2)}
 
 ## Task
-Identify any safety concerns that rule-based checks might miss:
+Identify any safety concerns that rule-based checks might miss, using the KG context:
 1. Hidden contraindications
 2. Unrealistic progression
 3. Nutrient deficiencies
@@ -584,11 +693,25 @@ Identify any safety concerns that rule-based checks might miss:
 5. Environmental mismatches
 6. Conflicts with user's medical conditions
 
-Use the Knowledge Graph context to identify potential risks, contraindications, and interactions.
+## Output Format (STRICT JSON)
+Return a single valid JSON object containing two lists: "risk_factors" and "checks".
+Follow the schema definitions below STRICTLY.
 
-Return JSON with:
-- "risk_factors": array of {{factor, description, severity}}
-- "checks": array of {{check_name, passed, message}}"""
+1. "risk_factors": list of objects containing:
+   - "factor": (string) Name of the risk factor
+   - "category": (string) Must be one of ["medical", "environmental", "nutritional", "exercise"]
+   - "severity": (string) Must be one of ["low", "moderate", "high", "very_high"]
+   - "description": (string) Detailed description of the risk
+   - "recommendation": (string) Actionable mitigation advice
+
+2. "checks": list of objects containing:
+   - "check_name": (string) Name of the specific check performed
+   - "passed": (boolean) true or false
+   - "message": (string) Explanation of the check result
+   - "severity": (string, optional) If passed is false, must be one of ["low", "moderate", "high", "very_high"]
+
+Ensure "severity" values matches the allowed Enum values EXACTLY.
+"""
 
             response = self._call_llm(
                 system_prompt="You are a safety assessment expert. Return only valid JSON.",
@@ -597,7 +720,7 @@ Return JSON with:
             )
 
             if isinstance(response, str):
-                return json.loads(response)
+                return parse_json_response(response)
             return response
 
         except Exception as e:
@@ -703,7 +826,7 @@ Return JSON with:
                 print(f"[WARN] GraphRAG search failed, falling back to keyword search: {e}")
                 use_vector_search = False
 
-        # === Fallback: Keyword-based Search (original logic) ===
+        # === Keyword-based Search (original logic) ===
         if not use_vector_search:
             # Build query entities: food items + conditions + restrictions + default entities
             all_entities = []
@@ -792,7 +915,7 @@ Return JSON with:
                         if hasattr(ex, 'name'):
                             exercise_names.append(ex.name)
         
-        print(f"[DEBUG] assessor judging exercise names = {exercise_names}")
+        # print(f"[DEBUG] assessor judging exercise names = {exercise_names}")
 
         # Get user conditions
         conditions = user_metadata.get("medical_conditions", [])

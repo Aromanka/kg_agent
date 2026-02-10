@@ -13,6 +13,7 @@ from kg.prompts import (
     EXER_KG_EXTRACT_SCHEMA_PROMPT as EXER_SCHEMA_PROMPT,
     EXER_VALID_RELS
 )
+from core.llm.utils import parse_json_response
 # Optional import for local model support
 try:
     from core.llm import should_use_local, get_unified_llm
@@ -210,7 +211,7 @@ def extract_quads_with_llm(text_chunk, schema_prompt):
             response_format={'type': 'json_object'}
         )
         content = response.choices[0].message.content.strip()
-        data = json.loads(content)
+        data = parse_json_response(content)
         # Priority 1: Look for "quads" key (required by new prompt)
         if isinstance(data, dict):
             if "quads" in data and isinstance(data["quads"], list):

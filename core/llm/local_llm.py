@@ -6,6 +6,7 @@ import torch
 from typing import List, Dict, Optional, Any
 from datetime import datetime
 from config_loader import get_config
+from core.llm.utils import parse_json_response
 
 # Lazy imports to avoid heavy dependencies when using API mode
 _local_model = None
@@ -106,7 +107,7 @@ class LocalLLM:
         start_time = datetime.now()
 
         # Debug print generation params
-        print(f"[DEBUG] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
+        # print(f"[DEBUG] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
 
         # Convert messages to text format for local model
         text_content = self._messages_to_text(messages)
@@ -163,7 +164,7 @@ class LocalLLM:
         start_time = datetime.now()
 
         # Debug print generation params
-        print(f"[DEBUG] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
+        # print(f"[DEBUG] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
 
         text_content = self._messages_to_text(messages)
         model, processor = _load_local_model()
@@ -209,7 +210,7 @@ class LocalLLM:
 
         # Parse JSON
         try:
-            result = json.loads(content.strip())
+            result = parse_json_response(content)
             _log_to_file(messages, result, duration_ms)
             return result
         except json.JSONDecodeError as e:

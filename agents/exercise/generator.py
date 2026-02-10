@@ -201,6 +201,9 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         use_vector: bool = True,  # GraphRAG: use vector search instead of keyword matching
         rag_topk: int = 3
     ) -> List[ExercisePlan]:
+        # KG Format Version
+        KG_FORMAT_VER = 3
+
         # Parse input
         input_obj = ExerciseAgentInput(**input_data)
         self._input_meta = input_obj.user_metadata  # Store for condition access
@@ -229,8 +232,13 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 
         # Query entity-based KG context when user_preference is provided
         if user_preference:
-            entity_knowledge = self.query_exercise_by_entity(user_preference, use_vector_search=use_vector, rag_topk=rag_topk)
-            entity_context = self._format_exercise_entity_kg_context(entity_knowledge)
+            entity_knowledge = self.query_exercise_by_entity(
+                user_preference,
+                use_vector_search=use_vector,
+                rag_topk=rag_topk,
+                kg_format_ver=KG_FORMAT_VER
+            )
+            entity_context = self._format_exercise_entity_kg_context(entity_knowledge, kg_format_ver=KG_FORMAT_VER)
             kg_context += entity_context
 
         # Get environment context
@@ -331,16 +339,32 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 
         return "## Knowledge Graph Context\n" + "\n".join(parts) + "\n"
 
-    def _format_exercise_entity_kg_context(self, entity_knowledge: Dict) -> str:
+    def _format_exercise_entity_kg_context(
+        self, entity_knowledge: Dict, kg_format_ver: int = 2
+    ) -> str:
         """Format entity-based KG knowledge for exercise prompt (matching diet agent pattern)"""
         if not entity_knowledge:
             return ""
 
         parts = []
 
-        KG_FORMAT_VER = 2
+        if kg_format_ver >= 3:
+            # Simplified: uniform pattern for all relations
+            matched_entities = entity_knowledge.get("matched_entities", [])
+            relations = entity_knowledge.get("relations", [])
 
-        if KG_FORMAT_VER == 1:
+            # Format matched entities
+            parts.append(f"Matched Entities: {', '.join(matched_entities)}")
+            parts.append("")  # Empty line for separation
+
+            # Format all relations uniformly: "- {head} {relation} {tail}"
+            parts.append("## Knowledge Graph Relations")
+            for rel in relations:
+                head = rel.get("head", "")
+                relation = rel.get("relation", "").replace("_", " ")
+                tail = rel.get("tail", "")
+                parts.append(f"- {head} {relation} {tail}")
+        elif kg_format_ver == 1:
             if entity_knowledge.get("matched_entities"):
                 entities = entity_knowledge["matched_entities"]
                 parts.append(f"- Matched Entities from KG: {', '.join(set(entities))}")
@@ -388,8 +412,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
                 if unique_frequencies:
                     freq_list = [f"{f.get('entity', '')}: {f.get('frequency', '')}" for f in unique_frequencies.values()]
                     parts.append(f"- Frequency Recommendations: {', '.join(freq_list)}")
-
-        elif KG_FORMAT_VER == 2:
+        elif kg_format_ver == 2:
             # Organize by entities instead of by categories
             matched_entities = entity_knowledge.get("matched_entities", [])
             entity_benefits = entity_knowledge.get("entity_benefits", [])
@@ -738,7 +761,7 @@ def generate_exercise_variants(
     # Expand each candidate into variants
     parser = ExercisePlanParser()
     result = {}
-    print(f"num_var = {num_var}")
+    # print(f"num_var = {num_var}")
     if num_var == 1:
         var = ["Lite"]
     elif num_var == 2:

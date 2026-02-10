@@ -92,11 +92,11 @@ class DietPipeline:
         env = environment or {}
         req = user_requirement or {}
 
-        print("=" * 60)
-        print(f"DIET PIPELINE ({meal_type.upper()})")
-        print("=" * 60)
-        print(f"[INFO] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
-        print(f"[INFO] Selection: {num_base_plans} bases x {num_variants} variants -> top {top_k_selection}")
+        # print("=" * 60)
+        # print(f"DIET PIPELINE ({meal_type.upper()})")
+        # print("=" * 60)
+        # print(f"[INFO] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
+        # print(f"[INFO] Selection: {num_base_plans} bases x {num_variants} variants -> top {top_k_selection}")
 
         # Step 1: Generate meal candidates with variants
         print(f"\n[1/4] Generating {meal_type} candidates...")
@@ -154,8 +154,8 @@ class DietPipeline:
             score = assessment.score
             is_safe = assessment.is_safe
             risk = assessment.risk_level.value
-            print(f"      ID:{plan_id} {plan.get('variant', 'N/A')} | "
-                  f"Score:{score} | Risk:{risk} | Safe:{is_safe}")
+            # print(f"      ID:{plan_id} {plan.get('variant', 'N/A')} | "
+            #       f"Score:{score} | Risk:{risk} | Safe:{is_safe}")
 
         # Add assessment info to plans
         for plan in all_plans_dict:
@@ -174,10 +174,10 @@ class DietPipeline:
         )
         top_plans = sorted_plans[:top_k]
 
-        for i, plan in enumerate(top_plans, 1):
-            score = plan.get("_assessment", {}).get("score", 0)
-            variant = plan.get("variant", "N/A")
-            print(f"      #{i} ID:{plan.get('id')} {variant} | Score:{score}")
+        # for i, plan in enumerate(top_plans, 1):
+        #     score = plan.get("_assessment", {}).get("score", 0)
+        #     variant = plan.get("variant", "N/A")
+        #     print(f"      #{i} ID:{plan.get('id')} {variant} | Score:{score}")
 
         # Step 4: Save all plans to JSON
         print(f"\n[4/4] Saving all {len(all_plans_dict)} plans to {output_path}...")
@@ -198,9 +198,7 @@ class DietPipeline:
 
     def print_top_plans(self, output: DietPipelineOutput):
         """Print the top selected plans to terminal"""
-        print("\n" + "=" * 60)
-        print("TOP SELECTED LUNCH PLANS")
-        print("=" * 60)
+        print(">>> TOP SELECTED LUNCH PLANS")
 
         for i, plan in enumerate(output.top_plans, 1):
             assessment = plan.get("_assessment", {})
