@@ -189,7 +189,7 @@ class SafeguardAgent(BaseAgent):
                     risk_level=RiskLevel.LOW,
                     risk_factors=risk_factors,
                     safety_checks=checks,
-                    recommendations=None,
+                    recommendations=[],
                     warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
                 )
             else:
@@ -200,7 +200,7 @@ class SafeguardAgent(BaseAgent):
                     risk_level=RiskLevel.VERY_HIGH,
                     risk_factors=risk_factors,
                     safety_checks=checks,
-                    recommendations=None,
+                    recommendations=[],
                     warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
                 )
 
@@ -219,7 +219,7 @@ class SafeguardAgent(BaseAgent):
                     risk_level=RiskLevel.LOW,
                     risk_factors=risk_factors,
                     safety_checks=checks,
-                    recommendations=None,
+                    recommendations=[],
                     warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
                 )
             else:
@@ -230,7 +230,7 @@ class SafeguardAgent(BaseAgent):
                     risk_level=RiskLevel.VERY_HIGH,
                     risk_factors=risk_factors,
                     safety_checks=checks,
-                    recommendations=None,
+                    recommendations=[],
                     warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
                 )
         else:
