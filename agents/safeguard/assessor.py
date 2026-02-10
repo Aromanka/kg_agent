@@ -172,7 +172,7 @@ class SafeguardAgent(BaseAgent):
                 recommendations=recommendations,
                 warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
             )
-        elif ENABLE_RULE_BASED_CHECKS == 2:
+        elif SAFETY_MEASURE == 2:
             print(f"Evaluate LLM Assessment by risk factors...")
             passed = True
             for rf in risk_factors:
@@ -204,7 +204,7 @@ class SafeguardAgent(BaseAgent):
                     warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
                 )
 
-        elif ENABLE_RULE_BASED_CHECKS == 3:
+        elif SAFETY_MEASURE == 3:
             print(f"Evaluate LLM Assessment by checks...")
             passed = True
             for c in checks:
