@@ -5,6 +5,9 @@ tests/
 *.zip
 tests/llm.log
 .ipynb_checkpoints/
+.plan/
+.claude/
+.vscode/
 
 *.json
 !config.json
