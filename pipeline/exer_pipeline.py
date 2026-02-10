@@ -65,6 +65,8 @@ def exercise_generate(
     if verbose_on and user_query:
         print(f"      User Query: \"{user_query}\"")
     for i in range(num_base_plans):
+        print(f"[DEBUG] kg_context=")
+        print(kg_context)
         variants_dict, kg_context = generate_exercise_variants(
             user_metadata=user_metadata,
             environment=environment,
