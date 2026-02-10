@@ -191,7 +191,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
     def generate(
         self,
         input_data: Dict[str, Any],
-        num_candidates: int = 3,
+        num_base_plans: int = 3,
         meal_timing: str = "",
         user_preference: str = None,
         use_vector: bool = True,  # GraphRAG: use vector search instead of keyword matching
@@ -258,7 +258,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         candidates = []
         used_combinations = set()
 
-        for i in range(num_candidates):
+        for i in range(num_base_plans):
             if user_preference:
                 primary_cardio = None
                 primary_strength = None
@@ -283,9 +283,9 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
                 outdoor = True
 
             combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
-            if not user_preference and combo_key in used_combinations and num_candidates < len(CARDIO_ACTIVITIES):
-                primary_cardio = random.choice(CARDIO_ACTIVITIES)
-                combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
+            # if not user_preference and combo_key in used_combinations and num_candidates < len(CARDIO_ACTIVITIES):
+            #     primary_cardio = random.choice(CARDIO_ACTIVITIES)
+            #     combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
             used_combinations.add(combo_key)
 
             constraint_prompt = build_exercise_constraint_prompt(
@@ -689,7 +689,7 @@ def generate_exercise_candidates(
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = {},
     user_requirement: Dict[str, Any] = {},
-    num_candidates: int = 3,
+    num_base_plans: int = 3,
     meal_timing: str = "",
     user_preference: str = None,
     use_vector: bool = False,
@@ -714,17 +714,17 @@ def generate_exercise_candidates(
         "user_metadata": user_metadata,
         "environment": environment,
         "user_requirement": user_requirement,
-        "num_candidates": num_candidates
+        # "num_candidates": num_candidates
     }
-    return agent.generate(input_data, num_candidates, meal_timing=meal_timing, user_preference=user_preference, use_vector=use_vector, rag_topk=rag_topk)
+    return agent.generate(input_data, num_base_plans, meal_timing=meal_timing, user_preference=user_preference, use_vector=use_vector, rag_topk=rag_topk)
 
 
 def generate_exercise_variants(
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = {},
     user_requirement: Dict[str, Any] = {},
-    num_candidates: int = 3,
-    num_var: int = 3,
+    num_base_plans: int = 3,
+    num_var_plans: int = 3,
     min_scale: float = 0.7,
     max_scale: float = 1.3,
     meal_timing: str = "",
@@ -739,7 +739,8 @@ def generate_exercise_variants(
         user_metadata: User physiological data
         environment: Environmental context
         user_requirement: User requirements (intensity, duration in minutes)
-        num_candidates: Number of base candidates to generate
+        num_base_plans: Number of base candidates to generate by LLM
+        num_var_plans: Number of expand variation for each generated base candidate
         user_preference: User's string preference (e.g., "I want to focus on upper body exercises")
         use_vector: Use vector search (GraphRAG) instead of keyword matching
 
@@ -753,11 +754,11 @@ def generate_exercise_variants(
     """
     # Generate base candidates
     base_candidates = generate_exercise_candidates(
-        user_metadata, environment, user_requirement, num_candidates, meal_timing, user_preference, use_vector, rag_topk
+        user_metadata, environment, user_requirement, num_base_plans, meal_timing, user_preference, use_vector, rag_topk
     )
 
     # Expand each candidate into variants
-    parser = ExercisePlanParser(num_variants=num_var, min_scale=min_scale, max_scale=max_scale)
+    parser = ExercisePlanParser(num_variants=num_var_plans, min_scale=min_scale, max_scale=max_scale)
     result = {}
 
     for base_plan in base_candidates:
