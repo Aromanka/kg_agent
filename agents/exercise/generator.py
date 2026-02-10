@@ -335,6 +335,10 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         """Format entity-based KG knowledge for exercise prompt (matching diet agent pattern)"""
         if not entity_knowledge:
             return ""
+        
+        from pprint import pprint
+        print(f"[DEBUG] entity_knowledge - entity")
+        pprint(entity_knowledge)
 
         parts = []
 
