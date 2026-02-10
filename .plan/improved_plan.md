@@ -1,116 +1,154 @@
+Based on the code analysis of `agents/safeguard/assessor.py`, here is the breakdown of the current evaluation metrics and the improvement plan.
 
-# Requirement & Target:
-## Detailed Task Explanation
-In the process of querying knowledge graph and format the query result for plans generation, we currently use a paradigm that: 1. firstly categorize retrieved knowledge and relations; 2. format each category in the prompt. Now modify it to a easier, simpler, less redundant method: 1. firstly retrieve the knowledge entities and targets and their relations, but no need to categorize and just save all relations uniformly; 2. and then, just convert those entities and relations by a uniform pattern. The new version should be much more simpler than the old one.
+### 1. Current Assessor Evaluation Metrics
+
+The `SafeguardAgent` currently evaluates safety using a hybrid approach combining four distinct layers. The final safety score is currently calculated **before** the LLM assessment is fully integrated, meaning the current scoring relies heavily on the first three rule-based layers.
+
+1. **Rule-Based Logic (Deterministic):**
+* **Diet:** Checks calorie limits (min 1200, max 4000), macro ratios (protein > 10%, fat < 40%), and single meal caps (1500 kcal).
+* **Exercise:** Checks daily duration caps based on fitness level (e.g., Beginners < 30 mins), rest day requirements (max 7 sessions/week), and HIIT frequency limits (max 3/week).
 
 
-## Core code:
-@agents/diet/generator.py and @agents/exer/generator.py
+2. **Condition-Specific Restrictions (Deterministic):**
+* Matches user medical conditions (e.g., Diabetes, Hypertension) against a hardcoded list of forbidden keywords in `CONDITION_RESTRICTIONS` (e.g., "sugar", "sprint", "isometric").
 
-For example in diet agent, current implementation is in 1. query_dietary_by_entity and 2. _format_dietary_entity_kg_context:
-            entity_knowledge = self.query_dietary_by_entity(user_preference, use_vector_search=use_vector)
-            entity_context = self._format_dietary_entity_kg_context(entity_knowledge)
 
-We are currently using KG_FORMAT_VER to contrtol the format method in _format_dietary_entity_kg_context, but this is just a partial solution. Should use KG_FORMAT_VER for the whole generate() process.
+3. **Environmental Safety (Deterministic):**
+* Checks weather conditions (Temperature > 35°C or < 5°C, Rain/Ice) against the plan type to flag environmental risks.
 
-# Detailed PLAN
 
-### **Objective**
-
-Replace the current redundant categorization logic (separating benefits, risks, conflicts, etc.) with a unified approach that retrieves and formats all entity relations uniformly. This will be controlled by a `KG_FORMAT_VER` flag introduced in the `generate()` process.
-
-### **Files to Modify**
-
-1. `agents/base.py` (Core Logic)
-2. `agents/diet/generator.py` (Diet Agent Implementation)
-3. `agents/exercise/generator.py` (Exercise Agent Implementation)
-
----
-
-### **Step 1: Modify `agents/base.py` (DietAgentMixin & ExerciseAgentMixin)**
-
-You will update the query and formatting methods in both Mixins to support a new `KG_FORMAT_VER` (e.g., `VER=3`).
-
-#### **1. Update `DietAgentMixin**`
-
-* **Method:** `query_dietary_by_entity(..., kg_format_ver=2)`
-* **Change:** Add `kg_format_ver` as an argument.
-* **Logic:**
-* **If `kg_format_ver >= 3`:** Initialize a simplified result structure: `{"matched_entities": [], "relations": []}`.
-* Inside the GraphRAG/Search loops, do **not** filter by relation type (Benefit/Risk/Conflict). Instead, append **all** valid relations found to the `relations` list as generic dictionaries: `{"head": entity_name, "relation": rel_type, "tail": tail}`.
-* **Else (Legacy):** Keep the existing logic that sorts relations into `entity_benefits`, `entity_risks`, etc.
+4. **LLM Semantic Assessment (Probabilistic):**
+* Uses an LLM with Knowledge Graph context to find semantic risks (e.g., "hidden contraindications", "nutrient deficiencies") that keyword matching might miss.
+* *Critique:* Currently, the code calculates the `base_score` and `severity_penalty` **before** merging the LLM results. This means the LLM's findings currently generate text warnings but **do not impact the numerical safety score**.
 
 
 
+### 2. Improvement Plan
 
-* **Method:** `_format_dietary_entity_kg_context(entity_knowledge, kg_format_ver=2)`
-* **Change:** Add `kg_format_ver` as an argument (remove the hardcoded local variable).
-* **Logic:**
-* **If `kg_format_ver >= 3`:**
-* Iterate through `entity_knowledge["relations"]`.
-* Format strictly using a uniform pattern, e.g., `"- {head} {relation} {tail}"` (optionally replacing underscores in relations with spaces).
-* Group them under a single header like `## Knowledge Graph Insights` or by Entity if desired, but avoid creating separate sections for "Benefits" vs "Risks".
+To achieve your goal of relying primarily on the LLM judge by default, we need to:
 
+1. Introduce a global toggle `ENABLE_RULE_BASED_CHECKS`.
+2. Refactor the `assess` method to skip deterministic checks when this flag is `False`.
+3. **Crucial Fix:** Move the scoring logic to **after** the LLM assessment so the LLM's findings actually determine the score.
 
-* **Else (Legacy):** Keep the existing formatting logic.
+#### **Step 1: Modify `agents/safeguard/config.py**` [DONE]
 
+Add the global control parameter.
 
+```python
+ENABLE_RULE_BASED_CHECKS = False
 
+```
 
+#### **Step 2: Modify `agents/safeguard/assessor.py**`
 
-#### **2. Update `ExerciseAgentMixin**`
+Update the `assess` method to respect the flag and fix the scoring order.
 
-* **Method:** `query_exercise_by_entity(..., kg_format_ver=2)`
-* **Change:** Add `kg_format_ver` as an argument.
-* **Logic:**
-* **If `kg_format_ver >= 3`:** Similar to Diet, use `{"matched_entities": [], "relations": []}`.
-* Capture `Targets_Entity`, `Recommended_Duration`, `Has_Benefit`, etc., all into the uniform `relations` list without distinct buckets.
+**Current Logic (Abstracted):**
 
+```python
+# 1. Run Rules -> checks/risks
+# 2. Run Conditions -> checks/risks
+# 3. Run Environment -> checks/risks
+# 4. Calculate Score (based on 1-3)
+# 5. Run LLM -> merge results (doesn't affect score)
 
+```
 
+**New Logic:**
 
-* **Method:** `_format_exercise_entity_kg_context(entity_knowledge, kg_format_ver=2)`
-* **Change:** Add `kg_format_ver` as an argument.
-* **Logic:**
-* **If `kg_format_ver >= 3`:** Iterate through the `relations` list and output the uniform string pattern.
+```python
+# 1. If ENABLE_RULE_BASED_CHECKS: Run Rules/Conditions/Environment
+# 2. Run LLM -> merge results
+# 3. Calculate Score (based on everything collected)
 
+```
 
+**Detailed Implementation Plan:**
 
+1. **Import Config:**
+```python
+from agents.safeguard.config import ENABLE_RULE_BASED_CHECKS, get_DIET_SAFETY_RULES, ...
 
-
----
-
-### **Step 2: Modify `agents/diet/generator.py**`
-
-* **Method:** `DietAgent.generate`
-* **Change:** Define the version constant at the start of the method: `KG_FORMAT_VER = 3`.
-* **Update Calls:**
-* Update the call to `self.query_dietary_by_entity(...)` to pass `kg_format_ver=KG_FORMAT_VER`.
-* Update the call to `self._format_dietary_entity_kg_context(...)` to pass `kg_format_ver=KG_FORMAT_VER`.
-
-
-
-
-
----
-
-### **Step 3: Modify `agents/exercise/generator.py**`
-
-* **Method:** `ExerciseAgent.generate`
-* **Change:** Define the version constant at the start of the method: `KG_FORMAT_VER = 3`.
-* **Update Calls:**
-* Update the call to `self.query_exercise_by_entity(...)` to pass `kg_format_ver=KG_FORMAT_VER`.
-* Update the call to `self._format_exercise_entity_kg_context(...)` to pass `kg_format_ver=KG_FORMAT_VER`.
+```
 
 
+2. **Update `SafeguardAgent.assess` method:**
 
+```python
+    def assess(
+        self,
+        plan: Dict[str, Any],
+        plan_type: str,
+        user_metadata: Dict[str, Any],
+        environment: Dict[str, Any] = {}
+    ) -> SafetyAssessment:
+        checks = []
+        risk_factors = []
 
+        # --- MODIFICATION START: Conditional Rule Execution ---
+        if ENABLE_RULE_BASED_CHECKS:
+            # 1. Run rule-based checks
+            if plan_type == "diet":
+                rule_checks, rule_risks = self._check_diet_safety(plan, user_metadata)
+            elif plan_type == "exercise":
+                rule_checks, rule_risks = self._check_exercise_safety(plan, user_metadata)
+            else:
+                rule_checks, rule_risks = [], []
+            checks.extend(rule_checks)
+            risk_factors.extend(rule_risks)
 
----
+            # 2. Run condition-specific checks
+            condition_checks, condition_risks = self._check_condition_restrictions(
+                plan, plan_type, user_metadata
+            )
+            checks.extend(condition_checks)
+            risk_factors.extend(condition_risks)
 
-### **Verification Checklist**
+            # 3. Run environment checks
+            env_checks, env_risks = self._check_environment_safety(
+                plan, plan_type, environment
+            )
+            checks.extend(env_checks)
+            risk_factors.extend(env_risks)
+        # --- MODIFICATION END ---
 
-* [ ] `generate` methods in both agents define the version flag.
-* [ ] `query` methods in `base.py` return the simplified dictionary structure (list of relations) when the new version is passed.
-* [ ] `format` methods in `base.py` generate a single list of strings based on the simplified structure when the new version is passed.
-* [ ] Backward compatibility is maintained for `KG_FORMAT_VER < 3` (optional, but good practice given the existing code structure).
+        # 4. LLM semantic assessment (Always run or run if rules disabled)
+        llm_assessment = self._llm_semantic_assessment(
+            plan, plan_type, user_metadata, environment
+        )
+
+        # Merge LLM findings BEFORE scoring
+        if llm_assessment:
+            for rf_dict in llm_assessment.get("risk_factors", []):
+                if isinstance(rf_dict, dict):
+                    risk_factors.append(RiskFactor(**rf_dict))
+            for check_dict in llm_assessment.get("checks", []):
+                if isinstance(check_dict, dict):
+                    checks.append(SafetyCheck(**check_dict))
+
+        # --- MOVED SCORING LOGIC HERE ---
+        
+        # Calculate score based on ALL checks (Rules + LLM)
+        passed_checks = sum(1 for c in checks if c.passed)
+        total_checks = len(checks) if checks else 1 # Avoid div by zero
+
+        # Base score
+        if not checks:
+            # If no checks ran at all (e.g. LLM failed and rules disabled), assume neutral/safe
+            base_score = 100 
+        else:
+            base_score = (passed_checks / total_checks) * 100
+
+        # Apply severity penalties from ALL risk factors (Rules + LLM)
+        severity_penalty = 0
+        for rf in risk_factors:
+            penalty = {"low": 5, "moderate": 15, "high": 30, "very_high": 50}
+            severity_penalty += penalty.get(rf.severity.value, 0)
+
+        # Final score calculation
+        final_score = max(0, min(100, base_score - severity_penalty))
+        
+        # ... remainder of the function (is_safe determination, status, return) ...
+
+```
