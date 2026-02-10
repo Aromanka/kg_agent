@@ -2,12 +2,25 @@ from typing import List, Dict, Any
 from .models import BaseFoodItem
 
 class DietPlanParser:
-    def __init__(self):
-        # Configurable list of variants (name, scale_factor)
+    def __init__(self, num_variants: int = 3, min_scale: float = 0.5, max_scale: float = 1.5):
+        # Generate variant configurations uniformly distributed between min_scale and max_scale
+        self.num_variants = num_variants
+        self.min_scale = min_scale
+        self.max_scale = max_scale
+
+        # Generate scale factors uniformly distributed between min_scale and max_scale
+        if num_variants == 1:
+            scale_factors = [(min_scale + max_scale) / 2]
+        elif num_variants == 2:
+            scale_factors = [min_scale, max_scale]
+        else:
+            step = (max_scale - min_scale) / (num_variants - 1)
+            scale_factors = [min_scale + i * step for i in range(num_variants)]
+
+        # Generate variant names: Variant_1, Variant_2, etc.
         self.variant_configs = [
-            ("Lite", 0.8),  # 80% of base portion
-            ("Standard", 1.0),  # 100% of base portion
-            ("Plus", 1.2)  # 120% of base portion
+            (f"Variant_{i+1}", round(factor, 3))
+            for i, factor in enumerate(scale_factors)
         ]
         self.variants = {name: factor for name, factor in self.variant_configs}
         # Unit-specific adjustments for discrete quantities
@@ -76,23 +89,25 @@ class DietPlanParser:
         unit: str,
         scale_factor: float
     ) -> float:
+        # Continuous units: direct multiplication
         if unit in ["gram", "ml"]:
             return round(original * scale_factor, 1)
+        # Discrete units: round to nearest increment
         elif unit in ["piece", "slice", "cup", "bowl"]:
-            adjustment = self.unit_adjustments.get(unit, 0.5)
-            if scale_factor < 1.0:
-                # Lite: reduce
-                new_num = original - adjustment
-                return max(0.5, round(new_num, 1))
-            elif scale_factor > 1.0:
-                # Plus: increase
-                new_num = original + adjustment
-                return round(new_num, 1)
+            increment = self.unit_adjustments.get(unit, 0.5)
+            target = original * scale_factor
+            # Round to nearest increment
+            if increment > 0:
+                rounded = round(target / increment) * increment
+                # Apply minimum value
+                min_value = increment
+                return round(max(min_value, rounded), 1)
             else:
-                # Standard: keep original
-                return original
+                return round(target, 1)
+        # Spoon: no adjustment (keep exact)
         elif unit == "spoon":
             return original
+        # Unknown units: treat as continuous
         else:
             return round(original * scale_factor, 1)
 
@@ -111,7 +126,7 @@ def expand_diet_plan(
     Args:
         base_items: List of BaseFoodItem from LLM
     Returns:
-        Dict with "Lite", "Standard", "Plus" variants
+        Dict with Variant_1, Variant_2, ... variants (default 3)
     """
     parser = DietPlanParser()
     return parser.expand_plan(base_items)

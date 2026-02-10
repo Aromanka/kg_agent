@@ -8,7 +8,7 @@ from agents.diet.models import (
     DietRecommendation, DietAgentInput,
     BaseFoodItem
 )
-from agents.diet.parser import DietPlanParser
+from agents.diet.parser_var import DietPlanParser
 from core.llm.utils import parse_json_response
 from agents.diet.config import *
 from kg.prompts import (
@@ -47,9 +47,12 @@ def build_constraint_prompt(protein: str, carb: str, veg: str, excluded: List[st
 class DietAgent(BaseAgent, DietAgentMixin):
     """Agent for generating diet recommendation candidates"""
 
-    def __init__(self):
+    def __init__(self, num_variants: int = 3, min_scale: float = 0.5, max_scale: float = 1.5):
         super().__init__()
-        self.parser = DietPlanParser()
+        self.parser = DietPlanParser(num_variants=num_variants, min_scale=min_scale, max_scale=max_scale)
+        self.num_variants = num_variants
+        self.min_scale = min_scale
+        self.max_scale = max_scale
 
     def get_agent_name(self) -> str:
         return "diet"
@@ -64,6 +67,8 @@ class DietAgent(BaseAgent, DietAgentMixin):
         self,
         input_data: Dict[str, Any],
         num_variants: int = 3,
+        min_scale: float = 0.5,
+        max_scale: float = 1.5,
         meal_type: str = None,
         temperature: float = 0.7,
         top_p: float = 0.92,
@@ -72,6 +77,14 @@ class DietAgent(BaseAgent, DietAgentMixin):
         use_vector: bool = True,  # GraphRAG: use vector search instead of keyword matching
         rag_topk: int = 3
     ) -> List[DietRecommendation]:
+        # Reinitialize parser if variant configuration changed
+        if (num_variants != self.num_variants or
+            min_scale != self.min_scale or
+            max_scale != self.max_scale):
+            self.parser = DietPlanParser(num_variants=num_variants, min_scale=min_scale, max_scale=max_scale)
+            self.num_variants = num_variants
+            self.min_scale = min_scale
+            self.max_scale = max_scale
         # KG Format Version
         KG_FORMAT_VER = 3
 
@@ -119,7 +132,8 @@ class DietAgent(BaseAgent, DietAgentMixin):
         else:
             meal_types = ["breakfast", "lunch", "dinner", "snacks"]
 
-        variant_names = ["Lite", "Standard", "Plus"][:num_variants]
+        # Get variant names from parser configuration
+        variant_names = [name for name, _ in self.parser.variant_configs]
         
         used_strategies = set()
         used_combinations = set()
@@ -434,6 +448,8 @@ def generate_diet_candidates(
     environment: Dict[str, Any] = {},
     user_requirement: Dict[str, Any] = {},
     num_variants: int = 3,
+    min_scale: float = 0.5,
+    max_scale: float = 1.5,
     meal_type: str = None,
     temperature: float = 0.7,
     top_p: float = 0.92,
@@ -442,13 +458,16 @@ def generate_diet_candidates(
     use_vector: bool = False,
     rag_topk: str = 3
 ) -> List[DietRecommendation]:
-    agent = DietAgent()
+    agent = DietAgent(num_variants=num_variants, min_scale=min_scale, max_scale=max_scale)
     input_data = {
         "user_metadata": user_metadata,
         "environment": environment,
         "user_requirement": user_requirement,
     }
-    return agent.generate(input_data, num_variants, meal_type, temperature, top_p, top_k, user_preference, use_vector, rag_topk)
+    return agent.generate(
+        input_data, num_variants, min_scale, max_scale,
+        meal_type, temperature, top_p, top_k, user_preference, use_vector, rag_topk
+    )
 
 
 if __name__ == "__main__":
