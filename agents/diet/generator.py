@@ -460,7 +460,8 @@ def generate_diet_candidates(
     top_k: int = 50,
     user_preference: str = None,
     use_vector: bool = False,
-    rag_topk: str = 3
+    rag_topk: str = 3,
+    kg_context: str = None
 ) -> List[DietRecommendation]:
     agent = DietAgent(num_variants=num_variants, min_scale=min_scale, max_scale=max_scale)
     input_data = {
@@ -470,7 +471,8 @@ def generate_diet_candidates(
     }
     return agent.generate(
         input_data, num_variants, min_scale, max_scale,
-        meal_type, temperature, top_p, top_k, user_preference, use_vector, rag_topk
+        meal_type, temperature, top_p, top_k, user_preference, use_vector, rag_topk,
+        kg_context=kg_context
     )
 
 

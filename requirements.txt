@@ -6,3 +6,4 @@ pandas
 docx
 pymupdf4llm
 flask
+flask-cors
