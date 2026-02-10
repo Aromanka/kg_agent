@@ -125,9 +125,9 @@ class ExercisePipeline:
                 plan_dict["_variant"] = variant_name
                 plan_dict["_base_id"] = base_id
                 all_plans_list.append(plan_dict)
-                print(f"      Base {base_id}/{variant_name}: {plan.title}")
+                # print(f"      Base {base_id}/{variant_name}: {plan.title}")
 
-        print(f"      Found {len(all_plans_list)} exercise plan variants")
+        # print(f"      Found {len(all_plans_list)} exercise plan variants")
 
         if not all_plans_list:
             print("[WARN] No candidates generated!")
@@ -154,8 +154,8 @@ class ExercisePipeline:
             is_safe = assessment.is_safe
             risk = assessment.risk_level.value
             variant = plan.get("_variant", "N/A")
-            print(f"      ID:{plan_id} {variant} | "
-                  f"Score:{score} | Risk:{risk} | Safe:{is_safe}")
+            # print(f"      ID:{plan_id} {variant} | "
+            #       f"Score:{score} | Risk:{risk} | Safe:{is_safe}")
 
         # Add assessment info to plans
         for plan in all_plans_list:
@@ -174,10 +174,10 @@ class ExercisePipeline:
         )
         top_plans = sorted_plans[:top_k_selection]
 
-        for i, plan in enumerate(top_plans, 1):
-            score = plan.get("_assessment", {}).get("score", 0)
-            variant = plan.get("_variant", "N/A")
-            print(f"      #{i} ID:{plan.get('id')} {variant} | Score:{score}")
+        # for i, plan in enumerate(top_plans, 1):
+        #     score = plan.get("_assessment", {}).get("score", 0)
+        #     variant = plan.get("_variant", "N/A")
+        #     print(f"      #{i} ID:{plan.get('id')} {variant} | Score:{score}")
 
         # Step 4: Save all plans to JSON
         print(f"\n[4/4] Saving all {len(all_plans_list)} plans to {output_path}...")
@@ -198,9 +198,7 @@ class ExercisePipeline:
 
     def print_top_plans(self, output: ExercisePipelineOutput):
         """Print the top selected plans to terminal"""
-        print("\n" + "=" * 60)
-        print("TOP SELECTED EXERCISE PLANS")
-        print("=" * 60)
+        print(">>> TOP SELECTED EXERCISE PLANS")
 
         for i, plan in enumerate(output.top_plans, 1):
             assessment = plan.get("_assessment", {})

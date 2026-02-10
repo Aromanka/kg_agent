@@ -95,7 +95,7 @@ class SafeguardAgent(BaseAgent):
         # --- MODIFICATION END ---
 
         # LLM semantic assessment (Always run or run if rules disabled)
-        print(f"LLM Assessing...")
+        # print(f"LLM Assessing...")
         llm_assessment = self._llm_semantic_assessment(
             plan, plan_type, user_metadata, environment
         )
@@ -174,7 +174,7 @@ class SafeguardAgent(BaseAgent):
                 warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
             )
         elif SAFETY_MEASURE == 2:
-            print(f"Evaluate LLM Assessment by risk factors...")
+            # print(f"Evaluate LLM Assessment by risk factors...")
             passed = True
             for rf in risk_factors:
                 penalty_values = ["high", "very high"]
@@ -915,7 +915,7 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
                         if hasattr(ex, 'name'):
                             exercise_names.append(ex.name)
         
-        print(f"[DEBUG] assessor judging exercise names = {exercise_names}")
+        # print(f"[DEBUG] assessor judging exercise names = {exercise_names}")
 
         # Get user conditions
         conditions = user_metadata.get("medical_conditions", [])

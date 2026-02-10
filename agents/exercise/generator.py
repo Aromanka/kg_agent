@@ -761,7 +761,7 @@ def generate_exercise_variants(
     # Expand each candidate into variants
     parser = ExercisePlanParser()
     result = {}
-    print(f"num_var = {num_var}")
+    # print(f"num_var = {num_var}")
     if num_var == 1:
         var = ["Lite"]
     elif num_var == 2:

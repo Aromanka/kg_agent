@@ -154,8 +154,8 @@ class DietPipeline:
             score = assessment.score
             is_safe = assessment.is_safe
             risk = assessment.risk_level.value
-            print(f"      ID:{plan_id} {plan.get('variant', 'N/A')} | "
-                  f"Score:{score} | Risk:{risk} | Safe:{is_safe}")
+            # print(f"      ID:{plan_id} {plan.get('variant', 'N/A')} | "
+            #       f"Score:{score} | Risk:{risk} | Safe:{is_safe}")
 
         # Add assessment info to plans
         for plan in all_plans_dict:
@@ -174,10 +174,10 @@ class DietPipeline:
         )
         top_plans = sorted_plans[:top_k]
 
-        for i, plan in enumerate(top_plans, 1):
-            score = plan.get("_assessment", {}).get("score", 0)
-            variant = plan.get("variant", "N/A")
-            print(f"      #{i} ID:{plan.get('id')} {variant} | Score:{score}")
+        # for i, plan in enumerate(top_plans, 1):
+        #     score = plan.get("_assessment", {}).get("score", 0)
+        #     variant = plan.get("variant", "N/A")
+        #     print(f"      #{i} ID:{plan.get('id')} {variant} | Score:{score}")
 
         # Step 4: Save all plans to JSON
         print(f"\n[4/4] Saving all {len(all_plans_dict)} plans to {output_path}...")
