@@ -75,7 +75,8 @@ class DietAgent(BaseAgent, DietAgentMixin):
         top_k: int = 50,
         user_preference: str = None,
         use_vector: bool = True,  # GraphRAG: use vector search instead of keyword matching
-        rag_topk: int = 3
+        rag_topk: int = 3,
+        kg_context: str = None
     ) -> List[DietRecommendation]:
         # Reinitialize parser if variant configuration changed
         if (num_variants != self.num_variants or
@@ -104,27 +105,30 @@ class DietAgent(BaseAgent, DietAgentMixin):
             activity_factor=self._get_activity_factor(user_meta.get("fitness_level", "beginner"))
         )
 
-        # Get KG context
-        kg_context = ""
-        conditions = user_meta.get("medical_conditions", [])
+        if kg_context is None:
+            # Get KG context
+            kg_context = ""
+            conditions = user_meta.get("medical_conditions", [])
 
-        # Query condition-based KG context
-        if conditions:
-            dietary_knowledge = self.query_dietary_knowledge(
-                conditions, user_meta.get("dietary_restrictions", [])
-            )
-            kg_context = self._format_kg_context(dietary_knowledge)
+            # Query condition-based KG context
+            if conditions:
+                dietary_knowledge = self.query_dietary_knowledge(
+                    conditions, user_meta.get("dietary_restrictions", [])
+                )
+                kg_context = self._format_kg_context(dietary_knowledge)
 
-        # Query entity-based KG context when user_preference is provided
-        if user_preference:
-            entity_knowledge = self.query_dietary_by_entity(
-                user_preference,
-                use_vector_search=use_vector,
-                rag_topk=rag_topk,
-                kg_format_ver=KG_FORMAT_VER
-            )
-            entity_context = self._format_dietary_entity_kg_context(entity_knowledge, kg_format_ver=KG_FORMAT_VER)
-            kg_context += entity_context
+            # Query entity-based KG context when user_preference is provided
+            if user_preference:
+                entity_knowledge = self.query_dietary_by_entity(
+                    user_preference,
+                    use_vector_search=use_vector,
+                    rag_topk=rag_topk,
+                    kg_format_ver=KG_FORMAT_VER
+                )
+                entity_context = self._format_dietary_entity_kg_context(entity_knowledge, kg_format_ver=KG_FORMAT_VER)
+                kg_context += entity_context
+        else:
+            pass
 
         # Define meal types to generate
         if meal_type:
@@ -255,7 +259,7 @@ class DietAgent(BaseAgent, DietAgentMixin):
         # Sort by deviation
         candidates.sort(key=lambda x: (x.meal_type, abs(x.calories_deviation)))
 
-        return candidates
+        return candidates, kg_context
 
     def _generate_base_plan(
         self,

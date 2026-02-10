@@ -110,8 +110,9 @@ class ExercisePipeline:
         if user_query:
             print(f"      User Query: \"{user_query}\"")
         all_plans_list = []
+        kg_context = None
         for i in range(num_base_plans):
-            variants_dict = generate_exercise_variants(
+            variants_dict, kg_context = generate_exercise_variants(
                 user_metadata=user_metadata,
                 environment=env,
                 user_requirement=req,
@@ -122,7 +123,8 @@ class ExercisePipeline:
                 meal_timing=meal_timing,
                 user_preference=user_query,
                 use_vector=use_vector,
-                rag_topk=rag_topk
+                rag_topk=rag_topk,
+                kg_context=kg_context
             )
             # Flatten variants into a single list
             for base_id, variants in variants_dict.items():
