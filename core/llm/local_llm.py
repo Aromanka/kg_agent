@@ -1,6 +1,3 @@
-"""
-Local LLM Implementation - Support for local HuggingFace/Transformers models
-"""
 import os
 import torch
 from typing import List, Dict, Optional, Any
