@@ -9,7 +9,7 @@ from datetime import datetime
 
 from agents.diet import generate_diet_candidates as diet_gen
 from agents.diet.models import DietRecommendation
-from agents.exercise.generator import generate_exercise_candidates as exercise_gen
+# from agents.exercise.generator import generate_exercise_candidates as exercise_gen
 from agents.exercise.models import ExercisePlan
 from agents.safeguard.assessor import assess_plan_safety, SafeguardAgent
 from agents.safeguard.models import (
@@ -170,13 +170,14 @@ class HealthPlanPipeline:
     ) -> List[Dict[str, Any]]:
         """Generate exercise candidates"""
         try:
-            candidates = exercise_gen(
-                user_metadata=user_metadata,
-                environment=environment,
-                user_requirement=requirement,
-                num_candidates=num_candidates
-            )
-            return [c.model_dump() for c in candidates]
+            # candidates = exercise_gen(
+            #     user_metadata=user_metadata,
+            #     environment=environment,
+            #     user_requirement=requirement,
+            #     num_candidates=num_candidates
+            # )
+            # return [c.model_dump() for c in candidates]
+            pass
         except Exception as e:
             print(f"[Pipeline] Exercise generation failed: {e}")
             return []
