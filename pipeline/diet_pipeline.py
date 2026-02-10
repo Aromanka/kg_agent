@@ -198,9 +198,7 @@ class DietPipeline:
 
     def print_top_plans(self, output: DietPipelineOutput):
         """Print the top selected plans to terminal"""
-        print("\n" + "=" * 60)
-        print("TOP SELECTED LUNCH PLANS")
-        print("=" * 60)
+        print(">>> TOP SELECTED LUNCH PLANS")
 
         for i, plan in enumerate(output.top_plans, 1):
             assessment = plan.get("_assessment", {})

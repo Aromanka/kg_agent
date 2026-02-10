@@ -265,7 +265,6 @@ class DietAgentMixin:
 
                     # Collect benefits, risks, and conflicts from neighbors
                     for neighbor in neighbors:
-                        print(f"neighbor= {neighbor}")
                         entity_name = neighbor.get("neighbor", "")
                         rel_type = neighbor.get("rel_type", "")
 
@@ -423,9 +422,7 @@ class DietAgentMixin:
         self, entity_knowledge: Dict, kg_format_ver: int = 2
     ) -> str:
         """Format entity-based KG knowledge for diet prompt"""
-        from pprint import pprint
-        print(f"entity knowledge:")
-        pprint(entity_knowledge)
+        
         if not entity_knowledge:
             return ""
 
@@ -470,8 +467,6 @@ class DietAgentMixin:
                     parts.append(f"- Entity Conflicts: {', '.join(conflict_list)}")
 
         elif kg_format_ver == 2:
-            from pprint import pprint
-            pprint(entity_knowledge)
             # Organize by entities instead of by categories
             matched_entities = entity_knowledge.get("matched_entities", [])
             entity_benefits = entity_knowledge.get("entity_benefits", [])
