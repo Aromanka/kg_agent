@@ -204,7 +204,8 @@ class DietAgentMixin:
         self,
         user_query: str,
         score_threshold: float = 0.5,
-        use_vector_search: bool = True  # GraphRAG: use vector search instead of keyword matching
+        use_vector_search: bool = True,  # GraphRAG: use vector search instead of keyword matching
+        rag_topk: int = 3
     ) -> Dict[str, Any]:
         """
         Query dietary knowledge graph using GraphRAG approach:
@@ -232,7 +233,7 @@ class DietAgentMixin:
         if use_vector_search:
             try:
                 # 1. Anchor Search: Find semantically similar entities
-                anchors = self._kg.search_similar_entities(user_query, top_k=3)
+                anchors = self._kg.search_similar_entities(user_query, top_k=rag_topk)
 
                 print(f"GraphRAG: Found {len(anchors)} anchor entities for query: '{user_query}'")
                 for anchor in anchors:
@@ -556,7 +557,8 @@ class ExerciseAgentMixin:
         self,
         user_query: str,
         score_threshold: float = 0.5,
-        use_vector_search: bool = True  # GraphRAG: use vector search instead of keyword matching
+        use_vector_search: bool = True,  # GraphRAG: use vector search instead of keyword matching
+        rag_topk: int = 3
     ) -> Dict[str, Any]:
         """
         Query exercise knowledge graph using GraphRAG approach
@@ -582,7 +584,7 @@ class ExerciseAgentMixin:
         if use_vector_search:
             try:
                 # 1. Anchor Search: Find semantically similar entities
-                anchors = self._kg.search_similar_entities(user_query, top_k=3)
+                anchors = self._kg.search_similar_entities(user_query, top_k=rag_topk)
 
                 print(f"GraphRAG Exercise: Found {len(anchors)} anchor entities for query: '{user_query}'")
                 for anchor in anchors:

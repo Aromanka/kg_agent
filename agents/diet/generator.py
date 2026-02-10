@@ -69,7 +69,8 @@ class DietAgent(BaseAgent, DietAgentMixin):
         top_p: float = 0.92,
         top_k: int = 50,
         user_preference: str = None,
-        use_vector: bool = True  # GraphRAG: use vector search instead of keyword matching
+        use_vector: bool = True,  # GraphRAG: use vector search instead of keyword matching
+        rag_topk: int = 3
     ) -> List[DietRecommendation]:
         # Parse input
         input_obj = DietAgentInput(**input_data)
@@ -430,7 +431,8 @@ def generate_diet_candidates(
     top_p: float = 0.92,
     top_k: int = 50,
     user_preference: str = None,
-    use_vector: bool = False
+    use_vector: bool = False,
+    rag_topk: str = 3
 ) -> List[DietRecommendation]:
     agent = DietAgent()
     input_data = {
@@ -438,7 +440,7 @@ def generate_diet_candidates(
         "environment": environment,
         "user_requirement": user_requirement,
     }
-    return agent.generate(input_data, num_variants, meal_type, temperature, top_p, top_k, user_preference, use_vector)
+    return agent.generate(input_data, num_variants, meal_type, temperature, top_p, top_k, user_preference, use_vector, rag_topk)
 
 
 if __name__ == "__main__":

@@ -69,7 +69,8 @@ class ExercisePipeline:
         top_k_selection: int = 3,
         output_path: str = "exer_plan.json",
         meal_timing: str = "",
-        use_vector: bool = False
+        use_vector: bool = False,
+        rag_topk: int = 3
     ) -> ExercisePipelineOutput:
         """
         Generate exercise options with safety assessment.
@@ -110,7 +111,8 @@ class ExercisePipeline:
             num_var=num_var_plans,
             meal_timing=meal_timing,
             user_preference=user_query,
-            use_vector=use_vector  # GraphRAG: use vector search instead of keyword matching
+            use_vector=use_vector,  # GraphRAG: use vector search instead of keyword matching
+            rag_topk=rag_topk
         )
 
         # Flatten variants into a single list
@@ -249,7 +251,8 @@ def run_exercise_pipeline(
     output_path: str = "exer_plan.json",
     print_results: bool = True,
     meal_timing: str = "",
-    use_vector: bool = False
+    use_vector: bool = False,
+    rag_topk: int = 3
 ) -> ExercisePipelineOutput:
     """
     Run the exercise pipeline and optionally print results.
@@ -285,7 +288,8 @@ def run_exercise_pipeline(
         top_k_selection=top_k_selection,
         output_path=output_path,
         meal_timing=meal_timing,
-        use_vector=use_vector
+        use_vector=use_vector,
+        rag_topk=rag_topk
     )
 
     if print_results:
@@ -301,6 +305,7 @@ if __name__ == "__main__":
     parser.add_argument('--bn', type=int, default=3, help='base plan num')
     parser.add_argument('--vn', type=int, default=3, help='variation plan num')
     parser.add_argument('--topk', type=int, default=3, help='top k selection')
+    parser.add_argument('--rag_topk', type=int, default=3, help='graph rag top_k similar entities')
     parser.add_argument('--use_vector', action='store_true', default=False, help='Use vector search (GraphRAG) instead of keyword matching')
     parser.add_argument('--meal_timing', type=str, default="before_breakfast", help='meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".')
     parser.add_argument('--query', type=str, default="I want to focus on upper body exercises with moderate intensity", help='user query (free-form text for KG entity matching)')
@@ -324,6 +329,7 @@ if __name__ == "__main__":
         },
         "user_query": args.query,  # Free-form query for KG entity matching
         "use_vector": args.use_vector,  # Use vector search (GraphRAG) instead of keyword matching
+        "rag_topk": args.rag_topk,
         "num_base_plans": args.bn,
         "num_var_plans": args.vn,
         "temperature": 0.7,

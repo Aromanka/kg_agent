@@ -198,7 +198,8 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         num_candidates: int = 3,
         meal_timing: str = "",
         user_preference: str = None,
-        use_vector: bool = True  # GraphRAG: use vector search instead of keyword matching
+        use_vector: bool = True,  # GraphRAG: use vector search instead of keyword matching
+        rag_topk: int = 3
     ) -> List[ExercisePlan]:
         # Parse input
         input_obj = ExerciseAgentInput(**input_data)
@@ -228,7 +229,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 
         # Query entity-based KG context when user_preference is provided
         if user_preference:
-            entity_knowledge = self.query_exercise_by_entity(user_preference, use_vector_search=use_vector)
+            entity_knowledge = self.query_exercise_by_entity(user_preference, use_vector_search=use_vector, rag_topk=rag_topk)
             entity_context = self._format_exercise_entity_kg_context(entity_knowledge)
             kg_context += entity_context
 
@@ -596,7 +597,8 @@ def generate_exercise_candidates(
     num_candidates: int = 3,
     meal_timing: str = "",
     user_preference: str = None,
-    use_vector: bool = False
+    use_vector: bool = False,
+    rag_topk: int = 3
 ) -> List[ExercisePlan]:
     """
     Convenience function to generate exercise candidates.
@@ -619,7 +621,7 @@ def generate_exercise_candidates(
         "user_requirement": user_requirement,
         "num_candidates": num_candidates
     }
-    return agent.generate(input_data, num_candidates, meal_timing=meal_timing, user_preference=user_preference, use_vector=use_vector)
+    return agent.generate(input_data, num_candidates, meal_timing=meal_timing, user_preference=user_preference, use_vector=use_vector, rag_topk=rag_topk)
 
 
 def generate_exercise_variants(
@@ -630,7 +632,8 @@ def generate_exercise_variants(
     num_var: int = 3,
     meal_timing: str = "",
     user_preference: str = None,
-    use_vector: bool = False
+    use_vector: bool = False,
+    rag_topk: int = 3
 ) -> Dict[str, List[ExercisePlan]]:
     """
     Generate exercise plans with intensity variants (Lite/Standard/Plus).
@@ -653,7 +656,7 @@ def generate_exercise_variants(
     """
     # Generate base candidates
     base_candidates = generate_exercise_candidates(
-        user_metadata, environment, user_requirement, num_candidates, meal_timing, user_preference, use_vector
+        user_metadata, environment, user_requirement, num_candidates, meal_timing, user_preference, use_vector, rag_topk
     )
 
     # Expand each candidate into variants

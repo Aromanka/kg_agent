@@ -64,7 +64,8 @@ class DietPipeline:
         top_k: int = 50,
         top_k_selection: int = 3,
         output_path: str = "plan.json",
-        use_vector: bool = False
+        use_vector: bool = False,
+        rag_topk: str = 3
     ) -> DietPipelineOutput:
         """
         Generate meal options with safety assessment.
@@ -83,6 +84,7 @@ class DietPipeline:
             top_k_selection: Number of top plans to select by safety score
             output_path: Path to save all plans JSON
             use_vector: Use vector search (GraphRAG) instead of keyword matching
+            rag_topk: top_k similar enetities for GraphRAG
 
         Returns:
             DietPipelineOutput with all plans, top plans, and assessments
@@ -112,7 +114,8 @@ class DietPipeline:
                 top_p=top_p,
                 top_k=top_k,
                 user_preference=user_query,
-                use_vector=use_vector  # GraphRAG: use vector search instead of keyword matching
+                use_vector=use_vector,  # GraphRAG: use vector search instead of keyword matching
+                rag_topk=rag_topk
             )
             meal_candidates.extend(candidates)
             print(f"      Base {i+1}/{num_base_plans}: {len(candidates)} variants")
@@ -230,6 +233,7 @@ def run_diet_pipeline(
     environment: Dict[str, Any] = None,
     user_requirement: Dict[str, Any] = None,
     user_query: str = None,
+    rag_topk: int = 3,
     num_base_plans: int = 3,
     num_variants: int = 3,
     meal_type: str = "lunch",
@@ -277,7 +281,8 @@ def run_diet_pipeline(
         top_k=top_k,
         top_k_selection=top_k_selection,
         output_path=output_path,
-        use_vector=use_vector
+        use_vector=use_vector,
+        rag_topk=rag_topk
     )
 
     if print_results:
@@ -293,6 +298,7 @@ if __name__ == "__main__":
     parser.add_argument('--bn', type=int, default=3, help='base plan num')
     parser.add_argument('--vn', type=int, default=3, help='var plan num')
     parser.add_argument('--topk', type=int, default=3, help='var plan num')
+    parser.add_argument('--rag_topk', type=int, default=3, help='graph rag top_k similar entities')
     parser.add_argument('--use_vector', action='store_true', default=False, help='Use vector search (GraphRAG) instead of keyword matching')
     parser.add_argument('--query', type=str, default="I want a healthy tuna salad sandwich with fresh vegetables",
                        help='user query (free-form text for KG entity matching)')
@@ -314,6 +320,7 @@ if __name__ == "__main__":
         "user_requirement": {},  # Empty, use user_query instead
         "user_query": args.query,  # Free-form query for KG entity matching
         "use_vector": args.use_vector,  # Use vector search (GraphRAG) instead of keyword matching
+        "rag_topk": args.rag_topk,
         "num_base_plans": args.bn,
         "num_variants": args.vn,
         "meal_type": "lunch",
