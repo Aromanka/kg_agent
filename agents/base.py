@@ -381,7 +381,7 @@ class DietAgentMixin:
 
         return results
 
-    def _format_entity_kg_context(self, entity_knowledge: Dict) -> str:
+    def _format_dietary_entity_kg_context(self, entity_knowledge: Dict) -> str:
         """Format entity-based KG knowledge for diet prompt"""
         from pprint import pprint
         print(f"entity knowledge:")
@@ -391,42 +391,104 @@ class DietAgentMixin:
 
         parts = []
 
-        if entity_knowledge.get("matched_entities"):
-            entities = entity_knowledge["matched_entities"]
-            parts.append(f"- Matched Entities from KG: {', '.join(set(entities))}")
+        KG_FORMAT_VER = 2
 
-        if entity_knowledge.get("entity_benefits"):
-            benefits = entity_knowledge["entity_benefits"][:5]  # Limit to top 5
-            unique_benefits = {}
-            for b in benefits:
-                key = f"{b.get('entity', '')}-{b.get('benefit', '')}"
-                if key not in unique_benefits:
-                    unique_benefits[key] = b
-            if unique_benefits:
-                benefit_list = [f"{b.get('entity', '')} has {b.get('benefit', '')}" for b in unique_benefits.values()]
-                parts.append(f"- Entity Benefits: {', '.join(benefit_list)}")
+        if KG_FORMAT_VER == 1:
+            if entity_knowledge.get("matched_entities"):
+                entities = entity_knowledge["matched_entities"]
+                parts.append(f"- Matched Entities from KG: {', '.join(set(entities))}")
 
-        if entity_knowledge.get("entity_risks"):
-            risks = entity_knowledge["entity_risks"][:5]  # Limit to top 5
-            unique_risks = {}
-            for r in risks:
-                key = f"{r.get('entity', '')}-{r.get('risk', '')}"
-                if key not in unique_risks:
-                    unique_risks[key] = r
-            if unique_risks:
-                risk_list = [f"{r.get('entity', '')} may have {r.get('risk', '')}" for r in unique_risks.values()]
-                parts.append(f"- Entity Risks: {', '.join(risk_list)}")
+            if entity_knowledge.get("entity_benefits"):
+                benefits = entity_knowledge["entity_benefits"][:5]  # Limit to top 5
+                unique_benefits = {}
+                for b in benefits:
+                    key = f"{b.get('entity', '')}-{b.get('benefit', '')}"
+                    if key not in unique_benefits:
+                        unique_benefits[key] = b
+                if unique_benefits:
+                    benefit_list = [f"{b.get('entity', '')} has {b.get('benefit', '')}" for b in unique_benefits.values()]
+                    parts.append(f"- Entity Benefits: {', '.join(benefit_list)}")
 
-        if entity_knowledge.get("entity_conflicts"):
-            conflicts = entity_knowledge["entity_conflicts"][:5]  # Limit to top 5
-            unique_conflicts = {}
-            for c in conflicts:
-                key = f"{c.get('entity', '')}-{c.get('conflicts_with', '')}"
-                if key not in unique_conflicts:
-                    unique_conflicts[key] = c
-            if unique_conflicts:
-                conflict_list = [f"{c.get('entity', '')} conflicts with {c.get('conflicts_with', '')}" for c in unique_conflicts.values()]
-                parts.append(f"- Entity Conflicts: {', '.join(conflict_list)}")
+            if entity_knowledge.get("entity_risks"):
+                risks = entity_knowledge["entity_risks"][:5]  # Limit to top 5
+                unique_risks = {}
+                for r in risks:
+                    key = f"{r.get('entity', '')}-{r.get('risk', '')}"
+                    if key not in unique_risks:
+                        unique_risks[key] = r
+                if unique_risks:
+                    risk_list = [f"{r.get('entity', '')} may have {r.get('risk', '')}" for r in unique_risks.values()]
+                    parts.append(f"- Entity Risks: {', '.join(risk_list)}")
+
+            if entity_knowledge.get("entity_conflicts"):
+                conflicts = entity_knowledge["entity_conflicts"][:5]  # Limit to top 5
+                unique_conflicts = {}
+                for c in conflicts:
+                    key = f"{c.get('entity', '')}-{c.get('conflicts_with', '')}"
+                    if key not in unique_conflicts:
+                        unique_conflicts[key] = c
+                if unique_conflicts:
+                    conflict_list = [f"{c.get('entity', '')} conflicts with {c.get('conflicts_with', '')}" for c in unique_conflicts.values()]
+                    parts.append(f"- Entity Conflicts: {', '.join(conflict_list)}")
+
+        elif KG_FORMAT_VER == 2:
+            # Organize by entities instead of by categories
+            matched_entities = entity_knowledge.get("matched_entities", [])
+            entity_benefits = entity_knowledge.get("entity_benefits", [])
+            entity_risks = entity_knowledge.get("entity_risks", [])
+            entity_conflicts = entity_knowledge.get("entity_conflicts", [])
+
+            # Group relations by entity
+            entity_relations = {}
+            for entity in matched_entities:
+                entity_relations[entity] = {
+                    "benefits": [],
+                    "risks": [],
+                    "conflicts": []
+                }
+
+            # Populate benefits
+            for b in entity_benefits:
+                entity = b.get("entity", "")
+                benefit = b.get("benefit", "")
+                if entity in entity_relations and benefit:
+                    entity_relations[entity]["benefits"].append(benefit)
+
+            # Populate risks
+            for r in entity_risks:
+                entity = r.get("entity", "")
+                risk = r.get("risk", "")
+                if entity in entity_relations and risk:
+                    entity_relations[entity]["risks"].append(risk)
+
+            # Populate conflicts
+            for c in entity_conflicts:
+                entity = c.get("entity", "")
+                conflict = c.get("conflicts_with", "")
+                if entity in entity_relations and conflict:
+                    entity_relations[entity]["conflicts"].append(conflict)
+
+            # Format by entity
+            parts.append(f"Matched Entities: {', '.join(matched_entities)}")
+            parts.append("")  # Empty line for separation
+
+            for entity in matched_entities:
+                parts.append(f"### Entity: {entity}")
+                relations = entity_relations[entity]
+
+                if relations["benefits"]:
+                    for benefit in relations["benefits"]:
+                        parts.append(f"- {entity} has benefit of {benefit}")
+
+                if relations["risks"]:
+                    for risk in relations["risks"]:
+                        parts.append(f"- {entity} may have risk of {risk}")
+
+                if relations["conflicts"]:
+                    for conflict in relations["conflicts"]:
+                        parts.append(f"- {entity} conflicts with {conflict}")
+
+                parts.append("")  # Empty line between entities
 
         if parts:
             return "## Entity-Based KG Context\n" + "\n".join(parts) + "\n"

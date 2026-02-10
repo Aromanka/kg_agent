@@ -335,60 +335,132 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         """Format entity-based KG knowledge for exercise prompt (matching diet agent pattern)"""
         if not entity_knowledge:
             return ""
-        
-        from pprint import pprint
-        print(f"[DEBUG] entity_knowledge - entity")
-        pprint(entity_knowledge)
 
         parts = []
 
-        if entity_knowledge.get("matched_entities"):
-            entities = entity_knowledge["matched_entities"]
-            parts.append(f"- Matched Entities from KG: {', '.join(set(entities))}")
+        KG_FORMAT_VER = 2
 
-        if entity_knowledge.get("entity_benefits"):
-            benefits = entity_knowledge["entity_benefits"][:5]  # Limit to top 5
-            unique_benefits = {}
-            for b in benefits:
-                key = f"{b.get('entity', '')}-{b.get('benefit', '')}"
-                if key not in unique_benefits:
-                    unique_benefits[key] = b
-            if unique_benefits:
-                benefit_list = [f"{b.get('entity', '')} (has benefit of)/(is good for) {b.get('benefit', '')}" for b in unique_benefits.values()]
-                parts.append(f"- Exercise Benefits: {', '.join(benefit_list)}")
+        if KG_FORMAT_VER == 1:
+            if entity_knowledge.get("matched_entities"):
+                entities = entity_knowledge["matched_entities"]
+                parts.append(f"- Matched Entities from KG: {', '.join(set(entities))}")
 
-        if entity_knowledge.get("target_muscles"):
-            muscles = entity_knowledge["target_muscles"][:5]  # Limit to top 5
-            unique_muscles = {}
-            for m in muscles:
-                key = f"{m.get('entity', '')}-{m.get('target', '')}"
-                if key not in unique_muscles:
-                    unique_muscles[key] = m
-            if unique_muscles:
-                muscle_list = [f"{m.get('entity', '')} targets {m.get('target', '')}" for m in unique_muscles.values()]
-                parts.append(f"- Target Muscles: {', '.join(muscle_list)}")
+            if entity_knowledge.get("entity_benefits"):
+                benefits = entity_knowledge["entity_benefits"][:5]  # Limit to top 5
+                unique_benefits = {}
+                for b in benefits:
+                    key = f"{b.get('entity', '')}-{b.get('benefit', '')}"
+                    if key not in unique_benefits:
+                        unique_benefits[key] = b
+                if unique_benefits:
+                    benefit_list = [f"{b.get('entity', '')} (has benefit of)/(is good for) {b.get('benefit', '')}" for b in unique_benefits.values()]
+                    parts.append(f"- Exercise Benefits: {', '.join(benefit_list)}")
 
-        if entity_knowledge.get("duration_recommendations"):
-            durations = entity_knowledge["duration_recommendations"][:5]  # Limit to top 5
-            unique_durations = {}
-            for d in durations:
-                key = f"{d.get('entity', '')}-{d.get('duration', '')}"
-                if key not in unique_durations:
-                    unique_durations[key] = d
-            if unique_durations:
-                duration_list = [f"{d.get('entity', '')}: {d.get('duration', '')}" for d in unique_durations.values()]
-                parts.append(f"- Duration Recommendations: {', '.join(duration_list)}")
+            if entity_knowledge.get("target_muscles"):
+                muscles = entity_knowledge["target_muscles"][:5]  # Limit to top 5
+                unique_muscles = {}
+                for m in muscles:
+                    key = f"{m.get('entity', '')}-{m.get('target', '')}"
+                    if key not in unique_muscles:
+                        unique_muscles[key] = m
+                if unique_muscles:
+                    muscle_list = [f"{m.get('entity', '')} targets {m.get('target', '')}" for m in unique_muscles.values()]
+                    parts.append(f"- Target Muscles: {', '.join(muscle_list)}")
 
-        if entity_knowledge.get("frequency_recommendations"):
-            frequencies = entity_knowledge["frequency_recommendations"][:5]  # Limit to top 5
-            unique_frequencies = {}
-            for f in frequencies:
-                key = f"{f.get('entity', '')}-{f.get('frequency', '')}"
-                if key not in unique_frequencies:
-                    unique_frequencies[key] = f
-            if unique_frequencies:
-                freq_list = [f"{f.get('entity', '')}: {f.get('frequency', '')}" for f in unique_frequencies.values()]
-                parts.append(f"- Frequency Recommendations: {', '.join(freq_list)}")
+            if entity_knowledge.get("duration_recommendations"):
+                durations = entity_knowledge["duration_recommendations"][:5]  # Limit to top 5
+                unique_durations = {}
+                for d in durations:
+                    key = f"{d.get('entity', '')}-{d.get('duration', '')}"
+                    if key not in unique_durations:
+                        unique_durations[key] = d
+                if unique_durations:
+                    duration_list = [f"{d.get('entity', '')}: {d.get('duration', '')}" for d in unique_durations.values()]
+                    parts.append(f"- Duration Recommendations: {', '.join(duration_list)}")
+
+            if entity_knowledge.get("frequency_recommendations"):
+                frequencies = entity_knowledge["frequency_recommendations"][:5]  # Limit to top 5
+                unique_frequencies = {}
+                for f in frequencies:
+                    key = f"{f.get('entity', '')}-{f.get('frequency', '')}"
+                    if key not in unique_frequencies:
+                        unique_frequencies[key] = f
+                if unique_frequencies:
+                    freq_list = [f"{f.get('entity', '')}: {f.get('frequency', '')}" for f in unique_frequencies.values()]
+                    parts.append(f"- Frequency Recommendations: {', '.join(freq_list)}")
+
+        elif KG_FORMAT_VER == 2:
+            # Organize by entities instead of by categories
+            matched_entities = entity_knowledge.get("matched_entities", [])
+            entity_benefits = entity_knowledge.get("entity_benefits", [])
+            target_muscles = entity_knowledge.get("target_muscles", [])
+            duration_recommendations = entity_knowledge.get("duration_recommendations", [])
+            frequency_recommendations = entity_knowledge.get("frequency_recommendations", [])
+
+            # Group relations by entity
+            entity_relations = {}
+            for entity in matched_entities:
+                entity_relations[entity] = {
+                    "benefits": [],
+                    "target_muscles": [],
+                    "durations": [],
+                    "frequencies": []
+                }
+
+            # Populate benefits
+            for b in entity_benefits:
+                entity = b.get("entity", "")
+                benefit = b.get("benefit", "")
+                if entity in entity_relations and benefit:
+                    entity_relations[entity]["benefits"].append(benefit)
+
+            # Populate target muscles
+            for m in target_muscles:
+                entity = m.get("entity", "")
+                target = m.get("target", "")
+                if entity in entity_relations and target:
+                    entity_relations[entity]["target_muscles"].append(target)
+
+            # Populate duration recommendations
+            for d in duration_recommendations:
+                entity = d.get("entity", "")
+                duration = d.get("duration", "")
+                if entity in entity_relations and duration:
+                    entity_relations[entity]["durations"].append(duration)
+
+            # Populate frequency recommendations
+            for f in frequency_recommendations:
+                entity = f.get("entity", "")
+                frequency = f.get("frequency", "")
+                if entity in entity_relations and frequency:
+                    entity_relations[entity]["frequencies"].append(frequency)
+
+            # Format by entity
+            parts.append(f"Matched Entities: {', '.join(matched_entities)}")
+            parts.append("")  # Empty line for separation
+
+            for entity in matched_entities:
+                parts.append(f"### Entity: {entity}")
+                relations = entity_relations[entity]
+
+                if relations["benefits"]:
+                    for benefit in relations["benefits"]:
+                        parts.append(f"- {entity} has benefit of {benefit}")
+
+                if relations["target_muscles"]:
+                    for muscle in relations["target_muscles"]:
+                        parts.append(f"- {entity} targets {muscle}")
+
+                if relations["durations"]:
+                    for duration in relations["durations"]:
+                        parts.append(f"- {entity}: recommended duration {duration}")
+
+                if relations["frequencies"]:
+                    for freq in relations["frequencies"]:
+                        parts.append(f"- {entity}: recommended frequency {freq}")
+
+                parts.append("")  # Empty line between entities
+
 
         if parts:
             return "## Entity-Based KG Context\n" + "\n".join(parts) + "\n"

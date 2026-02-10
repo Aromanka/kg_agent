@@ -72,7 +72,6 @@ def search_similar_entities(self, query_text, top_k=5):
 
 2. **代码变更点示例**：
 ```python
-# agents/diet/generator.py 中的 _format_entity_kg_context 方法
 
 # 旧代码：
 # entity_knowledge = self.query_dietary_by_entity(user_preference) 
