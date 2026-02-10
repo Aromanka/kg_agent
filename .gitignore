@@ -3,3 +3,6 @@ output_history/
 __pycache__/
 tests/
 *.zip
+*.json
+tests/llm.log
+.ipynb_checkpoints/

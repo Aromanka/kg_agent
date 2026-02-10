@@ -72,6 +72,9 @@ class DietAgent(BaseAgent, DietAgentMixin):
         use_vector: bool = True,  # GraphRAG: use vector search instead of keyword matching
         rag_topk: int = 3
     ) -> List[DietRecommendation]:
+        # KG Format Version
+        KG_FORMAT_VER = 3
+
         # Parse input
         input_obj = DietAgentInput(**input_data)
 
@@ -101,8 +104,13 @@ class DietAgent(BaseAgent, DietAgentMixin):
 
         # Query entity-based KG context when user_preference is provided
         if user_preference:
-            entity_knowledge = self.query_dietary_by_entity(user_preference, use_vector_search=use_vector)
-            entity_context = self._format_dietary_entity_kg_context(entity_knowledge)
+            entity_knowledge = self.query_dietary_by_entity(
+                user_preference,
+                use_vector_search=use_vector,
+                rag_topk=rag_topk,
+                kg_format_ver=KG_FORMAT_VER
+            )
+            entity_context = self._format_dietary_entity_kg_context(entity_knowledge, kg_format_ver=KG_FORMAT_VER)
             kg_context += entity_context
 
         # Define meal types to generate

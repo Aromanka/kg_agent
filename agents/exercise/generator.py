@@ -201,6 +201,9 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         use_vector: bool = True,  # GraphRAG: use vector search instead of keyword matching
         rag_topk: int = 3
     ) -> List[ExercisePlan]:
+        # KG Format Version
+        KG_FORMAT_VER = 3
+
         # Parse input
         input_obj = ExerciseAgentInput(**input_data)
         self._input_meta = input_obj.user_metadata  # Store for condition access
@@ -229,8 +232,13 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
 
         # Query entity-based KG context when user_preference is provided
         if user_preference:
-            entity_knowledge = self.query_exercise_by_entity(user_preference, use_vector_search=use_vector, rag_topk=rag_topk)
-            entity_context = self._format_exercise_entity_kg_context(entity_knowledge)
+            entity_knowledge = self.query_exercise_by_entity(
+                user_preference,
+                use_vector_search=use_vector,
+                rag_topk=rag_topk,
+                kg_format_ver=KG_FORMAT_VER
+            )
+            entity_context = self._format_exercise_entity_kg_context(entity_knowledge, kg_format_ver=KG_FORMAT_VER)
             kg_context += entity_context
 
         # Get environment context
