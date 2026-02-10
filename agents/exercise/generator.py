@@ -734,7 +734,6 @@ Example format:
         target_calories: int,
         target_duration: int,
         target_frequency: int,
-        meal_timing: str = None,
         fitness_level: str,
         weight: float,
         strategy: str = "balanced",

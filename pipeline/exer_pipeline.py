@@ -73,6 +73,7 @@ class ExercisePipeline:
         environment: Dict[str, Any] = None,
         user_requirement: Dict[str, Any] = None,
         num_base_plans: int = 3,
+        num_variants: int = 3,
         temperature: float = 0.7,
         top_p: float = 0.92,
         top_k: int = 50,
@@ -88,6 +89,7 @@ class ExercisePipeline:
             environment: Environmental context
             user_requirement: User goals
             num_base_plans: Number of LLM-generated base plans
+            num_variants: Number of portion variants (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)
             temperature: LLM temperature (0.0-1.0)
             top_p: LLM top_p for nucleus sampling (0.0-1.0)
             top_k: LLM top_k for top-k sampling
@@ -114,7 +116,7 @@ class ExercisePipeline:
                 user_metadata=user_metadata,
                 environment=env,
                 user_requirement=req,
-                num_variants=3,  # Lite, Standard, Plus variants
+                num_variants=num_variants,  # Lite, Standard, Plus variants
                 time_of_day=meal_timing
             )
             exercise_candidates.extend(candidates)
@@ -123,10 +125,10 @@ class ExercisePipeline:
         # Convert to dicts with variant metadata
         all_plans_list = []
         candidate_id = 1
-        variant_names = ["Lite", "Standard", "Plus"]
+        variant_names = ["Lite", "Standard", "Plus"][:num_variants]
         for base_idx in range(num_base_plans):
             for variant_idx, variant_name in enumerate(variant_names):
-                idx = base_idx * 3 + variant_idx
+                idx = base_idx * num_variants + variant_idx
                 if idx < len(exercise_candidates):
                     plan = exercise_candidates[idx]
                     plan_dict = plan.model_dump()
@@ -252,6 +254,7 @@ def run_exercise_pipeline(
     environment: Dict[str, Any] = None,
     user_requirement: Dict[str, Any] = None,
     num_base_plans: int = 3,
+    num_variants: int = 3,
     temperature: float = 0.7,
     top_p: float = 0.92,
     top_k: int = 50,
@@ -268,6 +271,7 @@ def run_exercise_pipeline(
         environment: Environmental context
         user_requirement: User goals
         num_base_plans: Number of LLM-generated base plans
+        num_variants: Number of portion variants (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)
         temperature: LLM temperature (0.0-1.0)
         top_p: LLM top_p for nucleus sampling (0.0-1.0)
         top_k: LLM top_k for top-k sampling
@@ -284,6 +288,7 @@ def run_exercise_pipeline(
         environment=environment,
         user_requirement=user_requirement,
         num_base_plans=num_base_plans,
+        num_variants=num_variants,
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
@@ -303,6 +308,7 @@ def run_exercise_pipeline(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--bn', type=int, default=3, help='base plan num')
+    parser.add_argument('--vn', type=int, default=3, help='variant num (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)')
     parser.add_argument('--topk', type=int, default=3, help='top k selection')
     parser.add_argument('--meal_timing', type=str, default="before_breakfast", help='meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".')
     args = parser.parse_args()
@@ -324,6 +330,7 @@ if __name__ == "__main__":
             "intensity": "moderate"
         },
         "num_base_plans": args.bn,
+        "num_variants": args.vn,
         "temperature": 0.7,
         "top_k_selection": args.topk,
         "output_path": "exer_plan.json",
