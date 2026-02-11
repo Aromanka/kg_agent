@@ -287,11 +287,12 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
             if not user_preference and weather.get("condition") in ["clear", "sunny"] and random.random() > 0.5:
                 outdoor = True
 
-            combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
-            # if not user_preference and combo_key in used_combinations and num_candidates < len(CARDIO_ACTIVITIES):
-            #     primary_cardio = random.choice(CARDIO_ACTIVITIES)
-            #     combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
-            used_combinations.add(combo_key)
+            if not user_preference:
+                combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
+                # if not user_preference and combo_key in used_combinations and num_candidates < len(CARDIO_ACTIVITIES):
+                #     primary_cardio = random.choice(CARDIO_ACTIVITIES)
+                #     combo_key = f"{meal_timing}-{primary_cardio}-{primary_strength}"
+                used_combinations.add(combo_key)
 
             constraint_prompt = build_exercise_constraint_prompt(
                 primary_cardio=primary_cardio,
