@@ -43,7 +43,7 @@ python -m core.import_kg
 python -m core.embed_kg
 ```
 
-### Run Recommendation Pipelines
+### Run Python test Pipelines
 ```bash
 # Diet recommendation with vector-based GraphRAG
 python -m pipeline.diet_pipeline --bn 1 --vn 5 --query "I want to have a sandwich with only vegetables, no meat." --use_vector --rag_topk 5
@@ -58,6 +58,20 @@ python -m pipeline.exer_pipeline --bn 1 --vn 4 --query "I want to do some exerci
 - `--query`: User preference query (e.g., specific food or exercise request)
 - `--use_vector`: Enable vector-based GraphRAG for semantic knowledge retrieval
 - `--rag_topk`: Number of top-K results to retrieve from GraphRAG (default: 3)
+
+### Run Service
+```bash
+# Diet recommendation generate
+python server.py
+curl -X POST http://localhost:5000/api/v1/diet/generate-only \
+  -H "Content-Type: application/json" \
+  -d '{query}'
+
+# Security assess
+curl -X POST http://localhost:5000/api/v1/safety/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{plan}'
+```
 
 ## Configuration
 Configure in `config.json`:
