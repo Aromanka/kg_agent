@@ -101,7 +101,8 @@ def exercise_generate(
             user_preference=user_query,
             use_vector=use_vector,
             rag_topk=rag_topk,
-            kg_context=kg_context
+            kg_context=kg_context,
+            temperature=temperature
         )
         # Flatten variants into a single list
         for base_id, variants in variants_dict.items():

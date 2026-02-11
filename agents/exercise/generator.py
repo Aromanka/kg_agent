@@ -197,7 +197,8 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
         user_preference: str = None,
         use_vector: bool = True,  # GraphRAG: use vector search instead of keyword matching
         rag_topk: int = 3,
-        kg_context: str = None
+        kg_context: str = None,
+        temperature: float = 0.7
     ) -> List[ExercisePlan]:
         # KG Format Version
         KG_FORMAT_VER = 3
@@ -311,6 +312,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
                 candidate_id=i + 1,
                 fitness_level=fitness_level,
                 weight=weight,
+                temperature=temperature
                 # strategy=strategy
             )
             if candidate:
@@ -635,7 +637,8 @@ Generate ONLY ONE session per day (single morning/afternoon/evening block).
         candidate_id: int,
         fitness_level: str,
         weight: float,
-        strategy: str = "balanced"
+        strategy: str = "balanced",
+        temperature: float = 0.7
     ) -> Optional[ExercisePlan]:
         """Generate a single exercise plan candidate"""
         # Add strategy-specific guidance
@@ -653,7 +656,7 @@ Generate ONLY ONE session per day (single morning/afternoon/evening block).
             response = self._call_llm(
                 system_prompt=EXERCISE_GENERATION_SYSTEM_PROMPT,
                 user_prompt=full_prompt,
-                temperature=0.7
+                temperature=temperature
             )
 
             # Handle empty response
@@ -739,7 +742,8 @@ def generate_exercise_variants(
     user_preference: str = None,
     use_vector: bool = False,
     rag_topk: int = 3,
-    kg_context: str = None
+    kg_context: str = None,
+    temperature: float = 0.7
 ) -> Dict[str, List[ExercisePlan]]:
     agent = ExerciseAgent()
     input_data = {
@@ -755,7 +759,8 @@ def generate_exercise_variants(
         user_preference=user_preference,
         use_vector=use_vector,
         rag_topk=rag_topk,
-        kg_context=kg_context
+        kg_context=kg_context,
+        temperature=temperature
     )
     # Expand each candidate into variants
     parser = ExercisePlanParser(num_variants=num_var_plans, min_scale=min_scale, max_scale=max_scale)
