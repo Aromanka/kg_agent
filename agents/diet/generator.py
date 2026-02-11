@@ -12,7 +12,7 @@ from agents.diet.parser_var import DietPlanParser
 from core.llm.utils import parse_json_response
 from agents.diet.config import *
 from kg.prompts import (
-    available_strategies, available_cuisines, DIET_GENERATION_SYSTEM_PROMPT
+    available_strategies, available_cuisines, GET_DIET_GENERATION_SYSTEM_PROMPT
 )
 
 
@@ -301,6 +301,7 @@ class DietAgent(BaseAgent, DietAgentMixin):
         full_prompt += f"\n\n### Culinary Style: {cuisine}\nPLEASE strictly follow this style. Use ingredients and cooking methods typical for {cuisine} cuisine."
         full_prompt += constraint_prompt
 
+        DIET_GENERATION_SYSTEM_PROMPT = GET_DIET_GENERATION_SYSTEM_PROMPT()
         response = self._call_llm(
             system_prompt=DIET_GENERATION_SYSTEM_PROMPT,
             user_prompt=full_prompt,
@@ -460,7 +461,8 @@ def generate_diet_candidates(
     top_k: int = 50,
     user_preference: str = None,
     use_vector: bool = False,
-    rag_topk: str = 3
+    rag_topk: str = 3,
+    kg_context: str = None
 ) -> List[DietRecommendation]:
     agent = DietAgent(num_variants=num_variants, min_scale=min_scale, max_scale=max_scale)
     input_data = {
@@ -470,7 +472,8 @@ def generate_diet_candidates(
     }
     return agent.generate(
         input_data, num_variants, min_scale, max_scale,
-        meal_type, temperature, top_p, top_k, user_preference, use_vector, rag_topk
+        meal_type, temperature, top_p, top_k, user_preference, use_vector, rag_topk,
+        kg_context=kg_context
     )
 
 

@@ -11,6 +11,30 @@ from agents.safeguard.models import SafetyAssessment
 import argparse
 
 
+# Generate-Only Output
+
+@dataclass
+class ExerciseGenerateOnlyOutput:
+    """Output from exercise generation only (without safety assessment)"""
+    plans: List[Dict[str, Any]]      # Generated plans with variants
+    generated_at: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary, handling datetime serialization"""
+        def convert_datetime(obj):
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            elif isinstance(obj, dict):
+                return {k: convert_datetime(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_datetime(item) for item in obj]
+            return obj
+        return {
+            "plans": convert_datetime(self.plans),
+            "generated_at": self.generated_at
+        }
+
+
 # Pipeline Output
 
 @dataclass
@@ -77,7 +101,8 @@ def exercise_generate(
             user_preference=user_query,
             use_vector=use_vector,
             rag_topk=rag_topk,
-            kg_context=kg_context
+            kg_context=kg_context,
+            temperature=temperature
         )
         # Flatten variants into a single list
         for base_id, variants in variants_dict.items():
@@ -283,6 +308,71 @@ class ExercisePipeline:
                 # for rec in assessment.get("recommendations", [])[:2]:
                 for rec in assessment.get("recommendations", []):
                     print(f"     - {rec}")
+
+    def generate_only(
+        self,
+        user_metadata: Dict[str, Any],
+        environment: Dict[str, Any] = None,
+        user_requirement: Dict[str, Any] = None,
+        user_query: str = None,
+        num_base_plans: int = 3,
+        num_variants: int = 3,
+        min_scale: float = 0.7,
+        max_scale: float = 1.3,
+        temperature: float = 0.7,
+        top_p: float = 0.92,
+        top_k: int = 50,
+        meal_timing: str = "",
+        use_vector: bool = False,
+        rag_topk: int = 3
+    ) -> ExerciseGenerateOnlyOutput:
+        """
+        Generate exercise candidates only WITHOUT safety assessment.
+
+        Args:
+            user_metadata: User physiological data
+            environment: Environmental context
+            user_requirement: User requirements (intensity, duration)
+            user_query: Free-form user preference query
+            num_base_plans: Number of LLM-generated base plans
+            num_variants: Number of intensity variants per base
+            min_scale: Minimum scale factor for variants
+            max_scale: Maximum scale factor for variants
+            temperature: LLM temperature (0.0-1.0)
+            top_p: LLM top_p for nucleus sampling
+            meal_timing: Meal timing context
+            use_vector: Use vector search (GraphRAG)
+            rag_topk: Top-k similar entities for GraphRAG
+
+        Returns:
+            ExerciseGenerateOnlyOutput with generated plans only
+        """
+        print(f"\n[1/1] Generating exercise candidates (no assessment)...")
+        env = environment or {}
+        req = user_requirement or {}
+
+        all_plans_list = exercise_generate(
+            user_metadata=user_metadata,
+            environment=env,
+            user_requirement=req,
+            user_query=user_query,
+            num_base_plans=num_base_plans,
+            num_variants=num_variants,
+            min_scale=min_scale,
+            max_scale=max_scale,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            meal_timing=meal_timing,
+            use_vector=use_vector,
+            rag_topk=rag_topk,
+            verbose_on=True
+        )
+
+        return ExerciseGenerateOnlyOutput(
+            plans=all_plans_list,
+            generated_at=datetime.now().isoformat()
+        )
 
 
 # ================= Convenience Function =================
