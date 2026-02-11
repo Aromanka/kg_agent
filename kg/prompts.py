@@ -681,9 +681,9 @@ Return a valid JSON object matching the provided schema. STRICTLY follow:
 }
 
 CRITICAL CONSTRAINTS:
-- calories_burned must reflect physiologically plausible totals (e.g., 30 min walking ≈ 135 kcal, NOT 4-5 kcal).
+- calories_burned must reflect physiologically plausible totals (e.g., 30 min walking ~ 135 kcal, NOT 4-5 kcal).
 - meal_timing restricted to: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".
-- Generate exactly ONE daily session (morning, afternoon, OR evening—never multiple).
+- Generate exactly ONE daily session (morning, afternoon, OR evening-never multiple).
 """,
 # Version 3
 """
@@ -1260,7 +1260,7 @@ The output will be expanded by a parser into Lite/Standard/Plus portions.
 """
 You are a certified dietitian and meal-prep specialist. Your responsibility is to design nutritionally balanced BASE meals using practical, standardized household portions. Focus on whole foods, realistic serving sizes, and calorie estimates consistent with common dietary databases.
 
-Meals should emphasize balanced macronutrients (protein, complex carbohydrates, fiber-rich vegetables, and healthy fats). Avoid overly complex recipes — each entry should represent a simple, single food or basic preparation that can be combined into a complete meal.
+Meals should emphasize balanced macronutrients (protein, complex carbohydrates, fiber-rich vegetables, and healthy fats). Avoid overly complex recipes - each entry should represent a simple, single food or basic preparation that can be combined into a complete meal.
 
 ## Output Format
 
@@ -1273,7 +1273,7 @@ Output MUST be a valid JSON list of objects. Each object is a food item with the
 
 ## Rules
 
-1. Use ONLY the allowed units listed above — "spoon" means teaspoon (5ml), NOT "teaspoon"
+1. Use ONLY the allowed units listed above - "spoon" means teaspoon (5ml), NOT "teaspoon"
 2. STRICTLY follow the "Mandatory Ingredients" and "Excluded Ingredients" in the user prompt
 3. "total_calories" must be the TOTAL calories for the whole portion, NOT per unit
 4. Realistic calorie references:
@@ -1294,7 +1294,7 @@ Output MUST be a valid JSON list of objects. Each object is a food item with the
 * Prefer minimally processed foods
 * Keep ingredient names concise and generic (e.g., "Steamed Broccoli", not branded dishes)
 * Avoid combining multiple foods into one item (no mixed casseroles or salads with many components)
-* Aim for 3–6 items total per meal
+* Aim for 3-6 items total per meal
 * Include at least one protein source and one vegetable when possible
 * Calorie estimates should be plausible and dietitian-grade accurate
 
@@ -1335,7 +1335,7 @@ Output MUST be a valid JSON list of objects. Each object is a food item with the
 
 ## Task
 
-Generate base food items for one meal that align with the user’s dietary preferences, calorie targets, and ingredient constraints. The result should represent a clean, modular meal that can later be scaled into different portion tiers by an external system.
+Generate base food items for one meal that align with the user's dietary preferences, calorie targets, and ingredient constraints. The result should represent a clean, modular meal that can later be scaled into different portion tiers by an external system.
 """,
 # Version 3
 """
@@ -1428,7 +1428,7 @@ Output MUST be a valid JSON list of objects. Each object is a food item with the
    - 100g non-starchy vegetables: ~20-60 kcal total
    - 1 medium fruit (apple, banana): ~80-120 kcal total
    - 10ml oil or butter: ~90 kcal total
-   - 1 bowl (≈250-300g cooked carbs): ~250-350 kcal total
+   - 1 bowl (~250-300g cooked carbs): ~250-350 kcal total
 5. CRITICAL: Calories must be reasonable and reflect the full portion. For example, 150g tofu should be ~140-180 kcal total, NOT thousands
 6. Output only the food items for ONE meal as a JSON LIST
 7. Do NOT add extra keys like "meal", "plan", "items", or any other wrapper
