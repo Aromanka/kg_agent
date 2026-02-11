@@ -14,7 +14,7 @@ from core.neo4j import get_kg_query
 import random
 from agents.exercise.config import *
 from kg.prompts import (
-    EXERCISE_GENERATION_SYSTEM_PROMPT
+    GET_EXERCISE_GENERATION_SYSTEM_PROMPT
 )
 
 
@@ -648,6 +648,7 @@ Generate ONLY ONE session per day (single morning/afternoon/evening block).
 
         # Call LLM
         try:
+            EXERCISE_GENERATION_SYSTEM_PROMPT = GET_EXERCISE_GENERATION_SYSTEM_PROMPT()
             response = self._call_llm(
                 system_prompt=EXERCISE_GENERATION_SYSTEM_PROMPT,
                 user_prompt=full_prompt,

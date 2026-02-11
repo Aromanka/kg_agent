@@ -12,7 +12,7 @@ from agents.diet.parser_var import DietPlanParser
 from core.llm.utils import parse_json_response
 from agents.diet.config import *
 from kg.prompts import (
-    available_strategies, available_cuisines, DIET_GENERATION_SYSTEM_PROMPT
+    available_strategies, available_cuisines, GET_DIET_GENERATION_SYSTEM_PROMPT
 )
 
 
@@ -301,6 +301,7 @@ class DietAgent(BaseAgent, DietAgentMixin):
         full_prompt += f"\n\n### Culinary Style: {cuisine}\nPLEASE strictly follow this style. Use ingredients and cooking methods typical for {cuisine} cuisine."
         full_prompt += constraint_prompt
 
+        DIET_GENERATION_SYSTEM_PROMPT = GET_DIET_GENERATION_SYSTEM_PROMPT()
         response = self._call_llm(
             system_prompt=DIET_GENERATION_SYSTEM_PROMPT,
             user_prompt=full_prompt,
