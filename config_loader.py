@@ -1,7 +1,3 @@
-"""
-Centralized Configuration
-Load config.json from project root and provide access to all settings.
-"""
 import json
 from pathlib import Path
 

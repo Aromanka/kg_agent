@@ -1,30 +1,41 @@
-"""
-Exercise Pipeline
-Generates exercise plans with safety assessment and selection.
-
-Flow:
-1. Generate multiple exercise base plans via LLM
-2. Expand each base plan to Lite/Standard/Plus intensity variants
-3. Assess each variant through safeguard
-4. Select top_k (default 3) by safety score
-5. Output all expanded plans to exer_plan.json
-6. Output chosen plans to terminal
-"""
 import json
 import os
 from typing import List, Dict, Any
 from datetime import datetime
 from dataclasses import dataclass
 
-from agents.exercise.generator import generate_exercise_candidates
-from agents.exercise.models import ExercisePlan
+from agents.exercise.generator import generate_exercise_variants
 from agents.safeguard.assessor import SafeguardAgent
 from agents.safeguard.models import SafetyAssessment
 
 import argparse
 
 
-# ================= Pipeline Output =================
+# Generate-Only Output
+
+@dataclass
+class ExerciseGenerateOnlyOutput:
+    """Output from exercise generation only (without safety assessment)"""
+    plans: List[Dict[str, Any]]      # Generated plans with variants
+    generated_at: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary, handling datetime serialization"""
+        def convert_datetime(obj):
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            elif isinstance(obj, dict):
+                return {k: convert_datetime(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_datetime(item) for item in obj]
+            return obj
+        return {
+            "plans": convert_datetime(self.plans),
+            "generated_at": self.generated_at
+        }
+
+
+# Pipeline Output
 
 @dataclass
 class ExercisePipelineOutput:
@@ -52,9 +63,62 @@ class ExercisePipelineOutput:
             "assessments": convert_datetime(self.assessments),
             "generated_at": self.generated_at
         }
+    
+
+def exercise_generate(
+        user_metadata: Dict[str, Any],
+        environment: Dict[str, Any] = None,
+        user_requirement: Dict[str, Any] = None,
+        user_query: str = None,
+        num_base_plans: int = 3,
+        num_variants: int = 3,
+        min_scale: float = 0.7,
+        max_scale: float = 1.3,
+        temperature: float = 0.7,
+        top_p: float = 0.92,
+        top_k: int = 50,
+        top_k_selection: int = 3,
+        output_path: str = "exer_plan.json",
+        meal_timing: str = "",
+        use_vector: bool = False,
+        rag_topk: int = 3,
+        verbose_on: bool = True
+    ):
+    all_plans_list = []
+    kg_context = None
+    if verbose_on and user_query:
+        print(f"      User Query: \"{user_query}\"")
+    for i in range(num_base_plans):
+        variants_dict, kg_context = generate_exercise_variants(
+            user_metadata=user_metadata,
+            environment=environment,
+            user_requirement=user_requirement,
+            num_base_plans=1,
+            num_var_plans=num_variants,
+            min_scale=min_scale,
+            max_scale=max_scale,
+            meal_timing=meal_timing,
+            user_preference=user_query,
+            use_vector=use_vector,
+            rag_topk=rag_topk,
+            kg_context=kg_context,
+            temperature=temperature
+        )
+        # Flatten variants into a single list
+        for base_id, variants in variants_dict.items():
+            variants_cnt = 0
+            for variant_name, plan in variants.items():
+                plan_dict = plan.model_dump()
+                plan_dict["_variant"] = variant_name
+                plan_dict["_base_id"] = base_id
+                all_plans_list.append(plan_dict)
+                variants_cnt += 1
+            if verbose_on:
+                print(f"      Base {i+1}/{num_base_plans}: (base_id={base_id}){variants_cnt} variants")
+    return all_plans_list
 
 
-# ================= Exercise Pipeline =================
+# Exercise Pipeline
 
 class ExercisePipeline:
     """
@@ -72,14 +136,19 @@ class ExercisePipeline:
         user_metadata: Dict[str, Any],
         environment: Dict[str, Any] = None,
         user_requirement: Dict[str, Any] = None,
+        user_query: str = None,
         num_base_plans: int = 3,
         num_variants: int = 3,
+        min_scale: float = 0.7,
+        max_scale: float = 1.3,
         temperature: float = 0.7,
         top_p: float = 0.92,
         top_k: int = 50,
         top_k_selection: int = 3,
         output_path: str = "exer_plan.json",
-        meal_timing: str = ""
+        meal_timing: str = "",
+        use_vector: bool = False,
+        rag_topk: int = 3
     ) -> ExercisePipelineOutput:
         """
         Generate exercise options with safety assessment.
@@ -87,59 +156,52 @@ class ExercisePipeline:
         Args:
             user_metadata: User physiological data
             environment: Environmental context
-            user_requirement: User goals
+            user_requirement: User requirements (intensity, duration in minutes)
+            user_query: Free-form user preference query (e.g., "I want to focus on upper body exercises")
             num_base_plans: Number of LLM-generated base plans
-            num_variants: Number of portion variants (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)
+            num_variants: Number of intensity variants per base (Lite/Standard/Plus)
+            min_scale: Minimum scale factor for variants
+            max_scale: Maximum scale factor for variants
             temperature: LLM temperature (0.0-1.0)
             top_p: LLM top_p for nucleus sampling (0.0-1.0)
-            top_k: LLM top_k for top-k sampling
-            top_k_selection: Number of top plans to select by safety score
+            top_k: Number of top plans to select by safety score
             output_path: Path to save all plans JSON
+            meal_timing: Meal timing context
+            use_vector: Use vector search (GraphRAG) instead of keyword matching
+            rag_topk: Top-k similar entities for GraphRAG
 
         Returns:
             ExercisePipelineOutput with all plans, top plans, and assessments
         """
-        env = environment or {}
-        req = user_requirement or {}
 
-        print("=" * 60)
-        print("EXERCISE PIPELINE")
-        print("=" * 60)
-        print(f"[INFO] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
-        print(f"[INFO] Selection: {num_base_plans} bases -> top {top_k_selection}")
+        # print("=" * 60)
+        # print("EXERCISE PIPELINE")
+        # print("=" * 60)
+        # print(f"[INFO] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
+        # print(f"[INFO] Selection: {num_base_plans} bases x {num_variants} variants -> top {top_k}")
 
         # Step 1: Generate exercise candidates with variants
         print(f"\n[1/4] Generating exercise candidates...")
-        exercise_candidates = []
-        for i in range(num_base_plans):
-            candidates = generate_exercise_candidates(
-                user_metadata=user_metadata,
-                environment=env,
-                user_requirement=req,
-                num_variants=num_variants,  # Lite, Standard, Plus variants
-                time_of_day=meal_timing
-            )
-            exercise_candidates.extend(candidates)
-            print(f"      Base {i+1}/{num_base_plans}: {len(candidates)} variants")
-
-        # Convert to dicts with variant metadata
-        all_plans_list = []
-        candidate_id = 1
-        variant_names = ["Lite", "Standard", "Plus"][:num_variants]
-        for base_idx in range(num_base_plans):
-            for variant_idx, variant_name in enumerate(variant_names):
-                idx = base_idx * num_variants + variant_idx
-                if idx < len(exercise_candidates):
-                    plan = exercise_candidates[idx]
-                    plan_dict = plan.model_dump()
-                    plan_dict["_variant"] = variant_name
-                    plan_dict["_base_id"] = base_idx + 1
-                    plan_dict["id"] = candidate_id
-                    candidate_id += 1
-                    all_plans_list.append(plan_dict)
-                    print(f"      Base {base_idx+1}/{variant_name}: {plan.title}")
-
-        print(f"      Found {len(all_plans_list)} exercise plan variants")
+        env = environment or {}
+        req = user_requirement or {}
+        all_plans_list = exercise_generate(
+            user_metadata=user_metadata,
+            environment=env,
+            user_requirement=req,
+            user_query=user_query,
+            num_base_plans=num_base_plans,
+            num_variants=num_variants,
+            min_scale=min_scale,
+            max_scale=max_scale,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            top_k_selection=top_k_selection,
+            output_path=output_path,
+            meal_timing=meal_timing,
+            use_vector=use_vector,
+            rag_topk=rag_topk,
+        )
 
         if not all_plans_list:
             print("[WARN] No candidates generated!")
@@ -166,8 +228,8 @@ class ExercisePipeline:
             is_safe = assessment.is_safe
             risk = assessment.risk_level.value
             variant = plan.get("_variant", "N/A")
-            print(f"      ID:{plan_id} {variant} | "
-                  f"Score:{score} | Risk:{risk} | Safe:{is_safe}")
+            # print(f"      ID:{plan_id} {variant} | "
+            #       f"Score:{score} | Risk:{risk} | Safe:{is_safe}")
 
         # Add assessment info to plans
         for plan in all_plans_list:
@@ -175,7 +237,7 @@ class ExercisePipeline:
             if plan_id in assessments:
                 plan["_assessment"] = assessments[plan_id]
 
-        # Step 3: Select top_k by safety score
+        # Step 3: Select top_k_selection by safety score
         print(f"\n[3/4] Selecting top {top_k_selection} plans by safety score...")
 
         # Sort by score (higher first)
@@ -186,10 +248,10 @@ class ExercisePipeline:
         )
         top_plans = sorted_plans[:top_k_selection]
 
-        for i, plan in enumerate(top_plans, 1):
-            score = plan.get("_assessment", {}).get("score", 0)
-            variant = plan.get("_variant", "N/A")
-            print(f"      #{i} ID:{plan.get('id')} {variant} | Score:{score}")
+        # for i, plan in enumerate(top_plans, 1):
+        #     score = plan.get("_assessment", {}).get("score", 0)
+        #     variant = plan.get("_variant", "N/A")
+        #     print(f"      #{i} ID:{plan.get('id')} {variant} | Score:{score}")
 
         # Step 4: Save all plans to JSON
         print(f"\n[4/4] Saving all {len(all_plans_list)} plans to {output_path}...")
@@ -210,9 +272,7 @@ class ExercisePipeline:
 
     def print_top_plans(self, output: ExercisePipelineOutput):
         """Print the top selected plans to terminal"""
-        print("\n" + "=" * 60)
-        print("TOP SELECTED EXERCISE PLANS")
-        print("=" * 60)
+        print(">>> TOP SELECTED EXERCISE PLANS")
 
         for i, plan in enumerate(output.top_plans, 1):
             assessment = plan.get("_assessment", {})
@@ -232,19 +292,87 @@ class ExercisePipeline:
                 print(f"     [{time_key.upper()}] {session.get('total_duration_minutes', 0)} min, "
                       f"{session.get('total_calories_burned', 0)} kcal, "
                       f"Intensity: {session.get('overall_intensity', 'N/A')}")
-                for ex in session.get("exercises", [])[:3]:
+                # for ex in session.get("exercises", [])[:3]:
+                for ex in session.get("exercises", []):
                     print(f"       - {ex.get('name', 'N/A')} ({ex.get('duration_minutes', 0)} min, "
                           f"{ex.get('intensity', 'N/A')})")
 
             if assessment.get("risk_factors"):
                 print(f"   Risk Factors:")
-                for rf in assessment.get("risk_factors", [])[:3]:
+                # for rf in assessment.get("risk_factors", [])[:3]:
+                for rf in assessment.get("risk_factors", []):
                     print(f"     - {rf}")
 
             if assessment.get("recommendations"):
                 print(f"   Recommendations:")
-                for rec in assessment.get("recommendations", [])[:2]:
+                # for rec in assessment.get("recommendations", [])[:2]:
+                for rec in assessment.get("recommendations", []):
                     print(f"     - {rec}")
+
+    def generate_only(
+        self,
+        user_metadata: Dict[str, Any],
+        environment: Dict[str, Any] = None,
+        user_requirement: Dict[str, Any] = None,
+        user_query: str = None,
+        num_base_plans: int = 3,
+        num_variants: int = 3,
+        min_scale: float = 0.7,
+        max_scale: float = 1.3,
+        temperature: float = 0.7,
+        top_p: float = 0.92,
+        top_k: int = 50,
+        meal_timing: str = "",
+        use_vector: bool = False,
+        rag_topk: int = 3
+    ) -> ExerciseGenerateOnlyOutput:
+        """
+        Generate exercise candidates only WITHOUT safety assessment.
+
+        Args:
+            user_metadata: User physiological data
+            environment: Environmental context
+            user_requirement: User requirements (intensity, duration)
+            user_query: Free-form user preference query
+            num_base_plans: Number of LLM-generated base plans
+            num_variants: Number of intensity variants per base
+            min_scale: Minimum scale factor for variants
+            max_scale: Maximum scale factor for variants
+            temperature: LLM temperature (0.0-1.0)
+            top_p: LLM top_p for nucleus sampling
+            meal_timing: Meal timing context
+            use_vector: Use vector search (GraphRAG)
+            rag_topk: Top-k similar entities for GraphRAG
+
+        Returns:
+            ExerciseGenerateOnlyOutput with generated plans only
+        """
+        print(f"\n[1/1] Generating exercise candidates (no assessment)...")
+        env = environment or {}
+        req = user_requirement or {}
+
+        all_plans_list = exercise_generate(
+            user_metadata=user_metadata,
+            environment=env,
+            user_requirement=req,
+            user_query=user_query,
+            num_base_plans=num_base_plans,
+            num_variants=num_variants,
+            min_scale=min_scale,
+            max_scale=max_scale,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            meal_timing=meal_timing,
+            use_vector=use_vector,
+            rag_topk=rag_topk,
+            verbose_on=True
+        )
+
+        return ExerciseGenerateOnlyOutput(
+            plans=all_plans_list,
+            generated_at=datetime.now().isoformat()
+        )
 
 
 # ================= Convenience Function =================
@@ -253,15 +381,20 @@ def run_exercise_pipeline(
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = None,
     user_requirement: Dict[str, Any] = None,
+    user_query: str = None,
     num_base_plans: int = 3,
     num_variants: int = 3,
+    min_scale: float = 0.7,
+    max_scale: float = 1.3,
+    meal_timing: str = "",
     temperature: float = 0.7,
     top_p: float = 0.92,
     top_k: int = 50,
     top_k_selection: int = 3,
     output_path: str = "exer_plan.json",
     print_results: bool = True,
-    meal_timing: str = ""
+    use_vector: bool = False,
+    rag_topk: int = 3
 ) -> ExercisePipelineOutput:
     """
     Run the exercise pipeline and optionally print results.
@@ -269,15 +402,20 @@ def run_exercise_pipeline(
     Args:
         user_metadata: User physiological data
         environment: Environmental context
-        user_requirement: User goals
+        user_requirement: User requirements (intensity, duration in minutes)
+        user_query: Free-form user preference query (e.g., "I want to focus on upper body exercises")
         num_base_plans: Number of LLM-generated base plans
-        num_variants: Number of portion variants (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)
+        num_variants: Number of intensity variants per base (Lite/Standard/Plus)
+        min_scale: Minimum scale factor for variants
+        max_scale: Maximum scale factor for variants
+        meal_timing: Meal timing context
         temperature: LLM temperature (0.0-1.0)
         top_p: LLM top_p for nucleus sampling (0.0-1.0)
-        top_k: LLM top_k for top-k sampling
-        top_k_selection: Number of top plans to select by safety score
+        top_k: Number of top plans to select by safety score
         output_path: Path to save all plans JSON
         print_results: Whether to print top plans to terminal
+        use_vector: Use vector search (GraphRAG) instead of keyword matching
+        rag_topk: Top-k similar entities for GraphRAG
 
     Returns:
         ExercisePipelineOutput object
@@ -287,14 +425,19 @@ def run_exercise_pipeline(
         user_metadata=user_metadata,
         environment=environment,
         user_requirement=user_requirement,
+        user_query=user_query,
         num_base_plans=num_base_plans,
         num_variants=num_variants,
+        min_scale=min_scale,
+        max_scale=max_scale,
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
         top_k_selection=top_k_selection,
         output_path=output_path,
-        meal_timing=meal_timing
+        meal_timing=meal_timing,
+        use_vector=use_vector,
+        rag_topk=rag_topk
     )
 
     if print_results:
@@ -308,9 +451,14 @@ def run_exercise_pipeline(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--bn', type=int, default=3, help='base plan num')
-    parser.add_argument('--vn', type=int, default=3, help='variant num (1=Lite, 2=Lite+Standard, 3=Lite+Standard+Plus)')
+    parser.add_argument('--vn', type=int, default=3, help='variation plan num')
     parser.add_argument('--topk', type=int, default=3, help='top k selection')
+    parser.add_argument('--rag_topk', type=int, default=3, help='graph rag top_k similar entities')
+    parser.add_argument('--use_vector', action='store_true', default=False, help='Use vector search (GraphRAG) instead of keyword matching')
+    parser.add_argument('--min_scale', type=float, default=0.7, help='minimum scale factor for variants (default: 0.7)')
+    parser.add_argument('--max_scale', type=float, default=1.3, help='maximum scale factor for variants (default: 1.3)')
     parser.add_argument('--meal_timing', type=str, default="before_breakfast", help='meal_timing must be one of: "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner".')
+    parser.add_argument('--query', type=str, default="I want to focus on upper body exercises with moderate intensity", help='user query (free-form text for KG entity matching)')
     args = parser.parse_args()
     test_input = {
         "user_metadata": {
@@ -326,12 +474,18 @@ if __name__ == "__main__":
             "time_context": {"season": "summer"}
         },
         "user_requirement": {
-            "goal": "weight_loss",
-            "intensity": "moderate"
+            "intensity": "moderate",
+            "duration": 30
         },
+        "user_query": args.query,
+        "use_vector": args.use_vector,
+        "rag_topk": args.rag_topk,
         "num_base_plans": args.bn,
         "num_variants": args.vn,
+        "min_scale": args.min_scale,
+        "max_scale": args.max_scale,
         "temperature": 0.7,
+        "top_k": 10,
         "top_k_selection": args.topk,
         "output_path": "exer_plan.json",
         "meal_timing": args.meal_timing

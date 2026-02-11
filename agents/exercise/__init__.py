@@ -1,9 +1,3 @@
-"""
-Exercise Agent Module
-Exports the main generator function and data models.
-"""
-
-from .generator import generate_exercise_candidates
 from .models import (
     ExerciseType,
     IntensityLevel,
@@ -16,7 +10,6 @@ from .models import (
 )
 
 __all__ = [
-    "generate_exercise_candidates",
     "ExerciseType",
     "IntensityLevel",
     "TimeOfDay",

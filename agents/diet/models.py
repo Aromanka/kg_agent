@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from enum import Enum
 
 
-# ================= Enums & Constants =================
+# Enums & Constants
 
 class MealType(str, Enum):
     """Types of meals in a day"""
@@ -17,11 +17,8 @@ class MealType(str, Enum):
     SNACKS = "snacks"
 
 
-# Allowed portion units for diet generation (must match Prompt)
 ALLOWED_UNITS = Literal["gram", "ml", "piece", "slice", "cup", "bowl", "spoon"]
 
-
-# ================= Base Food Models (for LLM → Parser pipeline) =================
 
 class BaseFoodItem(BaseModel):
     """LLM output: Base food item with standardized units for parser expansion"""
@@ -47,12 +44,12 @@ class RawDietPlan(BaseModel):
 class FoodItem(BaseModel):
     """A single food item in a meal"""
     food: str = Field(..., description="Name of the food dish")
-    portion: str = Field(..., description="Portion size (e.g., '100g', '1碗', '2片')")
+    portion: str = Field(..., description="Portion size (e.g., '100g', '1bowl', '2piece')")
     calories: int = Field(..., description="Estimated calories per serving")
-    protein: float = Field(..., description="Protein content in grams")
-    carbs: float = Field(..., description="Carbohydrate content in grams")
-    fat: float = Field(..., description="Fat content in grams")
-    fiber: Optional[float] = Field(None, description="Fiber content in grams")
+    # protein: float = Field(..., description="Protein content in grams")
+    # carbs: float = Field(..., description="Carbohydrate content in grams")
+    # fat: float = Field(..., description="Fat content in grams")
+    # fiber: Optional[float] = Field(None, description="Fiber content in grams")
 
 
 class MealPlanItem(BaseModel):

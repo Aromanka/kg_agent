@@ -1,10 +1,3 @@
-"""
-Safeguard Agent - Safety Assessment Module
-Evaluates plan safety based on user metadata, environment, and plan content.
-Provides 0-100 safety score and True/False safety judgment.
-
-适应 DietRecommendation 和 ExercisePlan 的真实数据结构。
-"""
 import json
 import os
 from typing import List, Dict, Any, Optional
@@ -16,117 +9,28 @@ from agents.safeguard.models import (
     SafeguardInput, SafeguardResponse
 )
 from core.llm import get_llm
+from core.llm.utils import parse_json_response
 from core.neo4j import get_kg_query
+from agents.safeguard.config import *
+from kg.prompts import (
+    prioritized_risk_kg_rels, DIETARY_QUERY_ENTITIES,
+    get_keywords
+)
 
 
-# ================= Safety Rules =================
+DIET_SAFETY_RULES = get_DIET_SAFETY_RULES(RiskLevel)
+EXERCISE_SAFETY_RULES = get_EXERCISE_SAFETY_RULES(RiskLevel)
+CONDITION_RESTRICTIONS = get_CONDITION_RESTRICTIONS()
 
-# Rule-based safety thresholds
-DIET_SAFETY_RULES = {
-    "min_calories": {
-        "value": 1200,
-        "message": "Daily calories too low",
-        "severity": RiskLevel.HIGH
-    },
-    "max_calories": {
-        "value": 4000,
-        "message": "Daily calories too high",
-        "severity": RiskLevel.MODERATE
-    },
-    "min_protein_ratio": {
-        "value": 0.10,
-        "message": "Protein ratio too low (need adequate protein)",
-        "severity": RiskLevel.MODERATE
-    },
-    "max_fat_ratio": {
-        "value": 0.40,
-        "message": "Fat ratio too high",
-        "severity": RiskLevel.MODERATE
-    },
-    "single_meal_calories": {
-        "value": 1500,
-        "message": "Single meal calorie too high",
-        "severity": RiskLevel.LOW
-    }
-}
-
-EXERCISE_SAFETY_RULES = {
-    "max_daily_duration_beginner": {
-        "value": 30,
-        "message": "Exercise duration too long for beginner",
-        "severity": RiskLevel.HIGH
-    },
-    "max_daily_duration_intermediate": {
-        "value": 60,
-        "message": "Exercise duration too long",
-        "severity": RiskLevel.MODERATE
-    },
-    "max_daily_duration_advanced": {
-        "value": 120,
-        "message": "Exercise duration excessive",
-        "severity": RiskLevel.LOW
-    },
-    "min_rest_between_hiit": {
-        "value": 48,
-        "message": "HIIT sessions too frequent (need rest days)",
-        "severity": RiskLevel.HIGH
-    },
-    "max_weekly_sessions": {
-        "value": 7,
-        "message": "Daily exercise without rest (need rest days)",
-        "severity": RiskLevel.MODERATE
-    }
-}
-
-# Condition-specific restrictions
-CONDITION_RESTRICTIONS = {
-    "diabetes": {
-        "diet": {
-            "avoid_high_sugar": "High sugar foods",
-            "avoid_irregular_meals": "Irregular meal timing"
-        },
-        "exercise": {
-            "avoid_vigorous_if_below_100": "Vigorous exercise with blood sugar < 100mg/dL",
-            "avoid_late_exercise": "Late night exercise (hypoglycemia risk)"
-        }
-    },
-    "hypertension": {
-        "diet": {
-            "max_sodium": 2300,
-            "avoid_high_sodium": "High sodium foods"
-        },
-        "exercise": {
-            "avoid_isometric": "Isometric exercises (heavy static holds)",
-            "avoid_valsalva": "Breath holding during exercise"
-        }
-    },
-    "heart_disease": {
-        "exercise": {
-            "max_heart_rate": "220 - age * 0.7",
-            "avoid_high_intensity": "High intensity exercise",
-            "require_clearance": "Medical clearance required"
-        }
-    },
-    "obesity": {
-        "exercise": {
-            "avoid_high_impact": "High impact exercises",
-            "start_low": "Low impact, gradual progression"
-        }
-    },
-    "arthritis": {
-        "exercise": {
-            "avoid_high_impact": "Running, jumping",
-            "prefer_low_impact": "Swimming, cycling"
-        }
-    }
-}
+SAFETY_MEASURE = 2
+# SAFETY_MEASURE = 1: score based (current implementation)
+# SAFETY_MEASURE = 2: LLM risk_factors.severity based 
+# SAFETY_MEASURE = 3: LLM checks.passed based 
 
 
-# ================= Safeguard Agent =================
+# security agent
 
 class SafeguardAgent(BaseAgent):
-    """Agent for safety assessment of diet and exercise plans"""
-
     def get_agent_name(self) -> str:
         return "safeguard"
 
@@ -141,16 +45,6 @@ class SafeguardAgent(BaseAgent):
         input_data: Dict[str, Any],
         num_candidates: int = 1
     ) -> List[SafetyAssessment]:
-        """
-        Generate safety assessments for plans.
-
-        Args:
-            input_data: Dictionary containing plan, plan_type, user_metadata, environment
-            num_candidates: Number of assessments to generate (ignored, always returns 1)
-
-        Returns:
-            List of SafetyAssessment objects
-        """
         plan = input_data.get("plan", {})
         plan_type = input_data.get("plan_type", "diet")
         user_metadata = input_data.get("user_metadata", {})
@@ -166,72 +60,48 @@ class SafeguardAgent(BaseAgent):
         user_metadata: Dict[str, Any],
         environment: Dict[str, Any] = {}
     ) -> SafetyAssessment:
-        """
-        Assess safety of a plan.
-
-        Args:
-            plan: The plan to assess (dict)
-            plan_type: 'diet' or 'exercise'
-            user_metadata: User physiological data
-            environment: Environmental context
-
-        Returns:
-            SafetyAssessment object with score and risk factors
-        """
-        # Initialize checks and risk factors
         checks = []
         risk_factors = []
 
-        # Run rule-based checks
-        if plan_type == "diet":
-            rule_checks, rule_risks = self._check_diet_safety(
-                plan, user_metadata
+        # --- MODIFICATION START: Conditional Rule Execution ---
+        if ENABLE_RULE_BASED_CHECKS:
+            # 1. Run rule-based checks
+            if plan_type == "diet":
+                rule_checks, rule_risks = self._check_diet_safety(
+                    plan, user_metadata
+                )
+            elif plan_type == "exercise":
+                rule_checks, rule_risks = self._check_exercise_safety(
+                    plan, user_metadata
+                )
+            else:
+                rule_checks, rule_risks = [], []
+            checks.extend(rule_checks)
+            risk_factors.extend(rule_risks)
+
+            # 2. Run condition-specific checks
+            condition_checks, condition_risks = self._check_condition_restrictions(
+                plan, plan_type, user_metadata
             )
-        elif plan_type == "exercise":
-            rule_checks, rule_risks = self._check_exercise_safety(
-                plan, user_metadata
+            checks.extend(condition_checks)
+            risk_factors.extend(condition_risks)
+
+            # 3. Run environment checks
+            env_checks, env_risks = self._check_environment_safety(
+                plan, plan_type, environment
             )
-        else:
-            rule_checks, rule_risks = [], []
+            checks.extend(env_checks)
+            risk_factors.extend(env_risks)
+        # --- MODIFICATION END ---
 
-        checks.extend(rule_checks)
-        risk_factors.extend(rule_risks)
-
-        # Run condition-specific checks
-        condition_checks, condition_risks = self._check_condition_restrictions(
-            plan, plan_type, user_metadata
-        )
-        checks.extend(condition_checks)
-        risk_factors.extend(condition_risks)
-
-        # Run environment checks
-        env_checks, env_risks = self._check_environment_safety(
-            plan, plan_type, environment
-        )
-        checks.extend(env_checks)
-        risk_factors.extend(env_risks)
-
-        # Calculate score
-        passed_checks = sum(1 for c in checks if c.passed)
-        total_checks = len(checks) if checks else 1
-
-        # Base score from rule checks
-        base_score = (passed_checks / total_checks) * 100 if total_checks > 0 else 100
-
-        # Apply severity penalties
-        severity_penalty = 0
-        for rf in risk_factors:
-            penalty = {"low": 5, "moderate": 15, "high": 30, "very_high": 50}
-            severity_penalty += penalty.get(rf.severity.value, 0)
-
-        # LLM semantic assessment for additional insights
+        # LLM semantic assessment (Always run or run if rules disabled)
+        # print(f"LLM Assessing...")
         llm_assessment = self._llm_semantic_assessment(
             plan, plan_type, user_metadata, environment
         )
 
-        # Merge LLM findings
+        # Merge LLM findings BEFORE scoring
         if llm_assessment:
-            # Convert dicts to model objects
             for rf_dict in llm_assessment.get("risk_factors", []):
                 if isinstance(rf_dict, dict):
                     risk_factors.append(RiskFactor(**rf_dict))
@@ -239,57 +109,139 @@ class SafeguardAgent(BaseAgent):
                 if isinstance(check_dict, dict):
                     checks.append(SafetyCheck(**check_dict))
 
-        # Final score calculation
-        final_score = max(0, min(100, base_score - severity_penalty))
+        # --- MOVED SCORING LOGIC HERE ---
 
-        # Determine if safe
-        is_safe = final_score >= 60 and not any(
-            rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]
-            for rf in risk_factors
-        )
+        if ENABLE_RULE_BASED_CHECKS and SAFETY_MEASURE == 1:
+            # Calculate score based on ALL checks (Rules + LLM)
+            passed_checks = sum(1 for c in checks if c.passed)
+            total_checks = len(checks) if checks else 1  # Avoid div by zero
 
-        # Determine status
-        if final_score >= 80:
-            status = AssessmentStatus.PASSED
-        elif final_score >= 60:
-            status = AssessmentStatus.WARNING
-        elif final_score >= 40:
-            status = AssessmentStatus.REVIEW
+            # Base score
+            if not checks:
+                # If no checks ran at all (e.g. LLM failed and rules disabled), assume neutral/safe
+                base_score = 100
+            else:
+                base_score = (passed_checks / total_checks) * 100
+
+            # Apply severity penalties from ALL risk factors (Rules + LLM)
+            severity_penalty = 0
+            for rf in risk_factors:
+                penalty = {"low": 5, "moderate": 15, "high": 30, "very_high": 50}
+                severity_penalty += penalty.get(rf.severity.value, 0)
+
+            # Final score calculation
+            final_score = max(0, min(100, base_score - severity_penalty))
+
+            # Determine if safe
+            is_safe = final_score >= 60 and not any(
+                rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]
+                for rf in risk_factors
+            )
+
+            # Determine status
+            if final_score >= 80:
+                status = AssessmentStatus.PASSED
+            elif final_score >= 60:
+                status = AssessmentStatus.WARNING
+            elif final_score >= 40:
+                status = AssessmentStatus.REVIEW
+            else:
+                status = AssessmentStatus.FAILED
+
+            # Determine risk level
+            if final_score >= 80:
+                risk_level = RiskLevel.LOW
+            elif final_score >= 60:
+                risk_level = RiskLevel.MODERATE
+            elif final_score >= 40:
+                risk_level = RiskLevel.HIGH
+            else:
+                risk_level = RiskLevel.VERY_HIGH
+
+            # Generate recommendations
+            recommendations = self._generate_recommendations(
+                risk_factors, plan_type, user_metadata
+            )
+
+            return SafetyAssessment(
+                score=final_score,
+                is_safe=is_safe,
+                status=status,
+                risk_level=RiskLevel.LOW,
+                risk_factors=risk_factors,
+                safety_checks=checks,
+                recommendations=recommendations,
+                warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
+            )
+        elif SAFETY_MEASURE == 2:
+            # print(f"Evaluate LLM Assessment by risk factors...")
+            passed = True
+            for rf in risk_factors:
+                penalty_values = ["high", "very high"]
+                # penalty_values = ["very high"]
+                if rf.severity.value in penalty_values:
+                    passed = False
+                    break
+            if passed:
+                return SafetyAssessment(
+                    score=100,
+                    is_safe=True,
+                    status=AssessmentStatus.PASSED,
+                    risk_level=RiskLevel.LOW,
+                    risk_factors=risk_factors,
+                    safety_checks=checks,
+                    recommendations=[],
+                    warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
+                )
+            else:
+                return SafetyAssessment(
+                    score=0,
+                    is_safe=False,
+                    status=AssessmentStatus.FAILED,
+                    risk_level=RiskLevel.VERY_HIGH,
+                    risk_factors=risk_factors,
+                    safety_checks=checks,
+                    recommendations=[],
+                    warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
+                )
+
+        elif SAFETY_MEASURE == 3:
+            print(f"Evaluate LLM Assessment by checks...")
+            passed = True
+            for c in checks:
+                if not c.passed:
+                    passed = False
+                    break
+            if passed:
+                return SafetyAssessment(
+                    score=100,
+                    is_safe=True,
+                    status=AssessmentStatus.PASSED,
+                    risk_level=RiskLevel.LOW,
+                    risk_factors=risk_factors,
+                    safety_checks=checks,
+                    recommendations=[],
+                    warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
+                )
+            else:
+                return SafetyAssessment(
+                    score=0,
+                    is_safe=False,
+                    status=AssessmentStatus.FAILED,
+                    risk_level=RiskLevel.VERY_HIGH,
+                    risk_factors=risk_factors,
+                    safety_checks=checks,
+                    recommendations=[],
+                    warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
+                )
         else:
-            status = AssessmentStatus.FAILED
-
-        # Determine risk level
-        if final_score >= 80:
-            risk_level = RiskLevel.LOW
-        elif final_score >= 60:
-            risk_level = RiskLevel.MODERATE
-        elif final_score >= 40:
-            risk_level = RiskLevel.HIGH
-        else:
-            risk_level = RiskLevel.VERY_HIGH
-
-        # Generate recommendations
-        recommendations = self._generate_recommendations(
-            risk_factors, plan_type, user_metadata
-        )
-
-        return SafetyAssessment(
-            score=final_score,
-            is_safe=is_safe,
-            status=status,
-            risk_level=risk_level,
-            risk_factors=risk_factors,
-            safety_checks=checks,
-            recommendations=recommendations,
-            warnings=[rf.description for rf in risk_factors if rf.severity in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]]
-        )
+            raise ValueError("Invalid ENABLE_RULE_BASED_CHECKS")
 
     def _check_diet_safety(
         self,
         plan: Dict[str, Any],
         user_metadata: Dict[str, Any]
     ) -> tuple:
-        """Run diet-specific safety checks - adapted for DietRecommendation model"""
         checks = []
         risk_factors = []
 
@@ -325,16 +277,12 @@ class SafeguardAgent(BaseAgent):
                 message="Calorie intake within acceptable range"
             ))
 
-        # Macro ratio checks - DietRecommendation.macro_nutrients is MacroNutrients (dict)
-        # Structure: {protein, carbs, fat, protein_ratio, carbs_ratio, fat_ratio}
         macros = plan.get("macro_nutrients", {})
         if macros:
-            # Handle both dict and object formats
             if isinstance(macros, dict):
                 protein_ratio = macros.get("protein_ratio", 0)
                 fat_ratio = macros.get("fat_ratio", 0)
             else:
-                # Object format
                 protein_ratio = getattr(macros, "protein_ratio", 0)
                 fat_ratio = getattr(macros, "fat_ratio", 0)
 
@@ -356,7 +304,6 @@ class SafeguardAgent(BaseAgent):
                     recommendation="Reduce high-fat foods"
                 ))
 
-        # Single meal calorie check - check meals in meal_plan
         meal_plan = plan.get("meal_plan", {})
         if meal_plan:
             for meal_type, items in meal_plan.items():
@@ -383,7 +330,6 @@ class SafeguardAgent(BaseAgent):
         plan: Dict[str, Any],
         user_metadata: Dict[str, Any]
     ) -> tuple:
-        """Run exercise-specific safety checks - adapted for ExercisePlan model"""
         checks = []
         risk_factors = []
 
@@ -555,18 +501,15 @@ class SafeguardAgent(BaseAgent):
         plan_type: str,
         user_metadata: Dict[str, Any]
     ) -> tuple:
-        """Check plan against condition-specific restrictions"""
         checks = []
         risk_factors = []
 
         conditions = user_metadata.get("medical_conditions", [])
 
-        # Extract plan content for checking
         plan_content = self._extract_plan_content_text(plan, plan_type)
 
         for condition in conditions:
             condition_lower = condition.lower()
-            # Match condition (handle variations)
             matched_condition = None
             for known_condition in CONDITION_RESTRICTIONS:
                 if condition_lower == known_condition or condition_lower.replace("_", "") == known_condition.replace("_", ""):
@@ -606,7 +549,6 @@ class SafeguardAgent(BaseAgent):
 
                     for rule_key, rule_desc in ex_rules.items():
                         if "avoid" in rule_key or "max" in rule_key or "isometric" in rule_key:
-                            # Check for forbidden exercise types
                             forbidden_exercises = {
                                 "isometric": ["plank", "wall sit", "static hold"],
                                 "high_intensity": ["hiit", "sprint", "burpee", "jump"],
@@ -647,7 +589,7 @@ class SafeguardAgent(BaseAgent):
                     factor="high_temperature_exercise",
                     category="environmental",
                     severity=RiskLevel.HIGH,
-                    description=f"High temperature ({temperature}°C) increases heat stress risk",
+                    description=f"High temperature ({temperature} degrees Celsius) increases heat stress risk",
                     recommendation="Exercise indoors or in early morning/late evening"
                 ))
             elif temperature < 5:
@@ -655,7 +597,7 @@ class SafeguardAgent(BaseAgent):
                     factor="cold_temperature_exercise",
                     category="environmental",
                     severity=RiskLevel.MODERATE,
-                    description=f"Cold temperature ({temperature}°C) increases cardiovascular strain",
+                    description=f"Cold temperature ({temperature} degrees Celsius) increases cardiovascular strain",
                     recommendation="Warm up thoroughly, dress in layers"
                 ))
 
@@ -687,8 +629,45 @@ class SafeguardAgent(BaseAgent):
         user_metadata: Dict[str, Any],
         environment: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
-        """Use LLM for semantic safety assessment"""
+        """Use LLM for semantic safety assessment with KG context"""
         try:
+            # Build KG context if available
+            kg_context = ""
+            if plan_type == "diet":
+                kg_context = self._query_diet_kg_for_assessment(plan, user_metadata)
+            elif plan_type == "exercise":
+                kg_context = self._query_exercise_kg_for_assessment(plan, user_metadata)
+
+#             prompt = f"""Analyze the following {plan_type} plan for safety issues.
+
+# ## User Profile
+# - Age: {user_metadata.get('age', 'unknown')}
+# - Conditions: {', '.join(user_metadata.get('medical_conditions', ['none']))}
+# - Fitness Level: {user_metadata.get('fitness_level', 'unknown')}
+
+# ## Environment
+# {environment}
+
+# ## Knowledge Graph Context
+# {kg_context if kg_context else "No KG data available"}
+
+# ## Plan
+# {json.dumps(plan, ensure_ascii=False, indent=2)}
+
+# ## Task
+# Identify any safety concerns that rule-based checks might miss:
+# 1. Hidden contraindications
+# 2. Unrealistic progression
+# 3. Nutrient deficiencies
+# 4. Overtraining signs
+# 5. Environmental mismatches
+# 6. Conflicts with user's medical conditions
+
+# Use the Knowledge Graph context to identify potential risks, contraindications, and interactions.
+
+# Return JSON with:
+# - "risk_factors": array of {{factor, description, severity}}
+# - "checks": array of {{check_name, passed, message}}"""
             prompt = f"""Analyze the following {plan_type} plan for safety issues.
 
 ## User Profile
@@ -699,20 +678,40 @@ class SafeguardAgent(BaseAgent):
 ## Environment
 {environment}
 
+## Knowledge Graph Context
+{kg_context if kg_context else "No KG data available"}
+
 ## Plan
 {json.dumps(plan, ensure_ascii=False, indent=2)}
 
 ## Task
-Identify any safety concerns that rule-based checks might miss:
+Identify any safety concerns that rule-based checks might miss, using the KG context:
 1. Hidden contraindications
 2. Unrealistic progression
 3. Nutrient deficiencies
 4. Overtraining signs
 5. Environmental mismatches
+6. Conflicts with user's medical conditions
 
-Return JSON with:
-- "risk_factors": array of {{factor, description, severity}}
-- "checks": array of {{check_name, passed, message}}"""
+## Output Format (STRICT JSON)
+Return a single valid JSON object containing two lists: "risk_factors" and "checks".
+Follow the schema definitions below STRICTLY.
+
+1. "risk_factors": list of objects containing:
+   - "factor": (string) Name of the risk factor
+   - "category": (string) Must be one of ["medical", "environmental", "nutritional", "exercise"]
+   - "severity": (string) Must be one of ["low", "moderate", "high", "very_high"]
+   - "description": (string) Detailed description of the risk
+   - "recommendation": (string) Actionable mitigation advice
+
+2. "checks": list of objects containing:
+   - "check_name": (string) Name of the specific check performed
+   - "passed": (boolean) true or false
+   - "message": (string) Explanation of the check result
+   - "severity": (string, optional) If passed is false, must be one of ["low", "moderate", "high", "very_high"]
+
+Ensure "severity" values matches the allowed Enum values EXACTLY.
+"""
 
             response = self._call_llm(
                 system_prompt="You are a safety assessment expert. Return only valid JSON.",
@@ -721,12 +720,324 @@ Return JSON with:
             )
 
             if isinstance(response, str):
-                return json.loads(response)
+                return parse_json_response(response)
             return response
 
         except Exception as e:
             print(f"LLM assessment failed: {e}")
             return None
+
+    def _query_diet_kg_for_assessment(
+        self,
+        plan: Dict[str, Any],
+        user_metadata: Dict[str, Any],
+        use_vector_search: bool = True  # GraphRAG: use vector search instead of keyword matching
+    ) -> str:
+        """
+        Query knowledge graph for diet plan safety assessment using GraphRAG approach
+
+        Args:
+            plan: Diet plan with food items
+            user_metadata: User metadata including conditions
+            use_vector_search: If True, use vector search (GraphRAG); else use keyword matching
+        """
+        kg = get_kg_query()
+        results = []
+
+        # Extract food items from plan
+        food_items = []
+        meal_plan_str = ""
+        meal_plan_names = ""
+        meal_plan = plan.get("meal_plan", {})
+        if isinstance(meal_plan, dict):
+            items = meal_plan.get("items", [])
+            for item in items:
+                food = item.get("food", "")
+                portion = item.get("portion", "")
+                meal_plan_names += food
+                meal_plan_str += f"{portion} of {food}; "
+
+        # Get user conditions and restrictions
+        conditions = user_metadata.get("medical_conditions", [])
+        restrictions = user_metadata.get("dietary_restrictions", [])
+
+        # === GraphRAG Approach: Vector Search + Graph Traversal ===
+        use_vector_search = False
+        if use_vector_search:
+            try:
+                # 1. For each food item, use vector search to find similar entities
+                seen_entities = set()
+                for food_item in food_items[:5]:  # Limit to 5 food items
+                    anchors = kg.search_similar_entities(food_item, top_k=2)
+
+                    for anchor in anchors:
+                        anchor_name = anchor.get("name", "")
+                        if not anchor_name:
+                            continue
+
+                        if anchor_name not in seen_entities:
+                            seen_entities.add(anchor_name)
+                            # Get neighbors for graph traversal (1-hop)
+                            neighbors = kg.client.get_neighbors(anchor_name)
+
+                            for neighbor in neighbors:
+                                entity_name = neighbor.get("neighbor", "")
+                                rel_type = neighbor.get("rel_type", "")
+
+                                if not entity_name:
+                                    continue
+
+                                # Filter by prioritized risk relations
+                                if rel_type not in prioritized_risk_kg_rels:
+                                    continue
+
+                                results.append({
+                                    "entity": anchor_name,
+                                    "relation": rel_type,
+                                    "related_to": entity_name
+                                })
+
+                # 2. Also add conditions and restrictions
+                for condition in conditions + restrictions:
+                    anchors = kg.search_similar_entities(condition, top_k=2)
+                    for anchor in anchors:
+                        anchor_name = anchor.get("name", "")
+                        if not anchor_name:
+                            continue
+
+                        neighbors = kg.client.get_neighbors(anchor_name)
+                        for neighbor in neighbors:
+                            entity_name = neighbor.get("neighbor", "")
+                            rel_type = neighbor.get("rel_type", "")
+
+                            if not entity_name:
+                                continue
+
+                            if rel_type not in prioritized_risk_kg_rels:
+                                continue
+
+                            results.append({
+                                "entity": anchor_name,
+                                "relation": rel_type,
+                                "related_to": entity_name
+                            })
+
+            except Exception as e:
+                print(f"[WARN] GraphRAG search failed, falling back to keyword search: {e}")
+                use_vector_search = False
+
+        # === Keyword-based Search (original logic) ===
+        if not use_vector_search:
+            # Build query entities: food items + conditions + restrictions + default entities
+            all_entities = []
+            keywords = get_keywords(meal_plan_names)
+            all_entities.extend(keywords)
+            all_entities.extend(conditions + conditions + restrictions + list(DIETARY_QUERY_ENTITIES))
+
+            # Remove duplicates while preserving order
+            all_entities = list(dict.fromkeys(all_entities))
+
+            # Query KG for each entity, filtering by prioritized risk relations
+            for entity in all_entities[:15]:  # Limit to 15 entities for performance
+                try:
+                    search_results = kg.search_entities(entity)
+
+                    for result in search_results:
+                        entity_name = result.get("head", "")
+                        tail = result.get("tail", "")
+                        rel_type = result.get("rel_type", "")
+
+                        # Filter by prioritized risk relations
+                        if rel_type not in prioritized_risk_kg_rels:
+                            continue
+
+                        if not tail:
+                            continue
+
+                        results.append({
+                            "entity": entity_name,
+                            "relation": rel_type,
+                            "related_to": tail
+                        })
+                except Exception as e:
+                    print(f"[WARN] Failed to query entity {entity}: {e}")
+
+        # Format results for prompt
+        if not results:
+            return "No relevant KG data found."
+
+        context_lines = ["## Relevant Knowledge Graph Relationships"]
+        # Deduplicate results
+        seen_relations = set()
+        unique_results = []
+        for r in results:
+            key = f"{r['entity']}-{r['relation']}-{r['related_to']}"
+            if key not in seen_relations:
+                seen_relations.add(key)
+                unique_results.append(r)
+
+        for r in unique_results[:20]:  # Limit to 20 most relevant results
+            context_lines.append(f"- {r['entity']} --[{r['relation']}]--> {r['related_to']}")
+
+        return "\n".join(context_lines)
+
+    def _query_exercise_kg_for_assessment(
+        self,
+        plan: Dict[str, Any],
+        user_metadata: Dict[str, Any],
+        use_vector_search: bool = True  # GraphRAG: use vector search instead of keyword matching
+    ) -> str:
+        """
+        Query knowledge graph for exercise plan safety assessment using GraphRAG approach
+
+        Args:
+            plan: Exercise plan with exercises
+            user_metadata: User metadata including conditions
+            use_vector_search: If True, use vector search (GraphRAG); else use keyword matching
+        """
+        kg = get_kg_query()
+        results = []
+
+        # Extract exercise names from plan
+        exercise_names = []
+        sessions = plan.get("sessions", {})
+        if isinstance(sessions, dict):
+            for session_key, session in sessions.items():
+                if isinstance(session, dict):
+                    exercises = session.get("exercises", [])
+                    for ex in exercises:
+                        if isinstance(ex, dict):
+                            ex_name = ex.get("name", "")
+                            if ex_name:
+                                exercise_names.append(ex_name)
+                elif hasattr(session, 'exercises'):
+                    for ex in session.exercises:
+                        if hasattr(ex, 'name'):
+                            exercise_names.append(ex.name)
+        
+        # print(f"[DEBUG] assessor judging exercise names = {exercise_names}")
+
+        # Get user conditions
+        conditions = user_metadata.get("medical_conditions", [])
+
+        # === GraphRAG Approach: Vector Search + Graph Traversal ===
+        use_vector_search = False
+        if use_vector_search:
+            try:
+                # 1. For each exercise, use vector search to find similar entities
+                seen_entities = set()
+                for exercise_name in exercise_names[:5]:  # Limit to 5 exercises
+                    anchors = kg.search_similar_entities(exercise_name, top_k=2)
+
+                    for anchor in anchors:
+                        anchor_name = anchor.get("name", "")
+                        if not anchor_name:
+                            continue
+
+                        if anchor_name not in seen_entities:
+                            seen_entities.add(anchor_name)
+                            # Get neighbors for graph traversal (1-hop)
+                            neighbors = kg.client.get_neighbors(anchor_name)
+
+                            for neighbor in neighbors:
+                                entity_name = neighbor.get("neighbor", "")
+                                rel_type = neighbor.get("rel_type", "")
+
+                                if not entity_name:
+                                    continue
+
+                                # Filter by prioritized exercise risk relations
+                                # All relation types are accepted for exercise (None filter)
+                                results.append({
+                                    "entity": anchor_name,
+                                    "relation": rel_type,
+                                    "related_to": entity_name
+                                })
+
+                # 2. Also add conditions
+                for condition in conditions:
+                    anchors = kg.search_similar_entities(condition, top_k=2)
+                    for anchor in anchors:
+                        anchor_name = anchor.get("name", "")
+                        if not anchor_name:
+                            continue
+
+                        neighbors = kg.client.get_neighbors(anchor_name)
+                        for neighbor in neighbors:
+                            entity_name = neighbor.get("neighbor", "")
+                            rel_type = neighbor.get("rel_type", "")
+
+                            if not entity_name:
+                                continue
+
+                            results.append({
+                                "entity": anchor_name,
+                                "relation": rel_type,
+                                "related_to": entity_name
+                            })
+
+            except Exception as e:
+                print(f"[WARN] GraphRAG search failed, falling back to keyword search: {e}")
+                use_vector_search = False
+
+        # === Fallback: Keyword-based Search (original logic) ===
+        if not use_vector_search:
+            all_entities = []
+            for entity_list in [exercise_names, conditions]:
+                for entity in entity_list:
+                    keywords = get_keywords(entity)
+                    all_entities.extend(keywords)
+
+            # Remove duplicates while preserving order
+            all_entities = list(dict.fromkeys(all_entities))
+
+            # Exercise-specific risk relations (None = accept all relations)
+            exercise_risk_rels = None
+
+            # Query KG for each entity
+            for entity in all_entities[:15]:
+                try:
+                    search_results = kg.search_entities(entity)
+
+                    for result in search_results:
+                        entity_name = result.get("head", "")
+                        tail = result.get("tail", "")
+                        rel_type = result.get("rel_type", "")
+
+                        # Filter by exercise risk relations
+                        if exercise_risk_rels is not None and rel_type not in exercise_risk_rels:
+                            continue
+
+                        if not tail:
+                            continue
+
+                        results.append({
+                            "entity": entity_name,
+                            "relation": rel_type,
+                            "related_to": tail
+                        })
+                except Exception as e:
+                    print(f"[WARN] Failed to query entity {entity}: {e}")
+
+        # Format results for prompt
+        if not results:
+            return "No relevant KG data found."
+
+        # context_lines = ["## Relevant Knowledge Graph Relationships"]
+        context_lines = []
+        # Deduplicate results
+        seen_relations = set()
+        unique_results = []
+        for r in results:
+            key = f"{r['entity']}-{r['relation']}-{r['related_to']}"
+            if key not in seen_relations:
+                seen_relations.add(key)
+                unique_results.append(r)
+
+        for r in unique_results[:20]:
+            context_lines.append(f"- {r['entity']} --[{r['relation']}]--> {r['related_to']}")
+
+        return "\n".join(context_lines)
 
     def _generate_recommendations(
         self,
@@ -756,26 +1067,12 @@ Return JSON with:
         return list(set(recommendations))  # Remove duplicates
 
 
-# ================= Convenience Functions =================
-
 def assess_plan_safety(
     plan: Dict[str, Any],
     plan_type: str,
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = {}
 ) -> SafetyAssessment:
-    """
-    Convenience function to assess plan safety.
-
-    Args:
-        plan: The plan to assess
-        plan_type: 'diet' or 'exercise'
-        user_metadata: User physiological data
-        environment: Environmental context
-
-    Returns:
-        SafetyAssessment object
-    """
     agent = SafeguardAgent()
     return agent.assess(plan, plan_type, user_metadata, environment)
 
@@ -819,12 +1116,11 @@ def combined_assessment(
 
 
 if __name__ == "__main__":
-    # Test the safeguard agent with DietRecommendation-like structure
     diet_plan = {
         "id": 1,
         "meal_plan": {
             "breakfast": [
-                {"food": "Oatmeal", "portion": "1碗", "calories": 150, "protein": 5, "carbs": 27, "fat": 3},
+                {"food": "Oatmeal", "portion": "1bowl", "calories": 150, "protein": 5, "carbs": 27, "fat": 3},
                 {"food": "Milk", "portion": "200ml", "calories": 120, "protein": 8, "carbs": 12, "fat": 5}
             ],
             "lunch": [
@@ -924,8 +1220,8 @@ if __name__ == "__main__":
         "id": 2,
         "meal_plan": {
             "breakfast": [
-                {"food": "Chocolate Cake", "portion": "1块", "calories": 500, "protein": 5, "carbs": 60, "fat": 25},
-                {"food": "Ice Cream", "portion": "1碗", "calories": 300, "protein": 5, "carbs": 40, "fat": 15}
+                {"food": "Chocolate Cake", "portion": "1piece", "calories": 500, "protein": 5, "carbs": 60, "fat": 25},
+                {"food": "Ice Cream", "portion": "1bowl", "calories": 300, "protein": 5, "carbs": 40, "fat": 15}
             ]
         },
         "total_calories": 800,

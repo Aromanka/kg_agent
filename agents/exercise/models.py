@@ -1,7 +1,3 @@
-"""
-Exercise Agent Models
-Pydantic models for exercise recommendation input/output.
-"""
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 from enum import Enum

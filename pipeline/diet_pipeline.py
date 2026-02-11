@@ -1,15 +1,3 @@
-"""
-Diet Pipeline
-Generates lunch options with safety assessment and selection.
-
-Flow:
-1. Generate multiple lunch base plans via LLM
-2. Expand each base plan to Lite/Standard/Plus variants
-3. Assess each variant through safeguard
-4. Select top_k (default 3) by safety score
-5. Output all expanded plans to plan.json
-6. Output chosen plans to terminal
-"""
 import json
 import os
 from typing import List, Dict, Any
@@ -24,7 +12,27 @@ from agents.safeguard.models import SafetyAssessment
 import argparse
 
 
-# ================= Pipeline Output =================
+@dataclass
+class DietGenerateOnlyOutput:
+    """Output from diet generation only (without safety assessment)"""
+    plans: List[Dict[str, Any]]      # Generated plans with variants
+    generated_at: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary, handling datetime serialization"""
+        def convert_datetime(obj):
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            elif isinstance(obj, dict):
+                return {k: convert_datetime(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_datetime(item) for item in obj]
+            return obj
+        return {
+            "plans": convert_datetime(self.plans),
+            "generated_at": self.generated_at
+        }
+
 
 @dataclass
 class DietPipelineOutput:
@@ -53,9 +61,6 @@ class DietPipelineOutput:
             "generated_at": self.generated_at
         }
 
-
-# ================= Diet Pipeline =================
-
 class DietPipeline:
     """
     Pipeline for generating and evaluating lunch options.
@@ -72,14 +77,19 @@ class DietPipeline:
         user_metadata: Dict[str, Any],
         environment: Dict[str, Any] = None,
         user_requirement: Dict[str, Any] = None,
+        user_query: str = None,
         num_base_plans: int = 3,
         num_variants: int = 3,
+        min_scale: float = 0.5,
+        max_scale: float = 1.5,
         meal_type: str = "lunch",
         temperature: float = 0.7,
         top_p: float = 0.92,
         top_k: int = 50,
         top_k_selection: int = 3,
-        output_path: str = "plan.json"
+        output_path: str = "plan.json",
+        use_vector: bool = False,
+        rag_topk: str = 3
     ) -> DietPipelineOutput:
         """
         Generate meal options with safety assessment.
@@ -87,7 +97,8 @@ class DietPipeline:
         Args:
             user_metadata: User physiological data
             environment: Environmental context
-            user_requirement: User goals
+            user_requirement: User goals (optional, can be empty)
+            user_query: Free-form user preference query (e.g., "I want a tuna sandwich with vegetables")
             num_base_plans: Number of LLM-generated base plans
             num_variants: Number of portion variants per base (Lite/Standard/Plus)
             meal_type: Meal type to generate (breakfast/lunch/dinner/snacks)
@@ -96,6 +107,8 @@ class DietPipeline:
             top_k: LLM top_k for top-k sampling
             top_k_selection: Number of top plans to select by safety score
             output_path: Path to save all plans JSON
+            use_vector: Use vector search (GraphRAG) instead of keyword matching
+            rag_topk: top_k similar enetities for GraphRAG
 
         Returns:
             DietPipelineOutput with all plans, top plans, and assessments
@@ -103,25 +116,37 @@ class DietPipeline:
         env = environment or {}
         req = user_requirement or {}
 
-        print("=" * 60)
-        print(f"DIET PIPELINE ({meal_type.upper()})")
-        print("=" * 60)
-        print(f"[INFO] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
-        print(f"[INFO] Selection: {num_base_plans} bases x {num_variants} variants -> top {top_k_selection}")
+        # print("=" * 60)
+        # print(f"DIET PIPELINE ({meal_type.upper()})")
+        # print("=" * 60)
+        # print(f"[INFO] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
+        # print(f"[INFO] Selection: {num_base_plans} bases x {num_variants} variants -> top {top_k_selection}")
 
         # Step 1: Generate meal candidates with variants
         print(f"\n[1/4] Generating {meal_type} candidates...")
+        if user_query:
+            print(f"      User Query: \"{user_query}\"")
         meal_candidates = []
+        kg_context = None
         for i in range(num_base_plans):
-            candidates = generate_diet_candidates(
+            print("generate with kg_context=")
+            print(kg_context)
+            print("")
+            candidates, kg_context = generate_diet_candidates(
                 user_metadata=user_metadata,
                 environment=env,
                 user_requirement=req,
                 num_variants=num_variants,
+                min_scale=min_scale,
+                max_scale=max_scale,
                 meal_type=meal_type,
                 temperature=temperature,
                 top_p=top_p,
-                top_k=top_k
+                top_k=top_k,
+                user_preference=user_query,
+                use_vector=use_vector,  # GraphRAG: use vector search instead of keyword matching
+                rag_topk=rag_topk,
+                kg_context=kg_context
             )
             meal_candidates.extend(candidates)
             print(f"      Base {i+1}/{num_base_plans}: {len(candidates)} variants")
@@ -160,8 +185,8 @@ class DietPipeline:
             score = assessment.score
             is_safe = assessment.is_safe
             risk = assessment.risk_level.value
-            print(f"      ID:{plan_id} {plan.get('variant', 'N/A')} | "
-                  f"Score:{score} | Risk:{risk} | Safe:{is_safe}")
+            # print(f"      ID:{plan_id} {plan.get('variant', 'N/A')} | "
+            #       f"Score:{score} | Risk:{risk} | Safe:{is_safe}")
 
         # Add assessment info to plans
         for plan in all_plans_dict:
@@ -180,10 +205,10 @@ class DietPipeline:
         )
         top_plans = sorted_plans[:top_k]
 
-        for i, plan in enumerate(top_plans, 1):
-            score = plan.get("_assessment", {}).get("score", 0)
-            variant = plan.get("variant", "N/A")
-            print(f"      #{i} ID:{plan.get('id')} {variant} | Score:{score}")
+        # for i, plan in enumerate(top_plans, 1):
+        #     score = plan.get("_assessment", {}).get("score", 0)
+        #     variant = plan.get("variant", "N/A")
+        #     print(f"      #{i} ID:{plan.get('id')} {variant} | Score:{score}")
 
         # Step 4: Save all plans to JSON
         print(f"\n[4/4] Saving all {len(all_plans_dict)} plans to {output_path}...")
@@ -204,9 +229,7 @@ class DietPipeline:
 
     def print_top_plans(self, output: DietPipelineOutput):
         """Print the top selected plans to terminal"""
-        print("\n" + "=" * 60)
-        print("TOP SELECTED LUNCH PLANS")
-        print("=" * 60)
+        print(">>> TOP SELECTED LUNCH PLANS")
 
         for i, plan in enumerate(output.top_plans, 1):
             assessment = plan.get("_assessment", {})
@@ -225,30 +248,111 @@ class DietPipeline:
 
             if assessment.get("risk_factors"):
                 print(f"   Risk Factors:")
-                for rf in assessment.get("risk_factors", [])[:3]:
+                # for rf in assessment.get("risk_factors", [])[:3]:
+                for rf in assessment.get("risk_factors", []):
                     print(f"     - {rf}")
 
             if assessment.get("recommendations"):
                 print(f"   Recommendations:")
-                for rec in assessment.get("recommendations", [])[:2]:
+                # for rec in assessment.get("recommendations", [])[:2]:
+                for rec in assessment.get("recommendations", []):
                     print(f"     - {rec}")
 
+    def generate_only(
+        self,
+        user_metadata: Dict[str, Any],
+        environment: Dict[str, Any] = None,
+        user_requirement: Dict[str, Any] = None,
+        user_query: str = None,
+        num_base_plans: int = 3,
+        num_variants: int = 3,
+        min_scale: float = 0.5,
+        max_scale: float = 1.5,
+        meal_type: str = "lunch",
+        temperature: float = 0.7,
+        top_p: float = 0.92,
+        top_k: int = 50,
+        use_vector: bool = False,
+        rag_topk: str = 3
+    ) -> DietGenerateOnlyOutput:
+        """
+        Generate meal candidates only WITHOUT safety assessment.
 
-# ================= Convenience Function =================
+        Args:
+            user_metadata: User physiological data
+            environment: Environmental context
+            user_requirement: User goals (optional, can be empty)
+            user_query: Free-form user preference query
+            num_base_plans: Number of LLM-generated base plans
+            num_variants: Number of portion variants per base
+            meal_type: Meal type to generate
+            temperature: LLM temperature (0.0-1.0)
+            top_p: LLM top_p for nucleus sampling
+            top_k: LLM top_k for top-k sampling
+            use_vector: Use vector search (GraphRAG)
+            rag_topk: Top-k similar entities for GraphRAG
+
+        Returns:
+            DietGenerateOnlyOutput with generated plans only
+        """
+        env = environment or {}
+        req = user_requirement or {}
+
+        print(f"\n[1/1] Generating {meal_type} candidates (no assessment)...")
+        if user_query:
+            print(f"      User Query: \"{user_query}\"")
+
+        meal_candidates = []
+        kg_context = None
+        for i in range(num_base_plans):
+            candidates, kg_context = generate_diet_candidates(
+                user_metadata=user_metadata,
+                environment=env,
+                user_requirement=req,
+                num_variants=num_variants,
+                min_scale=min_scale,
+                max_scale=max_scale,
+                meal_type=meal_type,
+                temperature=temperature,
+                top_p=top_p,
+                top_k=top_k,
+                user_preference=user_query,
+                use_vector=use_vector,
+                rag_topk=rag_topk,
+                kg_context=kg_context
+            )
+            meal_candidates.extend(candidates)
+            print(f"      Base {i+1}/{num_base_plans}: {len(candidates)} variants")
+
+        print(f"      Found {len(meal_candidates)} {meal_type} candidates")
+
+        # Convert to dicts
+        all_plans_dict = [c.model_dump() for c in meal_candidates]
+
+        return DietGenerateOnlyOutput(
+            plans=all_plans_dict,
+            generated_at=datetime.now().isoformat()
+        )
+
 
 def run_diet_pipeline(
     user_metadata: Dict[str, Any],
     environment: Dict[str, Any] = None,
     user_requirement: Dict[str, Any] = None,
+    user_query: str = None,
+    rag_topk: int = 3,
     num_base_plans: int = 3,
     num_variants: int = 3,
+    min_scale: float = 0.5,
+    max_scale: float = 1.5,
     meal_type: str = "lunch",
     temperature: float = 0.7,
     top_p: float = 0.92,
     top_k: int = 50,
     top_k_selection: int = 3,
     output_path: str = "plan.json",
-    print_results: bool = True
+    print_results: bool = True,
+    use_vector: bool = False
 ) -> DietPipelineOutput:
     """
     Run the diet pipeline and optionally print results.
@@ -256,7 +360,8 @@ def run_diet_pipeline(
     Args:
         user_metadata: User physiological data
         environment: Environmental context
-        user_requirement: User goals
+        user_requirement: User goals (optional, can be empty)
+        user_query: Free-form user preference query (e.g., "I want a tuna sandwich with vegetables")
         num_base_plans: Number of LLM-generated base plans
         num_variants: Number of portion variants per base (Lite/Standard/Plus)
         meal_type: Meal type to generate (breakfast/lunch/dinner/snacks)
@@ -266,6 +371,7 @@ def run_diet_pipeline(
         top_k_selection: Number of top plans to select by safety score
         output_path: Path to save all plans JSON
         print_results: Whether to print top plans to terminal
+        use_vector: Use vector search (GraphRAG) instead of keyword matching
 
     Returns:
         DietPipelineOutput object
@@ -275,14 +381,19 @@ def run_diet_pipeline(
         user_metadata=user_metadata,
         environment=environment,
         user_requirement=user_requirement,
+        user_query=user_query,
         num_base_plans=num_base_plans,
         num_variants=num_variants,
+        min_scale=min_scale,
+        max_scale=max_scale,
         meal_type=meal_type,
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
         top_k_selection=top_k_selection,
-        output_path=output_path
+        output_path=output_path,
+        use_vector=use_vector,
+        rag_topk=rag_topk
     )
 
     if print_results:
@@ -294,10 +405,16 @@ def run_diet_pipeline(
 # ================= CLI =================
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='')
+    parser = argparse.ArgumentParser(description='Diet Pipeline with KG Entity Matching')
     parser.add_argument('--bn', type=int, default=3, help='base plan num')
     parser.add_argument('--vn', type=int, default=3, help='var plan num')
-    parser.add_argument('--topk', type=int, default=3, help='var plan num')
+    parser.add_argument('--topk', type=int, default=3, help='top k selection')
+    parser.add_argument('--rag_topk', type=int, default=3, help='graph rag top_k similar entities')
+    parser.add_argument('--use_vector', action='store_true', default=False, help='Use vector search (GraphRAG) instead of keyword matching')
+    parser.add_argument('--min_scale', type=float, default=0.5, help='minimum scale factor for variants (default: 0.5)')
+    parser.add_argument('--max_scale', type=float, default=1.5, help='maximum scale factor for variants (default: 1.5)')
+    parser.add_argument('--query', type=str, default="I want a healthy tuna salad sandwich with fresh vegetables",
+                       help='user query (free-form text for KG entity matching)')
     args = parser.parse_args()
     test_input = {
         "user_metadata": {
@@ -313,11 +430,14 @@ if __name__ == "__main__":
             "weather": {"condition": "clear", "temperature_c": 25},
             "time_context": {"season": "summer"}
         },
-        "user_requirement": {
-            "goal": "weight_loss"
-        },
+        "user_requirement": {},  # Empty, use user_query instead
+        "user_query": args.query,  # Free-form query for KG entity matching
+        "use_vector": args.use_vector,  # Use vector search (GraphRAG) instead of keyword matching
+        "rag_topk": args.rag_topk,
         "num_base_plans": args.bn,
         "num_variants": args.vn,
+        "min_scale": args.min_scale,
+        "max_scale": args.max_scale,
         "meal_type": "lunch",
         "temperature": 0.9,
         "top_k": args.topk,

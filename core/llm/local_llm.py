@@ -1,11 +1,9 @@
-"""
-Local LLM Implementation - Support for local HuggingFace/Transformers models
-"""
 import os
 import torch
 from typing import List, Dict, Optional, Any
 from datetime import datetime
 from config_loader import get_config
+from core.llm.utils import parse_json_response
 
 # Lazy imports to avoid heavy dependencies when using API mode
 _local_model = None
@@ -106,7 +104,7 @@ class LocalLLM:
         start_time = datetime.now()
 
         # Debug print generation params
-        print(f"[DEBUG] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
+        # print(f"[DEBUG] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
 
         # Convert messages to text format for local model
         text_content = self._messages_to_text(messages)
@@ -163,7 +161,7 @@ class LocalLLM:
         start_time = datetime.now()
 
         # Debug print generation params
-        print(f"[DEBUG] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
+        # print(f"[DEBUG] LLM params: temp={temperature}, top_p={top_p}, top_k={top_k}")
 
         text_content = self._messages_to_text(messages)
         model, processor = _load_local_model()
@@ -209,7 +207,7 @@ class LocalLLM:
 
         # Parse JSON
         try:
-            result = json.loads(content.strip())
+            result = parse_json_response(content)
             _log_to_file(messages, result, duration_ms)
             return result
         except json.JSONDecodeError as e:
@@ -222,7 +220,7 @@ class LocalLLM:
         import json
         import re
 
-        prompt = f"从以下问题中提取{max_count}个医学/健康实体关键词，只返回JSON列表格式：\n问题：{question}"
+        prompt = f"Extract {max_count} medical/health entity keywords from the following question, only return JSON list format:\nQuestion: {question}"
         messages = [{"role": "user", "content": prompt}]
 
         try:
@@ -232,7 +230,7 @@ class LocalLLM:
                 return json.loads(match.group())
             return []
         except Exception as e:
-            print(f"关键词提取失败: {e}")
+            print(f"Failed to extract keywords: {e}")
             return []
 
     def _messages_to_text(self, messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
