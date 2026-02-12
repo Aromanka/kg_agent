@@ -299,9 +299,10 @@ class DietAgent(BaseAgent, DietAgentMixin):
             user_preference=user_preference
         )
 
-        full_prompt = user_prompt + f"\n\n### Optimization Strategy: {strategy.upper()}\n{strategy_guidance.get(strategy, '')}"
-        full_prompt += f"\n\n### Culinary Style: {cuisine}\nPLEASE strictly follow this style. Use ingredients and cooking methods typical for {cuisine} cuisine."
-        full_prompt += constraint_prompt
+        full_prompt = user_prompt
+        # full_prompt = user_prompt + f"\n\n### Optimization Strategy: {strategy.upper()}\n{strategy_guidance.get(strategy, '')}"
+        # full_prompt += f"\n\n### Culinary Style: {cuisine}\nPLEASE strictly follow this style. Use ingredients and cooking methods typical for {cuisine} cuisine."
+        # full_prompt += constraint_prompt
 
         DIET_GENERATION_SYSTEM_PROMPT = GET_DIET_GENERATION_SYSTEM_PROMPT()
         response = self._call_llm(
