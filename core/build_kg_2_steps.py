@@ -7,15 +7,11 @@ import datetime
 import pandas as pd
 from tqdm import tqdm
 from config_loader import get_config
-from kg.prompts import (
-    DIET_KG_EXTRACT_SCHEMA_PROMPT as DIET_SCHEMA_PROMPT,
-    DIET_VALID_RELS,
-    DIET_KG_EXTRACT_COT_PROMPT_v1,
-    DIET_KG_RESOLUTION_PROMPT_v1,
-    EXER_KG_EXTRACT_SCHEMA_PROMPT as EXER_SCHEMA_PROMPT,
-    EXER_VALID_RELS
-)
 from core.llm.utils import parse_json_response
+from kg.prompts import (
+    DIET_KG_EXTRACT_COT_PROMPT_v1,
+    DIET_KG_RESOLUTION_PROMPT_v1
+)
 # Optional import for local model support
 try:
     from core.llm import should_use_local, get_unified_llm
@@ -40,19 +36,13 @@ print(f"[INFO] API Model: {MODEL_NAME} @ {DEEPSEEK_BASE_URL}")
 KG_CONFIGS = {
     "diet": {
         "input_dir": "data/diet",
-        "schema_prompt": DIET_SCHEMA_PROMPT,
-        "cot_prompt": DIET_KG_EXTRACT_COT_PROMPT_v1,
-        "resolution_prompt": DIET_KG_RESOLUTION_PROMPT_v1,
-        "valid_rels": DIET_VALID_RELS,
         "name": "Diet",
-        "use_two_step": True
+        "use_two_step": True,
+        "cot_prompt": DIET_KG_EXTRACT_COT_PROMPT_v1,
+        "resolution_prompt": DIET_KG_RESOLUTION_PROMPT_v1
     },
     "exercise": {
         "input_dir": "data/exer",
-        "schema_prompt": EXER_SCHEMA_PROMPT,
-        "cot_prompt": None,  # No CoT prompt for exercise yet
-        "resolution_prompt": None,
-        "valid_rels": EXER_VALID_RELS,
         "name": "Exercise",
         "use_two_step": False
     }
@@ -274,7 +264,7 @@ def _resolve_entities(extracted_entities, resolution_prompt):
         return {}
 
 
-def extract_quads_with_llm(text_chunk, schema_prompt, cot_prompt=None, resolution_prompt=None, use_two_step=False):
+def extract_quads_with_llm(text_chunk, cot_prompt=None, resolution_prompt=None, use_two_step=True):
     """
     Extract knowledge quads from text chunk using two-step workflow.
 
@@ -285,7 +275,6 @@ def extract_quads_with_llm(text_chunk, schema_prompt, cot_prompt=None, resolutio
 
     Args:
         text_chunk: Text content to process
-        schema_prompt: Original schema prompt (fallback)
         cot_prompt: Chain of Thought extraction prompt (for step 1)
         resolution_prompt: Entity resolution prompt (for step 2)
         use_two_step: Whether to use two-step workflow
@@ -298,7 +287,7 @@ def extract_quads_with_llm(text_chunk, schema_prompt, cot_prompt=None, resolutio
 
     # Fallback to one-step if two-step not enabled or prompts not available
     if not use_two_step or not cot_prompt:
-        return _extract_quads_single_step(text_chunk, schema_prompt)
+        return []
 
     # ========== STEP 1: Extract entities and quads using CoT ==========
     cot_prompt_text = f"{cot_prompt}\n\n## Text to Process\n{text_chunk}"
@@ -307,27 +296,25 @@ def extract_quads_with_llm(text_chunk, schema_prompt, cot_prompt=None, resolutio
         data = parse_json_response(content)
 
         if not isinstance(data, dict):
-            print(f"[WARN] CoT extraction returned non-dict, falling back to single-step")
-            return _extract_quads_single_step(text_chunk, schema_prompt)
+            print(f"[WARN] CoT extraction returned non-dict")
+            return []
 
         # Extract entities and quads from CoT response
         extracted_entities = data.get("extracted_entities", [])
         quads = data.get("quads", [])
 
         if not quads:
-            # No quads extracted, try single-step fallback
-            if "quads" not in data:
-                print(f"[WARN] No 'quads' key in CoT response, falling back to single-step")
-            return _extract_quads_single_step(text_chunk, schema_prompt)
+            print(f"[WARN] No quads extracted from chunk")
+            return []
 
         print(f"[DEBUG] Step 1: Extracted {len(quads)} quads and {len(extracted_entities)} entities")
 
     except json.JSONDecodeError as e:
-        print(f"[WARN] CoT JSON parsing failed: {e}, falling back to single-step")
-        return _extract_quads_single_step(text_chunk, schema_prompt)
+        print(f"[WARN] CoT JSON parsing failed: {e}")
+        return []
     except Exception as e:
-        print(f"[WARN] CoT extraction failed: {e}, falling back to single-step")
-        return _extract_quads_single_step(text_chunk, schema_prompt)
+        print(f"[WARN] CoT extraction failed: {e}")
+        return []
 
     # ========== STEP 2: Resolve entity duplicates ==========
     if extracted_entities and resolution_prompt:
@@ -340,64 +327,20 @@ def extract_quads_with_llm(text_chunk, schema_prompt, cot_prompt=None, resolutio
     return quads
 
 
-def _extract_quads_single_step(text_chunk, schema_prompt):
-    """
-    Fallback: Extract quads in a single step using original schema prompt.
-    """
-    prompt = f"{schema_prompt}\n\n## Text to Process\n{text_chunk}"
-    messages = [
-        {"role": "system", "content": "You are a helpful medical assistant. Always output valid JSON."},
-        {"role": "user", "content": prompt}
-    ]
-    try:
-        from openai import OpenAI
-        client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=messages,
-            temperature=0.1,
-            stream=False,
-            response_format={'type': 'json_object'}
-        )
-        content = response.choices[0].message.content.strip()
-        data = parse_json_response(content)
-        if isinstance(data, dict):
-            if "quads" in data and isinstance(data["quads"], list):
-                return data["quads"]
-            if "triplets" in data and isinstance(data["triplets"], list):
-                return data["triplets"]
-            for val in data.values():
-                if isinstance(val, list):
-                    return val
-        elif isinstance(data, list):
-            return data
-        return []
-    except json.JSONDecodeError as e:
-        print(f"JSON parsing failed: {e}, content snippet: {content[:100] if 'content' in dir() else 'N/A'}...")
-        return []
-    except Exception as e:
-        print(f"LLM call failed: {e}")
-        time.sleep(2)
-        return []
-
-
 def build_knowledge_graph(kg_type: str, config: dict) -> dict:
     """
     Build knowledge graph for a specific type (diet or exercise).
     Args:
         kg_type: Type of knowledge graph ('diet' or 'exercise')
-        config: Configuration dict with schema_prompt, valid_rels, name, input_dir,
-                cot_prompt, resolution_prompt, use_two_step
+        config: Configuration dict with input_dir, name, use_two_step
     Returns:
         Dict with stats about the build
     """
-    schema_prompt = config["schema_prompt"]
-    cot_prompt = config.get("cot_prompt")
-    resolution_prompt = config.get("resolution_prompt")
-    use_two_step = config.get("use_two_step", False)
-    valid_rels = config["valid_rels"]
     kg_name = config["name"]
     input_dir = config["input_dir"]
+    use_two_step = config.get("use_two_step", False)
+    cot_prompt = config.get("cot_prompt")
+    resolution_prompt = config.get("resolution_prompt")
     # Check input folder
     if not os.path.exists(input_dir):
         os.makedirs(input_dir)
@@ -466,21 +409,19 @@ def build_knowledge_graph(kg_type: str, config: dict) -> dict:
         for chunk in tqdm(chunks, desc=f"Parsing {file_name[:10]}", leave=False):
             quads = extract_quads_with_llm(
                 chunk,
-                schema_prompt=schema_prompt,
                 cot_prompt=cot_prompt,
                 resolution_prompt=resolution_prompt,
                 use_two_step=use_two_step
             )
             for t in quads:
                 if "head" in t and "relation" in t and "tail" in t:
-                    if t['relation'] in valid_rels:
-                        # Include context in hash for deduplication
-                        context = t.get('context', 'General')
-                        t_hash = f"{t['head']}_{t['relation']}_{t['tail']}_{context}"
-                        if t_hash not in seen_hashes:
-                            seen_hashes.add(t_hash)
-                            t["source"] = file_name
-                            all_quads.append(t)
+                    # Include context in hash for deduplication
+                    context = t.get('context', 'General')
+                    t_hash = f"{t['head']}_{t['relation']}_{t['tail']}_{context}"
+                    if t_hash not in seen_hashes:
+                        seen_hashes.add(t_hash)
+                        t["source"] = file_name
+                        all_quads.append(t)
                 time.sleep(0.1)
         # Mark file as successfully processed and update checkpoint immediately
         files_processed_this_run.append({
