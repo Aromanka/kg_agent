@@ -537,7 +537,6 @@ class DietAgentMixin:
             # parts.append("")  # Empty line for separation
 
             # Format all relations uniformly: "- {head} {relation} {tail}"
-            parts.append("## Knowledge Graph Relations")
             for rel in relations:
                 head = rel.get("head", "")
                 relation = rel.get("relation", "").replace("_", " ")
@@ -546,7 +545,7 @@ class DietAgentMixin:
                 parts.append(f"<{head}, {relation}, {tail}>")
 
         if parts:
-            return "#### Knowledge Graph Relations\n" + "\n".join(parts) + "\n"
+            return "#### Request based KG Guidelines\n" + "\n".join(parts) + "\n"
         return ""
 
     def calculate_target_calories(

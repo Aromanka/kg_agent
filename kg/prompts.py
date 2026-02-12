@@ -2110,13 +2110,13 @@ Start two steps analysis, and output valid JSON object covered between ```json a
 
 def DIET_KG_RESOLUTION_PROMPT_v1(ENTITIES):
   return """
-Find duplicate entities from a list of diet lifestyle terms and an alias that best represents the duplicates.
+Find duplicate entities from a list of diet lifestyle terms (Extracted Entities) and an alias that best represents the duplicates.
 Duplicates are those that are the same in meaning, such as with variation in tense, plural form, stem form, case, abbreviation, shorthand.
 
 ## Output Schema
 Return a JSON object with a list of "resolutions".
-* `duplicate_group`: A list of the variations found in the input (including the canonical one).
-* `canonical_form`: The single best name to use for the group.
+* **duplicate_group**: A list of the variations found in the input (including the canonical one).
+* **canonical_form**: The single best name to use for the group.
 
 ## Example
 **Input Entities**:

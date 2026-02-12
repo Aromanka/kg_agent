@@ -648,14 +648,14 @@ class SafeguardAgent(BaseAgent):
 # ## Environment
 # {environment}
 
-# ## Knowledge Graph Context
+# ## Knowledge Graph Guidelines
 # {kg_context if kg_context else "No KG data available"}
 
 # ## Plan
 # {json.dumps(plan, ensure_ascii=False, indent=2)}
 
 # ## Task
-# Identify any safety concerns that rule-based checks might miss:
+# Identify any safety concerns:
 # 1. Hidden contraindications
 # 2. Unrealistic progression
 # 3. Nutrient deficiencies
@@ -663,29 +663,42 @@ class SafeguardAgent(BaseAgent):
 # 5. Environmental mismatches
 # 6. Conflicts with user's medical conditions
 
-# Use the Knowledge Graph context to identify potential risks, contraindications, and interactions.
+# ## Output Format (STRICT JSON)
+# Return a single valid JSON object containing two lists: "risk_factors" and "checks".
+# Follow the schema definitions below STRICTLY.
 
-# Return JSON with:
-# - "risk_factors": array of {{factor, description, severity}}
-# - "checks": array of {{check_name, passed, message}}"""
+# 1. "risk_factors": list of objects containing:
+#    - "factor": (string) Name of the risk factor
+#    - "category": (string) Must be one of ["medical", "environmental", "nutritional", "exercise"]
+#    - "severity": (string) Must be one of ["low", "moderate", "high", "very_high"]
+#    - "description": (string) Detailed description of the risk
+#    - "recommendation": (string) Actionable mitigation advice
+
+# 2. "checks": list of objects containing:
+#    - "check_name": (string) Name of the specific check performed
+#    - "passed": (boolean) true or false
+#    - "message": (string) Explanation of the check result
+#    - "severity": (string, optional) If passed is false, must be one of ["low", "moderate", "high", "very_high"]
+
+# Ensure "severity" values matches the allowed Enum values EXACTLY.
+# """
+            # Assess Prompt
             prompt = f"""Analyze the following {plan_type} plan for safety issues.
 
-## User Profile
-- Age: {user_metadata.get('age', 'unknown')}
-- Conditions: {', '.join(user_metadata.get('medical_conditions', ['none']))}
-- Fitness Level: {user_metadata.get('fitness_level', 'unknown')}
+## Profile
+{user_metadata}
 
 ## Environment
 {environment}
 
-## Knowledge Graph Context
+## Knowledge Graph Guidelines
 {kg_context if kg_context else "No KG data available"}
 
 ## Plan
 {json.dumps(plan, ensure_ascii=False, indent=2)}
 
 ## Task
-Identify any safety concerns that rule-based checks might miss, using the KG context:
+Identify any safety concerns:
 1. Hidden contraindications
 2. Unrealistic progression
 3. Nutrient deficiencies
@@ -762,7 +775,7 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
         restrictions = user_metadata.get("dietary_restrictions", [])
 
         # === GraphRAG Approach: Vector Search + Graph Traversal ===
-        use_vector_search = False
+        use_vector_search = True
         if use_vector_search:
             try:
                 # 1. For each food item, use vector search to find similar entities

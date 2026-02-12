@@ -341,7 +341,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
             part = "<{}, {}, {}> regarding {}".format(entity_name, rel, tail, condition)
             parts.append(part)
 
-        return "#### Knowledge Graph Context\n" + "\n".join(parts) + "\n"
+        return "#### Request based KG Guidelines\n" + "\n".join(parts) + "\n"
 
     def _format_exercise_entity_kg_context(
         self, entity_knowledge: Dict, kg_format_ver: int = 2
