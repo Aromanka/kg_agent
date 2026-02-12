@@ -859,6 +859,7 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
                         entity_name = result.get("head", "")
                         tail = result.get("tail", "")
                         rel_type = result.get("rel_type", "")
+                        condition = result.get("condition", "")
 
                         # Filter by prioritized risk relations
                         # if rel_type not in prioritized_risk_kg_rels:
@@ -870,7 +871,8 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
                         results.append({
                             "entity": entity_name,
                             "relation": rel_type,
-                            "related_to": tail
+                            "related_to": tail,
+                            "condition": condition
                         })
                 except Exception as e:
                     print(f"[WARN] Failed to query entity {entity}: {e}")
@@ -892,7 +894,7 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
 
         for r in unique_results[:20]:  # Limit to 20 most relevant results
             # context_lines.append(f"- {r['entity']} --[{r['relation']}]--> {r['related_to']}")
-            context_lines.append("<{}, {}, {}> regarding {}".format(r['entity'], r['relation'], r['related_to']))
+            context_lines.append("<{}, {}, {}> regarding {}".format(r['entity'], r['relation'], r['related_to'], r['condition']))
 
         return "\n".join(context_lines)
 

@@ -367,6 +367,7 @@ class DietAgent(BaseAgent, DietAgentMixin):
             condition = item.get('condition', "condition")
 
             # condition_words = "under condition: {}".format(condition)
+            # condition_words = "under condition: {}".format(condition)
             # condition_words = "regarding {} issues".format(condition)
             # part = "{} {} {} {}".format(entity_name, rel, tail, condition_words)
             part = "<{}, {}, {}> regarding {} issues".format(entity_name, rel, tail, condition)
