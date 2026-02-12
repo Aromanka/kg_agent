@@ -727,7 +727,7 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
 """
 
             response = self._call_llm(
-                system_prompt="You are a safety assessment expert. Return only valid JSON.",
+                system_prompt="You are a safety assessment expert. ",
                 user_prompt=prompt,
                 temperature=0.3
             )

@@ -541,8 +541,9 @@ class DietAgentMixin:
                 head = rel.get("head", "")
                 relation = rel.get("relation", "").replace("_", " ")
                 tail = rel.get("tail", "")
+                condition = rel.get("condition", "")
                 # parts.append(f"- {head} {relation} {tail}")
-                parts.append(f"<{head}, {relation}, {tail}>")
+                parts.append(f"<{head}, {relation}, {tail}> regarding {condition}")
 
         if parts:
             return "#### Request based KG Guidelines:\n" + "\n".join(parts) + "\n"
