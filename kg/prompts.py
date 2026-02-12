@@ -2140,5 +2140,5 @@ Return a JSON object with a list of "resolutions".
 ```
 
 ## Extracted Entities:\n""" + ENTITIES + """\n\n## Execution
-Start two steps analysis, and output valid JSON object covered between ```json and ```.
+Start duplicate analysis, and output valid JSON object covered between ```json and ```.
 """

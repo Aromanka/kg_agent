@@ -10,6 +10,8 @@ from kg.prompts import (
     get_keywords, STOP_WORDS
 )
 
+MAXIMUM_MATCHED_ENTITIES = 10
+
 # Configuration
 
 class UserMetadata(BaseModel):
@@ -434,7 +436,7 @@ class DietAgentMixin:
                 parts.append(f"- Matched Entities from KG: {', '.join(set(entities))}")
 
             if entity_knowledge.get("entity_benefits"):
-                benefits = entity_knowledge["entity_benefits"][:5]  # Limit to top 5
+                benefits = entity_knowledge["entity_benefits"][:MAXIMUM_MATCHED_ENTITIES]
                 unique_benefits = {}
                 for b in benefits:
                     key = f"{b.get('entity', '')}-{b.get('benefit', '')}"
@@ -445,7 +447,7 @@ class DietAgentMixin:
                     parts.append(f"- Entity Benefits: {', '.join(benefit_list)}")
 
             if entity_knowledge.get("entity_risks"):
-                risks = entity_knowledge["entity_risks"][:5]  # Limit to top 5
+                risks = entity_knowledge["entity_risks"][:MAXIMUM_MATCHED_ENTITIES]  # Limit to top 5
                 unique_risks = {}
                 for r in risks:
                     key = f"{r.get('entity', '')}-{r.get('risk', '')}"
@@ -456,7 +458,7 @@ class DietAgentMixin:
                     parts.append(f"- Entity Risks: {', '.join(risk_list)}")
 
             if entity_knowledge.get("entity_conflicts"):
-                conflicts = entity_knowledge["entity_conflicts"][:5]  # Limit to top 5
+                conflicts = entity_knowledge["entity_conflicts"][:MAXIMUM_MATCHED_ENTITIES]  # Limit to top 5
                 unique_conflicts = {}
                 for c in conflicts:
                     key = f"{c.get('entity', '')}-{c.get('conflicts_with', '')}"
@@ -800,7 +802,7 @@ class ExerciseAgentMixin:
                     results["matched_entities"].append(entity_name)
 
             # Also try direct entity queries for more specific results
-            for entity in results["matched_entities"][:5]:  # Limit to top 5 for performance
+            for entity in results["matched_entities"][:MAXIMUM_MATCHED_ENTITIES]:  # Limit to top 5 for performance
                 try:
                     if kg_format_ver >= 3:
                         # Simplified: add all relations uniformly
@@ -974,7 +976,7 @@ class ExerciseAgentMixin:
                 parts.append(f"- Matched Entities from KG: {', '.join(set(entities))}")
 
             if entity_knowledge.get("entity_benefits"):
-                benefits = entity_knowledge["entity_benefits"][:5]  # Limit to top 5
+                benefits = entity_knowledge["entity_benefits"][:MAXIMUM_MATCHED_ENTITIES]  # Limit to top 5
                 unique_benefits = {}
                 for b in benefits:
                     key = f"{b.get('entity', '')}-{b.get('benefit', '')}"
@@ -985,7 +987,7 @@ class ExerciseAgentMixin:
                     parts.append(f"- Exercise Benefits: {', '.join(benefit_list)}")
 
             if entity_knowledge.get("target_muscles"):
-                muscles = entity_knowledge["target_muscles"][:5]  # Limit to top 5
+                muscles = entity_knowledge["target_muscles"][:MAXIMUM_MATCHED_ENTITIES]  # Limit to top 5
                 unique_muscles = {}
                 for m in muscles:
                     key = f"{m.get('entity', '')}-{m.get('target', '')}"
@@ -996,7 +998,7 @@ class ExerciseAgentMixin:
                     parts.append(f"- Target Muscles: {', '.join(muscle_list)}")
 
             if entity_knowledge.get("duration_recommendations"):
-                durations = entity_knowledge["duration_recommendations"][:5]  # Limit to top 5
+                durations = entity_knowledge["duration_recommendations"][:MAXIMUM_MATCHED_ENTITIES]  # Limit to top 5
                 unique_durations = {}
                 for d in durations:
                     key = f"{d.get('entity', '')}-{d.get('duration', '')}"
@@ -1007,7 +1009,7 @@ class ExerciseAgentMixin:
                     parts.append(f"- Duration Recommendations: {', '.join(duration_list)}")
 
             if entity_knowledge.get("frequency_recommendations"):
-                frequencies = entity_knowledge["frequency_recommendations"][:5]  # Limit to top 5
+                frequencies = entity_knowledge["frequency_recommendations"][:MAXIMUM_MATCHED_ENTITIES]  # Limit to top 5
                 unique_frequencies = {}
                 for f in frequencies:
                     key = f"{f.get('entity', '')}-{f.get('frequency', '')}"
