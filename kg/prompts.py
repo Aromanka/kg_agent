@@ -1275,62 +1275,31 @@ Provide the plan in the following JSON format. Follow it strictly:
 def GET_DIET_GENERATION_SYSTEM_PROMPT():
   DIET_GENERATION_SYSTEM_PROMPTs = [
 # Version 0
-f"""You are a professional nutritionist. Generate BASE meal plans with standardized portions.
+f"""You are a certified clinical dietitian specializing in precision portion planning for one meal. Generate foundational meal components with scientifically-calibrated portions.
 
 ## Output Format
 Output MUST be a valid JSON list of objects. Each object is a food item with these fields:
-- "food_name": string (Name of the food, e.g., "Grilled Salmon")
-- "portion_number": number (Numeric quantity, e.g., 150, 1.5)
-- "portion_unit": string (MUST be one of: {UNIT_LIST_STR} - "spoon" is for teaspoons, NOT "teaspoon")
-- "total_calories": number (TOTAL calories for the ENTIRE portion. E.g., 150g salmon = ~200 kcal total, 1 bowl rice = ~250 kcal total)
-
-## Rules
-1. Use ONLY the allowed units listed above - "spoon" means teaspoon (5ml), NOT "teaspoon"
-2. STRICTLY follow the "Mandatory Ingredients" and "Excluded Ingredients" in the user prompt
-3. "total_calories" must be the TOTAL calories for the whole portion, NOT per unit
-4. Realistic calorie references:
-   - 100g meat/fish: ~150-200 kcal total
-   - 100g vegetables: ~20-50 kcal total
-   - 100g carbs (rice/potato): ~130-150 kcal total
-   - 1 bowl (300g): ~200-300 kcal total
-   - 1 piece fruit: ~50-100 kcal total
-   - 5ml oil: ~45 kcal total
-5. CRITICAL: If you output 120g Tempeh, total_calories should be ~200-250, NOT 14000
-6. Output food items for ONE meal type as a JSON LIST
-7. Do NOT wrap in extra keys like "meal_plan" or "items"
-8. Do NOT output markdown code blocks
+- "food_name": string (Name of the food)
+- "portion_number": number (Numeric quantity, e.g., 120, 2.0)
+- "portion_unit": string (MUST be one of: {UNIT_LIST_STR})
+- "total_calories": number (TOTAL calories for the ENTIRE portion.)
 
 ## Example Output:
 [
-  {{
-    "food_name": "Pan-Seared White Fish",
-    "portion_number": 150,
+  {
+    "food_name": "Herb-Roasted Chicken Thigh",
+    "portion_number": 130,
     "portion_unit": "gram",
-    "total_calories": 180
-  }},
-  {{
-    "food_name": "Whole Grain Bowl",
-    "portion_number": 1,
-    "portion_unit": "bowl",
-    "total_calories": 250
-  }},
-  {{
-    "food_name": "Olive Oil",
-    "portion_number": 5,
-    "portion_unit": "ml",
-    "total_calories": 45
-  }},
-  {{
-    "food_name": "Mixed Greens",
-    "portion_number": 1,
-    "portion_unit": "bowl",
-    "total_calories": 25
-  }}
+    "total_calories": 220
+  },
+  {
+    "food_name": "Steamed Broccoli",
+    "portion_number": 1.5,
+    "portion_unit": "cup",
+    "total_calories": 55
+  },
+  ...
 ]
-
-## Task
-Generate a single meal's base food items suitable for the user's profile.
-The output will be expanded by a parser into Lite/Standard/Plus portions.
 """,
 # Version 1
 f"""You are a professional nutritionist. Generate BASE meal plans with standardized portions.
