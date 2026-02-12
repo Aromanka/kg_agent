@@ -29,6 +29,7 @@ DEEPSEEK_BASE_URL = API_MODEL.get("base_url", "")
 MODEL_NAME = API_MODEL.get("model", "deepseek-chat")
 # Always use API model (no local model fallback)
 USE_LOCAL = False
+KG_EXTRACT_LOG_PATH = "kg/llm_log.log"
 print(f"[INFO] KG Builder LLM mode: api")
 print(f"[INFO] API Model: {MODEL_NAME} @ {DEEPSEEK_BASE_URL}")
 
@@ -179,6 +180,9 @@ def split_text(text, chunk_size=CHUNK_SIZE, overlap=OVERLAP):
 
 def _call_llm(prompt, temperature=0.1):
     """Helper function to call LLM with a prompt."""
+    # Log the prompt
+    _log_llm_interaction("PROMPT", prompt)
+
     messages = [
         {"role": "system", "content": "You are a helpful medical assistant. Always output valid JSON."},
         {"role": "user", "content": prompt}
@@ -192,7 +196,26 @@ def _call_llm(prompt, temperature=0.1):
         stream=False,
         response_format={'type': 'json_object'}
     )
-    return response.choices[0].message.content.strip()
+    content = response.choices[0].message.content.strip()
+
+    # Log the response
+    _log_llm_interaction("RESPONSE", content)
+
+    return content
+
+
+def _log_llm_interaction(step, content):
+    """Log LLM prompts and responses to the log file."""
+    try:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        with open(KG_EXTRACT_LOG_PATH, 'a', encoding='utf-8') as f:
+            f.write(f"\n{'='*60}\n")
+            f.write(f"[{timestamp}] {step}\n")
+            f.write(f"{'='*60}\n")
+            f.write(f"{content}\n")
+            f.write(f"\n{'='*60}\n")
+    except Exception as e:
+        print(f"[WARN] Failed to log LLM interaction: {e}")
 
 
 def _apply_canonical_mapping(quads, entity_mapping):
@@ -238,7 +261,8 @@ def _resolve_entities(extracted_entities, resolution_prompt):
 
     # Format entities as a comma-separated list
     entities_list = ", ".join([f'"{e}"' for e in extracted_entities])
-    prompt = f"{resolution_prompt}\n\n## Extracted Entities\n[{entities_list}]"
+    # prompt = f"{resolution_prompt}\n\n## Extracted Entities\n[{entities_list}]"
+    prompt = "resolution_prompt".format(ENTITIES=entities_list)
 
     try:
         content = _call_llm(prompt, temperature=0.2)
@@ -290,7 +314,7 @@ def extract_quads_with_llm(text_chunk, cot_prompt=None, resolution_prompt=None, 
         return []
 
     # ========== STEP 1: Extract entities and quads using CoT ==========
-    cot_prompt_text = f"{cot_prompt}\n\n## Text to Process\n{text_chunk}"
+    cot_prompt_text = "cot_prompt".format(TEXT=text_chunk)
     try:
         content = _call_llm(cot_prompt_text, temperature=0.1)
         data = parse_json_response(content)

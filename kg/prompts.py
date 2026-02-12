@@ -2071,7 +2071,7 @@ You must follow a **2-Step Forced Chain of Thought** process.
 ## Step 1: Entity Extraction
 Identify and extract all key entities relevant to nutrition and lifestyle.
 * **Scope**: Include foods, nutrients, health conditions, demographics, activities, measurements, and physiological effects.
-* **Constraint**: Do not categorize them. Just list the distinct terms found in the text.
+* **Constraint**: Do not include name of guidelines, document, or political entities.
 
 ## Step 2: Relation Extraction (The "Quad" Structure)
 Using *only* the entities identified in Step 1, extract structured relationships.
@@ -2105,12 +2105,12 @@ Using *only* the entities identified in Step 1, extract structured relationships
 ```
 
 ## Output Requirements
+Output valid JSON object covered between ```json and ```.
 
-1. Output **ONLY** the valid JSON object.
-2. Return `{"extracted_entities": [], "quads": []}` if no relevant info is found.
+## Text to Analyze:
+{TEXT}
 
 ## Execution
-
 Analyze the text provided below and output the valid JSON object.
 """
 
@@ -2151,6 +2151,9 @@ Return a JSON object with a list of "resolutions".
 }
 
 ```
+
+## Extracted Entities:
+[{ENTITIES}]
 
 ## Execution
 
