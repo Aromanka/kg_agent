@@ -1,0 +1,1641 @@
+
+============================================================
+[2026-02-12 22:35:05.406541] PROMPT
+============================================================
+cot_prompt
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:08.412980] RESPONSE
+============================================================
+{
+  "response": "I am a helpful medical assistant designed to output JSON. Please provide a medical-related query or instruction so I can assist you appropriately."
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:08.413980] PROMPT
+============================================================
+cot_prompt
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:11.126128] RESPONSE
+============================================================
+{
+  "response": "I am a helpful medical assistant designed to output JSON. Please provide a medical-related query or instruction so I can assist you appropriately."
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:11.127134] PROMPT
+============================================================
+cot_prompt
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:13.718857] RESPONSE
+============================================================
+{
+  "response": "I am a helpful medical assistant designed to output JSON. Please provide a medical-related query or instruction so I can assist you appropriately."
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:13.719861] PROMPT
+============================================================
+cot_prompt
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:16.259349] RESPONSE
+============================================================
+{
+  "response": "I am a helpful medical assistant designed to output JSON. Please provide a medical-related query or instruction so I can assist you appropriately."
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:16.260978] PROMPT
+============================================================
+cot_prompt
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:19.240614] RESPONSE
+============================================================
+{
+  "response": "I am a helpful medical assistant designed to output JSON. Please provide a medical-related query or instruction so I can assist you appropriately."
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:19.242621] PROMPT
+============================================================
+cot_prompt
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:22.621007] RESPONSE
+============================================================
+{
+  "response": "I am a helpful medical assistant designed to output JSON. Please provide a medical-related query or instruction so I can assist you appropriately."
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:22.622199] PROMPT
+============================================================
+cot_prompt
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:26.036248] RESPONSE
+============================================================
+{
+  "response": "I am a helpful medical assistant designed to output JSON. Please provide a medical-related query or instruction so I can assist you appropriately."
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:26.038256] PROMPT
+============================================================
+cot_prompt
+
+============================================================
+
+============================================================
+[2026-02-12 22:35:29.390633] RESPONSE
+============================================================
+{
+  "response": "I am a helpful medical assistant designed to output JSON. Please provide a medical-related query or instruction so I can assist you appropriately."
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:48:25.188454] PROMPT
+============================================================
+
+You are an expert Knowledge Graph Engineer specialized in Diet, Nutrition, and Lifestyle.
+Your goal is to extract **meaningful guidelines and facts** from the text.
+
+You must follow a **2-Step Forced Chain of Thought** process.
+
+## Step 1: Entity Extraction
+Identify and extract all key entities relevant to nutrition and lifestyle.
+* **Scope**: Include foods, nutrients, health conditions, demographics, activities, measurements, and physiological effects.
+* **Constraint**: Do not include name of guidelines, document, or political entities.
+
+## Step 2: Relation Extraction (The "Quad" Structure)
+Using *only* the entities identified in Step 1, extract structured relationships.
+* **Head**: The subject entity (Must be in Step 1 list).
+* **Relation**: A concise, descriptive verb phrase capturing the interaction (e.g., "increases risk of", "is rich in", "recommends", "should avoid"). You are free to define the relation based on the text.
+* **Tail**: The object entity (Must be in Step 1 list).
+* **Context**: (String) Any condition, timing, dosage, or constraint (e.g., "daily", "if pregnant"). If none, use "General".
+
+## Robustness Rules
+1.  **Grounding**: Every Head and Tail in the quads MUST be strictly selected from the `extracted_entities` list.
+2.  **Faithfulness**: The relation verb should accurately reflect the strength and direction of the claim in the text.
+
+## Few-Shot Example
+**Input**:
+"To prevent anemia, women should eat spinach because it contains iron. However, coffee can inhibit iron absorption."
+
+**Output**:
+```json
+{
+  "extracted_entities": [
+    "anemia", "women", "spinach", "iron", "coffee", "iron absorption"
+  ],
+  "quads": [
+    {"head": "spinach", "relation": "helps prevent", "tail": "anemia", "context": "General"},
+    {"head": "women", "relation": "should eat", "tail": "spinach", "context": "To prevent anemia"},
+    {"head": "spinach", "relation": "contains", "tail": "iron", "context": "General"},
+    {"head": "coffee", "relation": "inhibits", "tail": "iron absorption", "context": "General"}
+  ]
+}
+
+```
+
+## Output Requirements
+Output valid JSON object covered between ```json and ```.
+
+## Text to Analyze:
+# **A Quick Guide to the Government’s** **Healthy Eating Recommendations**
+
+A Quick Guide to the Government’s Healthy Eating Recommendations
+
+## About Public Health England
+
+
+## Execution
+Analyze the text provided below and output the valid JSON object.
+
+
+============================================================
+
+============================================================
+[2026-02-12 22:48:27.764955] RESPONSE
+============================================================
+{
+    "extracted_entities": [],
+    "quads": []
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:48:27.764955] PROMPT
+============================================================
+
+You are an expert Knowledge Graph Engineer specialized in Diet, Nutrition, and Lifestyle.
+Your goal is to extract **meaningful guidelines and facts** from the text.
+
+You must follow a **2-Step Forced Chain of Thought** process.
+
+## Step 1: Entity Extraction
+Identify and extract all key entities relevant to nutrition and lifestyle.
+* **Scope**: Include foods, nutrients, health conditions, demographics, activities, measurements, and physiological effects.
+* **Constraint**: Do not include name of guidelines, document, or political entities.
+
+## Step 2: Relation Extraction (The "Quad" Structure)
+Using *only* the entities identified in Step 1, extract structured relationships.
+* **Head**: The subject entity (Must be in Step 1 list).
+* **Relation**: A concise, descriptive verb phrase capturing the interaction (e.g., "increases risk of", "is rich in", "recommends", "should avoid"). You are free to define the relation based on the text.
+* **Tail**: The object entity (Must be in Step 1 list).
+* **Context**: (String) Any condition, timing, dosage, or constraint (e.g., "daily", "if pregnant"). If none, use "General".
+
+## Robustness Rules
+1.  **Grounding**: Every Head and Tail in the quads MUST be strictly selected from the `extracted_entities` list.
+2.  **Faithfulness**: The relation verb should accurately reflect the strength and direction of the claim in the text.
+
+## Few-Shot Example
+**Input**:
+"To prevent anemia, women should eat spinach because it contains iron. However, coffee can inhibit iron absorption."
+
+**Output**:
+```json
+{
+  "extracted_entities": [
+    "anemia", "women", "spinach", "iron", "coffee", "iron absorption"
+  ],
+  "quads": [
+    {"head": "spinach", "relation": "helps prevent", "tail": "anemia", "context": "General"},
+    {"head": "women", "relation": "should eat", "tail": "spinach", "context": "To prevent anemia"},
+    {"head": "spinach", "relation": "contains", "tail": "iron", "context": "General"},
+    {"head": "coffee", "relation": "inhibits", "tail": "iron absorption", "context": "General"}
+  ]
+}
+
+```
+
+## Output Requirements
+Output valid JSON object covered between ```json and ```.
+
+## Text to Analyze:
+Public Health England exists to protect and improve the nation’s health and wellbeing,
+and reduce health inequalities. We do this through world-leading science, knowledge
+and intelligence, advocacy, partnerships and the delivery of specialist public health
+services. We are an executive agency of the Department of Health and Social Care,
+and a distinct delivery organisation with operational autonomy. We provide
+government, local government, the NHS, Parliament, industry and the public with
+evidence-based professional, scientific and delivery expertise and support.
+
+Public Health England
+Wellington House
+133-155 Waterloo Road
+London SE1 8UG
+Tel: 020 7654 8000
+[www.gov.uk/phe](http://www.gov.uk/phe)
+[Twitter: @PHE_uk](https://twitter.com/PHE_uk)
+[Facebook: www.facebook.com/PublicHealthEngland](http://www.facebook.com/PublicHealthEngland)
+
+Prepared by: Nutrition Advice Team, Public Health England
+
+© Crown copyright 2018
+You may re-use this information (excluding logos) free of charge in any format or
+medium, under the terms of the Open Government Licence v3.0. To view this licence,
+[visit OGL. Where we have identified any third party copyright information you will need](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/)
+to obtain permission from the copyright holders concerned.
+
+Published September 2018
+PHE publications PHE supports the UN
+gateway number: 2014220 Sustainable Development Goals
+A Quick Guide to the Government’s Healthy Eating Recommendations
+
+
+## Execution
+Analyze the text provided below and output the valid JSON object.
+
+
+============================================================
+
+============================================================
+[2026-02-12 22:48:30.068055] RESPONSE
+============================================================
+{
+    "extracted_entities": [],
+    "quads": []
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:48:30.068055] PROMPT
+============================================================
+
+You are an expert Knowledge Graph Engineer specialized in Diet, Nutrition, and Lifestyle.
+Your goal is to extract **meaningful guidelines and facts** from the text.
+
+You must follow a **2-Step Forced Chain of Thought** process.
+
+## Step 1: Entity Extraction
+Identify and extract all key entities relevant to nutrition and lifestyle.
+* **Scope**: Include foods, nutrients, health conditions, demographics, activities, measurements, and physiological effects.
+* **Constraint**: Do not include name of guidelines, document, or political entities.
+
+## Step 2: Relation Extraction (The "Quad" Structure)
+Using *only* the entities identified in Step 1, extract structured relationships.
+* **Head**: The subject entity (Must be in Step 1 list).
+* **Relation**: A concise, descriptive verb phrase capturing the interaction (e.g., "increases risk of", "is rich in", "recommends", "should avoid"). You are free to define the relation based on the text.
+* **Tail**: The object entity (Must be in Step 1 list).
+* **Context**: (String) Any condition, timing, dosage, or constraint (e.g., "daily", "if pregnant"). If none, use "General".
+
+## Robustness Rules
+1.  **Grounding**: Every Head and Tail in the quads MUST be strictly selected from the `extracted_entities` list.
+2.  **Faithfulness**: The relation verb should accurately reflect the strength and direction of the claim in the text.
+
+## Few-Shot Example
+**Input**:
+"To prevent anemia, women should eat spinach because it contains iron. However, coffee can inhibit iron absorption."
+
+**Output**:
+```json
+{
+  "extracted_entities": [
+    "anemia", "women", "spinach", "iron", "coffee", "iron absorption"
+  ],
+  "quads": [
+    {"head": "spinach", "relation": "helps prevent", "tail": "anemia", "context": "General"},
+    {"head": "women", "relation": "should eat", "tail": "spinach", "context": "To prevent anemia"},
+    {"head": "spinach", "relation": "contains", "tail": "iron", "context": "General"},
+    {"head": "coffee", "relation": "inhibits", "tail": "iron absorption", "context": "General"}
+  ]
+}
+
+```
+
+## Output Requirements
+Output valid JSON object covered between ```json and ```.
+
+## Text to Analyze:
+## Contents
+
+About Public Health England 2
+
+Contents 3
+
+1. Executive summary 4
+
+2. The Eatwell Guide 5
+
+3. Government healthy eating recommendations 6
+
+4. Further information 11
+
+References 12
+A Quick Guide to the Government’s Healthy Eating Recommendations
+
+## 1. Executive summary
+
+
+## Execution
+Analyze the text provided below and output the valid JSON object.
+
+
+============================================================
+
+============================================================
+[2026-02-12 22:48:32.081199] RESPONSE
+============================================================
+{
+    "extracted_entities": [],
+    "quads": []
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:48:32.083243] PROMPT
+============================================================
+
+You are an expert Knowledge Graph Engineer specialized in Diet, Nutrition, and Lifestyle.
+Your goal is to extract **meaningful guidelines and facts** from the text.
+
+You must follow a **2-Step Forced Chain of Thought** process.
+
+## Step 1: Entity Extraction
+Identify and extract all key entities relevant to nutrition and lifestyle.
+* **Scope**: Include foods, nutrients, health conditions, demographics, activities, measurements, and physiological effects.
+* **Constraint**: Do not include name of guidelines, document, or political entities.
+
+## Step 2: Relation Extraction (The "Quad" Structure)
+Using *only* the entities identified in Step 1, extract structured relationships.
+* **Head**: The subject entity (Must be in Step 1 list).
+* **Relation**: A concise, descriptive verb phrase capturing the interaction (e.g., "increases risk of", "is rich in", "recommends", "should avoid"). You are free to define the relation based on the text.
+* **Tail**: The object entity (Must be in Step 1 list).
+* **Context**: (String) Any condition, timing, dosage, or constraint (e.g., "daily", "if pregnant"). If none, use "General".
+
+## Robustness Rules
+1.  **Grounding**: Every Head and Tail in the quads MUST be strictly selected from the `extracted_entities` list.
+2.  **Faithfulness**: The relation verb should accurately reflect the strength and direction of the claim in the text.
+
+## Few-Shot Example
+**Input**:
+"To prevent anemia, women should eat spinach because it contains iron. However, coffee can inhibit iron absorption."
+
+**Output**:
+```json
+{
+  "extracted_entities": [
+    "anemia", "women", "spinach", "iron", "coffee", "iron absorption"
+  ],
+  "quads": [
+    {"head": "spinach", "relation": "helps prevent", "tail": "anemia", "context": "General"},
+    {"head": "women", "relation": "should eat", "tail": "spinach", "context": "To prevent anemia"},
+    {"head": "spinach", "relation": "contains", "tail": "iron", "context": "General"},
+    {"head": "coffee", "relation": "inhibits", "tail": "iron absorption", "context": "General"}
+  ]
+}
+
+```
+
+## Output Requirements
+Output valid JSON object covered between ```json and ```.
+
+## Text to Analyze:
+1.1. This document has been updated to reflect recent changes to government
+
+dietary recommendations. The original Quick Guide to Government Healthy
+Eating Recommendations has been available on the Healthier and more
+Sustainable Catering webpage on GOV.UK since February 2014.
+
+1.2. This document is aimed at catering providers to support healthier catering
+
+provision, health professionals (including dietitians and nutritionists), teachers,
+university students, academics, industry and is also a source of information for
+the general population. It provides a summary of government dietary advice and
+nutrient recommendations throughout the lifecourse.
+
+1.3. Government healthy eating recommendations are visually depicted in the
+
+Eatwell Guide  and are based on recommendations from the World Health
+Organisation (WHO) , Committee on Medical Aspects of Food Policy
+(COMA)  and the Scientific Advisory Committee on Nutrition (SACN) [6,7,8,9,10,11 ]
+
+that succeeded COMA in 2000.
+
+1.4. This document provides a concise summary of government’s healthy eating
+
+recommendations and signposts to the evidence upon which they are based.
+A Quick Guide to the Government’s Healthy Eating Recommendations
+
+
+## Execution
+Analyze the text provided below and output the valid JSON object.
+
+
+============================================================
+
+============================================================
+[2026-02-12 22:48:51.754926] RESPONSE
+============================================================
+{
+    "extracted_entities": ["catering providers", "health professionals", "dietitians", "nutritionists", "teachers", "university students", "academics", "industry", "general population", "government dietary advice", "nutrient recommendations", "lifecourse", "healthy eating recommendations", "Eatwell Guide", "World Health Organisation", "Committee on Medical Aspects of Food Policy", "Scientific Advisory Committee on Nutrition"],
+    "quads": [
+        {"head": "catering providers", "relation": "are targeted by", "tail": "government dietary advice", "context": "General"},
+        {"head": "health professionals", "relation": "are targeted by", "tail": "government dietary advice", "context": "General"},
+        {"head": "dietitians", "relation": "are included in", "tail": "health professionals", "context": "General"},
+        {"head": "nutritionists", "relation": "are included in", "tail": "health professionals", "context": "General"},
+        {"head": "teachers", "relation": "are targeted by", "tail": "government dietary advice", "context": "General"},
+        {"head": "university students", "relation": "are targeted by", "tail": "government dietary advice", "context": "General"},
+        {"head": "academics", "relation": "are targeted by", "tail": "government dietary advice", "context": "General"},
+        {"head": "industry", "relation": "are targeted by", "tail": "government dietary advice", "context": "General"},
+        {"head": "general population", "relation": "are targeted by", "tail": "government dietary advice", "context": "General"},
+        {"head": "government dietary advice", "relation": "includes", "tail": "nutrient recommendations", "context": "General"},
+        {"head": "nutrient recommendations", "relation": "apply throughout", "tail": "lifecourse", "context": "General"},
+        {"head": "healthy eating recommendations", "relation": "are visually depicted in", "tail": "Eatwell Guide", "context": "General"},
+        {"head": "healthy eating recommendations", "relation": "are based on recommendations from", "tail": "World Health Organisation", "context": "General"},
+        {"head": "healthy eating recommendations", "relation": "are based on recommendations from", "tail": "Committee on Medical Aspects of Food Policy", "context": "General"},
+        {"head": "healthy eating recommendations", "relation": "are based on recommendations from", "tail": "Scientific Advisory Committee on Nutrition", "context": "General"}
+    ]
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:48:51.754926] PROMPT
+============================================================
+
+You are a Data Cleaning Specialist.
+Your task is to identify and resolve duplicate entities from a list of nutrition and lifestyle terms.
+
+## Task
+Review the input list of entities. Group terms that refer to the **same concept** (synonyms, abbreviations, plural variations, or case differences).
+For each group, select one **Canonical Alias** that is the clearest representation of the concept.
+
+## Output Schema
+Return a JSON object with a list of "resolutions".
+* `duplicate_group`: A list of the variations found in the input (including the canonical one).
+* `canonical_form`: The single best name to use for the group.
+
+## Example
+**Input Entities**:
+["cardio", "Cardiovascular exercise", "running", "run", "Vit D", "Vitamin D"]
+
+**Output**:
+```json
+{
+  "resolutions": [
+    {
+      "duplicate_group": ["cardio", "Cardiovascular exercise"],
+      "canonical_form": "Cardiovascular exercise"
+    },
+    {
+      "duplicate_group": ["running", "run"],
+      "canonical_form": "running"
+    },
+    {
+      "duplicate_group": ["Vit D", "Vitamin D"],
+      "canonical_form": "Vitamin D"
+    }
+  ]
+}
+
+```
+
+## Extracted Entities:
+"catering providers", "health professionals", "dietitians", "nutritionists", "teachers", "university students", "academics", "industry", "general population", "government dietary advice", "nutrient recommendations", "lifecourse", "healthy eating recommendations", "Eatwell Guide", "World Health Organisation", "Committee on Medical Aspects of Food Policy", "Scientific Advisory Committee on Nutrition"
+
+## Execution
+
+Analyze the list of entities below and provide the JSON resolution map.
+
+
+============================================================
+
+============================================================
+[2026-02-12 22:48:58.143348] RESPONSE
+============================================================
+{
+    "resolutions": [
+        {
+            "duplicate_group": ["health professionals", "dietitians", "nutritionists"],
+            "canonical_form": "health professionals"
+        },
+        {
+            "duplicate_group": ["university students", "academics"],
+            "canonical_form": "academics"
+        },
+        {
+            "duplicate_group": ["government dietary advice", "nutrient recommendations", "healthy eating recommendations"],
+            "canonical_form": "government dietary advice"
+        },
+        {
+            "duplicate_group": ["World Health Organisation", "Committee on Medical Aspects of Food Policy", "Scientific Advisory Committee on Nutrition"],
+            "canonical_form": "World Health Organisation"
+        }
+    ]
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:48:59.650719] PROMPT
+============================================================
+
+You are an expert Knowledge Graph Engineer specialized in Diet, Nutrition, and Lifestyle.
+Your goal is to extract **meaningful guidelines and facts** from the text.
+
+You must follow a **2-Step Forced Chain of Thought** process.
+
+## Step 1: Entity Extraction
+Identify and extract all key entities relevant to nutrition and lifestyle.
+* **Scope**: Include foods, nutrients, health conditions, demographics, activities, measurements, and physiological effects.
+* **Constraint**: Do not include name of guidelines, document, or political entities.
+
+## Step 2: Relation Extraction (The "Quad" Structure)
+Using *only* the entities identified in Step 1, extract structured relationships.
+* **Head**: The subject entity (Must be in Step 1 list).
+* **Relation**: A concise, descriptive verb phrase capturing the interaction (e.g., "increases risk of", "is rich in", "recommends", "should avoid"). You are free to define the relation based on the text.
+* **Tail**: The object entity (Must be in Step 1 list).
+* **Context**: (String) Any condition, timing, dosage, or constraint (e.g., "daily", "if pregnant"). If none, use "General".
+
+## Robustness Rules
+1.  **Grounding**: Every Head and Tail in the quads MUST be strictly selected from the `extracted_entities` list.
+2.  **Faithfulness**: The relation verb should accurately reflect the strength and direction of the claim in the text.
+
+## Few-Shot Example
+**Input**:
+"To prevent anemia, women should eat spinach because it contains iron. However, coffee can inhibit iron absorption."
+
+**Output**:
+```json
+{
+  "extracted_entities": [
+    "anemia", "women", "spinach", "iron", "coffee", "iron absorption"
+  ],
+  "quads": [
+    {"head": "spinach", "relation": "helps prevent", "tail": "anemia", "context": "General"},
+    {"head": "women", "relation": "should eat", "tail": "spinach", "context": "To prevent anemia"},
+    {"head": "spinach", "relation": "contains", "tail": "iron", "context": "General"},
+    {"head": "coffee", "relation": "inhibits", "tail": "iron absorption", "context": "General"}
+  ]
+}
+
+```
+
+## Output Requirements
+Output valid JSON object covered between ```json and ```.
+
+## Text to Analyze:
+## 2. The Eatwell Guide
+
+2.1. The Eatwell Guide (below) is a pictorial representation of government healthy
+
+eating advice showing the proportions in which different types of foods are
+needed to have a well-balanced and healthy diet. The proportions shown are
+representative of your food consumption over the period of a day or even a
+week, not necessarily each meal time.
+
+A Quick Guide to the Government’s Healthy Eating Recommendations
+
+## 3. Government healthy eating recommendations
+
+
+## Execution
+Analyze the text provided below and output the valid JSON object.
+
+
+============================================================
+
+============================================================
+[2026-02-12 22:49:08.878120] RESPONSE
+============================================================
+{
+    "extracted_entities": ["Eatwell Guide", "government healthy eating advice", "well-balanced diet", "healthy diet", "food consumption", "day", "week", "meal time", "Government's Healthy Eating Recommendations"],
+    "quads": [
+        {"head": "Eatwell Guide", "relation": "is a pictorial representation of", "tail": "government healthy eating advice", "context": "General"},
+        {"head": "Eatwell Guide", "relation": "shows proportions of", "tail": "food consumption", "context": "over a day or week"},
+        {"head": "food consumption", "relation": "should be well-balanced for", "tail": "healthy diet", "context": "General"},
+        {"head": "Eatwell Guide", "relation": "illustrates proportions for", "tail": "well-balanced diet", "context": "General"},
+        {"head": "proportions", "relation": "apply to", "tail": "food consumption", "context": "over day or week, not each meal time"}
+    ]
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:49:08.878120] PROMPT
+============================================================
+
+You are a Data Cleaning Specialist.
+Your task is to identify and resolve duplicate entities from a list of nutrition and lifestyle terms.
+
+## Task
+Review the input list of entities. Group terms that refer to the **same concept** (synonyms, abbreviations, plural variations, or case differences).
+For each group, select one **Canonical Alias** that is the clearest representation of the concept.
+
+## Output Schema
+Return a JSON object with a list of "resolutions".
+* `duplicate_group`: A list of the variations found in the input (including the canonical one).
+* `canonical_form`: The single best name to use for the group.
+
+## Example
+**Input Entities**:
+["cardio", "Cardiovascular exercise", "running", "run", "Vit D", "Vitamin D"]
+
+**Output**:
+```json
+{
+  "resolutions": [
+    {
+      "duplicate_group": ["cardio", "Cardiovascular exercise"],
+      "canonical_form": "Cardiovascular exercise"
+    },
+    {
+      "duplicate_group": ["running", "run"],
+      "canonical_form": "running"
+    },
+    {
+      "duplicate_group": ["Vit D", "Vitamin D"],
+      "canonical_form": "Vitamin D"
+    }
+  ]
+}
+
+```
+
+## Extracted Entities:
+"Eatwell Guide", "government healthy eating advice", "well-balanced diet", "healthy diet", "food consumption", "day", "week", "meal time", "Government's Healthy Eating Recommendations"
+
+## Execution
+
+Analyze the list of entities below and provide the JSON resolution map.
+
+
+============================================================
+
+============================================================
+[2026-02-12 22:49:16.079884] RESPONSE
+============================================================
+{
+    "resolutions": [
+        {
+            "duplicate_group": ["Eatwell Guide", "government healthy eating advice", "Government's Healthy Eating Recommendations"],
+            "canonical_form": "Eatwell Guide"
+        },
+        {
+            "duplicate_group": ["well-balanced diet", "healthy diet"],
+            "canonical_form": "healthy diet"
+        },
+        {
+            "duplicate_group": ["food consumption"],
+            "canonical_form": "food consumption"
+        },
+        {
+            "duplicate_group": ["day"],
+            "canonical_form": "day"
+        },
+        {
+            "duplicate_group": ["week"],
+            "canonical_form": "week"
+        },
+        {
+            "duplicate_group": ["meal time"],
+            "canonical_form": "meal time"
+        }
+    ]
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:49:16.583677] PROMPT
+============================================================
+
+You are an expert Knowledge Graph Engineer specialized in Diet, Nutrition, and Lifestyle.
+Your goal is to extract **meaningful guidelines and facts** from the text.
+
+You must follow a **2-Step Forced Chain of Thought** process.
+
+## Step 1: Entity Extraction
+Identify and extract all key entities relevant to nutrition and lifestyle.
+* **Scope**: Include foods, nutrients, health conditions, demographics, activities, measurements, and physiological effects.
+* **Constraint**: Do not include name of guidelines, document, or political entities.
+
+## Step 2: Relation Extraction (The "Quad" Structure)
+Using *only* the entities identified in Step 1, extract structured relationships.
+* **Head**: The subject entity (Must be in Step 1 list).
+* **Relation**: A concise, descriptive verb phrase capturing the interaction (e.g., "increases risk of", "is rich in", "recommends", "should avoid"). You are free to define the relation based on the text.
+* **Tail**: The object entity (Must be in Step 1 list).
+* **Context**: (String) Any condition, timing, dosage, or constraint (e.g., "daily", "if pregnant"). If none, use "General".
+
+## Robustness Rules
+1.  **Grounding**: Every Head and Tail in the quads MUST be strictly selected from the `extracted_entities` list.
+2.  **Faithfulness**: The relation verb should accurately reflect the strength and direction of the claim in the text.
+
+## Few-Shot Example
+**Input**:
+"To prevent anemia, women should eat spinach because it contains iron. However, coffee can inhibit iron absorption."
+
+**Output**:
+```json
+{
+  "extracted_entities": [
+    "anemia", "women", "spinach", "iron", "coffee", "iron absorption"
+  ],
+  "quads": [
+    {"head": "spinach", "relation": "helps prevent", "tail": "anemia", "context": "General"},
+    {"head": "women", "relation": "should eat", "tail": "spinach", "context": "To prevent anemia"},
+    {"head": "spinach", "relation": "contains", "tail": "iron", "context": "General"},
+    {"head": "coffee", "relation": "inhibits", "tail": "iron absorption", "context": "General"}
+  ]
+}
+
+```
+
+## Output Requirements
+Output valid JSON object covered between ```json and ```.
+
+## Text to Analyze:
+3.1. Eatwell Guide food groups and supporting information
+
+### Fruit and vegetables
+
+Over a third of the diet should come from fruit and
+vegetables.
+
+Eat at least 5 portions of a variety of fruit and
+vegetables every day. A portion is 80g or one of the
+following:
+
+            - a slice of a large fruit such as a melon
+
+            - a whole piece of fruit such as an apple or banana
+
+            - two pieces of small fruit such as satsumas
+
+            - three tablespoons of cooked vegetables
+
+            - a bowl of mixed salad
+
+Limit the consumption of 100% fruit and vegetable juices
+and/or smoothies to a combined total of 150ml (one
+portion) per day and consume with meals to reduce the risk
+of tooth decay.
+
+30g (1 heaped tablespoon) of dried fruit (such as
+raisins and apricots) also counts as one portion.
+Consume at mealtimes rather than as a between
+meal snack to reduce the risk of tooth decay.
+
+### Potatoes, bread, rice, pasta and other starchy carbohydrates
+
+Base meals on potatoes, bread, rice, pasta or other starchy
+carbohydrates; choosing wholegrain versions where
+possible. This includes wholewheat pasta, brown rice, or
+simply leaving the skins on potatoes.
+
+Wholegrain food contains more fibre than white or refined
+starchy food, and often more of other nutrients too.
+
+A Quick Guide to the Government’s Healthy Eating Recommendations
+
+### Dairy and alternatives
+
+Have some dairy and alternatives; choosing lower fat and
+lower sugar options.
+
+Look at labels and choose milks lower in fat, such as
+skimmed, 1% or semi-skimmed; yoghurts lower in fat and
+sugar and cheeses lower in fat and salt.
+
+When buying dairy alternatives like soya drinks, go for
+unsweetened, calcium-fortified versions.
+
+### Beans, pulses, fish, eggs, meat and other proteins
+
+Eat some beans, pulses, fish, eggs, meat and other
+proteins (including 2 portions of fish every week, one of
+which should be oily).
+
+Beans, peas and lentils (which are all types of pulses) are
+good alternatives to meat because they’re naturally very
+low in fat, and they’re high in fibre, protein, vitamins and
+minerals. Try adding them to soups, stews and ragùs to
+make your meal go further.
+
+Aim for at least two portions (2 x 140g) of fish a week,
+including a portion of oily fish. Oily fish includes salmon,
+sardines, mackerel and kippers.
+
+On average eat no more than 70g red and processed meat
+a day. Processed meat includes sausages, bacon, cured
+meats and reformed meat products.
+
+Some types of meat are high in fat, particularly saturated
+fat. When buying meat:
+
+            - choose lean cuts of meat
+
+            - go for leaner mince
+
+             - cut the fat off of meat and the skin off of chicken
+
+             - try to grill or steam meat and fish instead of frying
+A Quick Guide to the Government’s Healthy Eating Recommendations
+
+### Oil and spreads
+
+Choose unsaturated oils and spreads and eat in small amounts.
+
+Although some fat in the diet is essential, generally we are
+eating too much saturated fat.
+
+Unsaturated fats are healthier fats that are usually from
+plant sources and in liquid form as oil. This includes
+vegetable oil, rapeseed oil and olive oil; as well as spreads
+made from these oils.
+
+All types of fat are high in energy and should be limited in
+the diet.
+
+### Foods high in fat, salt and sugar
+
+Eat less often and in small amounts.
+
+This includes products such as chocolate, cakes, biscuits,
+full-sugar soft drinks, butter, cream and ice-cream.
+
+These foods are not needed in the diet and so, if included,
+should only be consumed infrequently and in
+small amounts.
+
+Check the label and avoid foods which are high in fat, salt
+and sugar.
+
+### Aim to drink 6-8 glasses of fluid every day
+
+Water, lower fat milk and sugar-free drinks including tea
+and coffee all count.
+
+100% fruit and vegetable juices and smoothies also count
+towards your fluid consumption, although they are a source
+of free sugars and so you should limit consumption to no
+more than a combined total of 150ml per day.
+A Quick Guide to the Government’s Healthy Eating Recommendations
+
+Swap sugary soft drinks for diet, sugar-free or no added
+sugar varieties to reduce your sugar intake in a simple
+step.
+
+### Food labelling
+
+Food labels can help you to choose
+between foods and to pick those that are
+
+lower in energy, fat, saturated fat, sugars
+and salt.
+
+Where colour coded labels are used you can tell at a glance if they are
+high, medium or low in fat, saturated fat, sugars and salt.
+
+For a healthier choice, try to pick products with more greens and ambers
+and fewer reds.
+
+### Daily energy requirements
+
+We all need different amounts of energy (or calories) from food to be a
+healthy weight. How much you need depends on a number of factors,
+including how active you are. Whenever we eat more than our body
+needs, we put on weight.
+
+The average energy requirement for a man is about 10.5 MJ (2,500 kcal);
+8.4MJ (2,000 kcal) for a woman. For more information on nutrient
+requirements please see the link provided in the Government Dietary
+Recommendations section below.
+
+By convention [i] :
+
+           - breakfast should provide about 1.7 MJ/400kcal of your energy
+
+           - lunch about 2.5 MJ/600kcal
+
+           - evening meal about 2.5 MJ/600kcal
+
+           - leaving 1.7 MJ/ 400kcal for all the snacks and drinks consumed
+
+between meals
+
+i The information provided is based on the average energy requirements for a woman (2000kcal per day)
+A Quick Guide to the Government’s Healthy Eating Recommendations
+
+3.2. Supplements
+
+Most of us can get all the nutrients we need by consuming a healthy,
+balanced and varied diet. However, **there are certain groups of the**
+**population for whom certain dietary supplements are recommended** :
+
+### Folic acid
+
+**Women who could become pregnant or who are planning a**
+**pregnancy** should take a dietary supplement of 400 micrograms (µg) of
+folic acid every day from before conception until the 12th week of
+pregnancy, to reduce the risk of neural tube defects (NTDs) such as spina
+bifida.
+
+Women who have an increased risk of having a pregnancy affected by an
+NTD, including those who had a previous NTD affected pregnancy and
+those with a family history of NTDs, are advised to take a higher dose of 5
+milligrams (mg) of folic acid each day until the 12th week of pregnancy.
+
+In addition to taking folic acid supplements, all pregnant women should eat
+folate rich foods such as green vegetables, some fruits (oranges for
+example) and fortified breakfast cereals.
+
+### Vitamin D
+
+It is recommended  that between the months of October and March
+**everyone aged five years and above including pregnant and**
+**breastfeeding women** should consider taking a supplement containing
+10µg of vitamin D per day [ii] . There are separate recommendations for
+children from birth to four years of age.
+
+Between late March/early April and the end of September, the majority of people
+aged five years and above will probably obtain sufficient vitamin D from sunlight
+when they are outdoors so they might choose not to take a vitamin D supplement
+during these months.
+
+However, some groups of people will not obtain enough vitamin D from sunlight
+because they have very little or no sunshine exposure. People from these groups
+
+ii This is due to the fact that vitamin D is only found in a small number of foods and so it might be difficult to get
+enough from foods that naturally contain vitamin D and/or fortified foods alone. This recommendation refers to the
+average amount of vitamin D consumed over a period of time (eg a week) and takes account of day to day
+variations in vitamin D intake.
+A Quick Guide to the Government’s Healthy Eating Recommendations
+
+should take a daily supplement containing 10µg vitamin D throughout the year.
+They are:
+
+       - people who are seldom outdoors such as frail or housebound individuals and
+those who are confined indoors eg in institutions such as care homes
+
+       - people who habitually wear clothes that cover most of their skin while outdoors
+
+People from minority ethnic groups with dark skin such as those with African,
+African-Caribbean and South Asian origin might not get enough vitamin D from
+sunlight in summer, so they should consider taking a daily supplement containing
+10µg vitamin D throughout the year.
+
+### Vitamins A and C
+
+**Infants and young children aged between six months and five years**
+should also be given a supplement containing vitamins A and C. Babies
+under six months of age should not need supplements containing vitamin A
+and C as their body stores of nutrients (obtained from the mother during
+pregnancy) and breast milk or infant formula intake should be adequate to
+meet their needs. Formula fed infants should not need vitamin
+supplements until they are having less than 500ml of formula a day, as
+formula is fortified with vitamins and minerals.
+
+Children who have a good appetite and eat a wide variety of foods,
+including fruit and vegetables, might not need vitamin supplements.
+Parents who are concerned about their child’s diet should talk to their GP
+or health visitor for further advice.
+
+
+## Execution
+Analyze the text provided below and output the valid JSON object.
+
+
+============================================================
+
+============================================================
+[2026-02-12 22:50:33.201693] RESPONSE
+============================================================
+{
+    "extracted_entities": [
+        "fruit and vegetables",
+        "diet",
+        "portions",
+        "fruit",
+        "vegetables",
+        "tooth decay",
+        "fruit and vegetable juices",
+        "smoothies",
+        "dried fruit",
+        "mealtimes",
+        "potatoes",
+        "bread",
+        "rice",
+        "pasta",
+        "starchy carbohydrates",
+        "wholegrain versions",
+        "wholewheat pasta",
+        "brown rice",
+        "fibre",
+        "nutrients",
+        "dairy and alternatives",
+        "lower fat",
+        "lower sugar",
+        "milks",
+        "skimmed",
+        "1%",
+        "semi-skimmed",
+        "yoghurts",
+        "cheeses",
+        "salt",
+        "soya drinks",
+        "calcium-fortified versions",
+        "beans",
+        "pulses",
+        "fish",
+        "eggs",
+        "meat",
+        "proteins",
+        "oily fish",
+        "salmon",
+        "sardines",
+        "mackerel",
+        "kippers",
+        "red and processed meat",
+        "sausages",
+        "bacon",
+        "cured meats",
+        "reformed meat products",
+        "saturated fat",
+        "lean cuts of meat",
+        "leaner mince",
+        "chicken",
+        "grill",
+        "steam",
+        "frying",
+        "unsaturated oils",
+        "spreads",
+        "fat",
+        "saturated fat",
+        "unsaturated fats",
+        "plant sources",
+        "vegetable oil",
+        "rapeseed oil",
+        "olive oil",
+        "energy",
+        "foods high in fat, salt and sugar",
+        "chocolate",
+        "cakes",
+        "biscuits",
+        "full-sugar soft drinks",
+        "butter",
+        "cream",
+        "ice-cream",
+        "fluid",
+        "water",
+        "lower fat milk",
+        "sugar-free drinks",
+        "tea",
+        "coffee",
+        "free sugars",
+        "sugary soft drinks",
+        "diet",
+        "sugar-free",
+        "no added sugar varieties",
+        "sugar intake",
+        "food labels",
+        "energy",
+        "fat",
+        "sugars",
+        "salt",
+        "colour coded labels",
+        "greens",
+        "ambers",
+        "reds",
+        "daily energy requirements",
+        "calories",
+        "healthy weight",
+        "active",
+        "weight",
+        "man",
+        "woman",
+        "breakfast",
+        "lunch",
+        "evening meal",
+        "snacks",
+        "drinks",
+        "nutrients",
+        "dietary supplements",
+        "folic acid",
+        "women",
+        "pregnancy",
+        "neural tube defects",
+        "spina bifida",
+        "folate rich foods",
+        "green vegetables",
+        "fruits",
+        "oranges",
+        "fortified breakfast cereals",
+        "vitamin D",
+        "October",
+        "March",
+        "five years and above",
+        "pregnant women",
+        "breastfeeding women",
+        "sunlight",
+        "outdoors",
+        "frail",
+        "housebound",
+        "care homes",
+        "minority ethnic groups",
+        "dark skin",
+        "African",
+        "African-Caribbean",
+        "South Asian",
+        "summer",
+        "vitamins A and C",
+        "infants",
+        "young children",
+        "six months",
+        "five years",
+        "babies",
+        "breast milk",
+        "infant formula",
+        "GP",
+        "health visitor"
+    ],
+    "quads": [
+        {"head": "fruit and vegetables", "relation": "should comprise over a third of", "tail": "diet", "context": "General"},
+        {"head": "fruit and vegetables", "relation": "should be eaten in at least 5 portions of", "tail": "portions", "context": "daily"},
+        {"head": "portions", "relation": "is defined as 80g of", "tail": "fruit and vegetables", "context": "General"},
+        {"head": "fruit and vegetable juices", "relation": "should be limited to 150ml of", "tail": "smoothies", "context": "daily combined total"},
+        {"head": "fruit and vegetable juices", "relation": "consumed with meals reduces risk of", "tail": "tooth decay", "context": "General"},
+        {"head": "dried fruit", "relation": "counts as one portion of", "tail": "fruit and vegetables", "context": "30g"},
+        {"head": "dried fruit", "relation": "consumed at mealtimes reduces risk of", "tail": "tooth decay", "context": "rather than as between meal snack"},
+        {"head": "potatoes", "relation": "should be based on meals with", "tail": "starchy carbohydrates", "context": "General"},
+        {"head": "wholegrain versions", "relation": "contain more", "tail": "fibre", "context": "than white or refined starchy food"},
+        {"head": "wholegrain versions", "relation": "contain more", "tail": "nutrients", "context": "than white or refined starchy food"},
+        {"head": "dairy and alternatives", "relation": "should be chosen as", "tail": "lower fat", "context": "General"},
+        {"head": "dairy and alternatives", "relation": "should be chosen as", "tail": "lower sugar", "context": "General"},
+        {"head": "milks", "relation": "should be chosen as", "tail": "skimmed", "context": "lower in fat"},
+        {"head": "soya drinks", "relation": "should be chosen as", "tail": "calcium-fortified versions", "context": "unsweetened"},
+        {"head": "beans", "relation": "are good alternatives to", "tail": "meat", "context": "General"},
+        {"head": "pulses", "relation": "are naturally low in", "tail": "fat", "context": "General"},
+        {"head": "pulses", "relation": "are high in", "tail": "fibre", "context": "General"},
+        {"head": "fish", "relation": "should be eaten in 2 portions of", "tail": "oily fish", "context": "weekly including one portion"},
+        {"head": "oily fish", "relation": "includes", "tail": "salmon", "context": "General"},
+        {"head": "red and processed meat", "relation": "should be eaten no more than 70g of", "tail": "sausages", "context": "daily on average"},
+        {"head": "meat", "relation": "can be high in", "tail": "saturated fat", "context": "some types"},
+        {"head": "meat", "relation": "should be chosen as", "tail": "lean cuts of meat", "context": "General"},
+        {"head": "meat", "relation": "should be prepared by", "tail": "grill", "context": "instead of frying"},
+        {"head": "unsaturated oils", "relation": "should be eaten in small amounts of", "tail": "spreads", "context": "General"},
+        {"head": "unsaturated fats", "relation": "are healthier than", "tail": "saturated fat", "context": "usually from plant sources"},
+        {"head": "fat", "relation": "is high in", "tail": "energy", "context": "all types"},
+        {"head": "foods high in fat, salt and sugar", "relation": "should be eaten less often and in small amounts of", "tail": "chocolate", "context": "General"},
+        {"head": "fluid", "relation": "should be drunk 6-8 glasses of", "tail": "water", "context": "daily"},
+        {"head": "sugary soft drinks", "relation": "should be swapped for", "tail": "diet", "context": "to reduce sugar intake"},
+        {"head": "food labels", "relation": "can help choose foods lower in", "tail": "energy", "context": "General"},
+        {"head": "colour coded labels", "relation": "indicate if foods are high in", "tail": "fat", "context": "using greens, ambers, reds"},
+        {"head": "daily energy requirements", "relation": "depend on how", "tail": "active", "context": "General"},
+        {"head": "man", "relation": "has average energy requirement of 10.5 MJ for", "tail": "healthy weight", "context": "General"},
+        {"head": "woman", "relation": "has average energy requirement of 8.4 MJ for", "tail": "healthy weight", "context": "General"},
+        {"head": "breakfast", "relation": "should provide about 1.7 MJ of", "tail": "energy", "context": "General"},
+        {"head": "nutrients", "relation": "can be obtained from", "tail": "dietary supplements", "context": "for certain groups"},
+        {"head": "women", "relation": "planning pregnancy should take 400µg of", "tail": "folic acid", "context": "daily until 12th week of pregnancy"},
+        {"head": "folic acid", "relation": "reduces risk of", "tail": "neural tube defects", "context": "General"},
+        {"head": "pregnant women", "relation": "should eat", "tail": "folate rich foods", "context": "in addition to supplements"},
+        {"head": "folate rich foods", "relation": "include", "tail": "green vegetables", "context": "General"},
+        {"head": "everyone aged five years and above", "relation": "should consider taking 10µg of", "tail": "vitamin D", "context": "daily between October and March"},
+        {"head": "vitamin D", "relation": "is obtained from", "tail": "sunlight", "context": "when outdoors between late March and September"},
+        {"head": "frail", "relation": "individuals should take daily supplement of", "tail": "vitamin D", "context": "throughout the year"},
+        {"head": "minority ethnic groups", "relation": "with dark skin might not get enough", "tail": "vitamin D", "context": "from sunlight in summer"},
+        {"head": "infants", "relation": "aged six months to five years should be given supplement containing", "tail": "vitamins A and C", "context": "General"},
+        {"head": "babies", "relation": "under six months should not need supplements if adequate", "tail": "breast milk", "context": "General"},
+        {"head": "parents", "relation": "concerned about child's diet should talk to", "tail": "GP", "context": "General"}
+    ]
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:50:33.202690] PROMPT
+============================================================
+
+You are a Data Cleaning Specialist.
+Your task is to identify and resolve duplicate entities from a list of nutrition and lifestyle terms.
+
+## Task
+Review the input list of entities. Group terms that refer to the **same concept** (synonyms, abbreviations, plural variations, or case differences).
+For each group, select one **Canonical Alias** that is the clearest representation of the concept.
+
+## Output Schema
+Return a JSON object with a list of "resolutions".
+* `duplicate_group`: A list of the variations found in the input (including the canonical one).
+* `canonical_form`: The single best name to use for the group.
+
+## Example
+**Input Entities**:
+["cardio", "Cardiovascular exercise", "running", "run", "Vit D", "Vitamin D"]
+
+**Output**:
+```json
+{
+  "resolutions": [
+    {
+      "duplicate_group": ["cardio", "Cardiovascular exercise"],
+      "canonical_form": "Cardiovascular exercise"
+    },
+    {
+      "duplicate_group": ["running", "run"],
+      "canonical_form": "running"
+    },
+    {
+      "duplicate_group": ["Vit D", "Vitamin D"],
+      "canonical_form": "Vitamin D"
+    }
+  ]
+}
+
+```
+
+## Extracted Entities:
+"fruit and vegetables", "diet", "portions", "fruit", "vegetables", "tooth decay", "fruit and vegetable juices", "smoothies", "dried fruit", "mealtimes", "potatoes", "bread", "rice", "pasta", "starchy carbohydrates", "wholegrain versions", "wholewheat pasta", "brown rice", "fibre", "nutrients", "dairy and alternatives", "lower fat", "lower sugar", "milks", "skimmed", "1%", "semi-skimmed", "yoghurts", "cheeses", "salt", "soya drinks", "calcium-fortified versions", "beans", "pulses", "fish", "eggs", "meat", "proteins", "oily fish", "salmon", "sardines", "mackerel", "kippers", "red and processed meat", "sausages", "bacon", "cured meats", "reformed meat products", "saturated fat", "lean cuts of meat", "leaner mince", "chicken", "grill", "steam", "frying", "unsaturated oils", "spreads", "fat", "saturated fat", "unsaturated fats", "plant sources", "vegetable oil", "rapeseed oil", "olive oil", "energy", "foods high in fat, salt and sugar", "chocolate", "cakes", "biscuits", "full-sugar soft drinks", "butter", "cream", "ice-cream", "fluid", "water", "lower fat milk", "sugar-free drinks", "tea", "coffee", "free sugars", "sugary soft drinks", "diet", "sugar-free", "no added sugar varieties", "sugar intake", "food labels", "energy", "fat", "sugars", "salt", "colour coded labels", "greens", "ambers", "reds", "daily energy requirements", "calories", "healthy weight", "active", "weight", "man", "woman", "breakfast", "lunch", "evening meal", "snacks", "drinks", "nutrients", "dietary supplements", "folic acid", "women", "pregnancy", "neural tube defects", "spina bifida", "folate rich foods", "green vegetables", "fruits", "oranges", "fortified breakfast cereals", "vitamin D", "October", "March", "five years and above", "pregnant women", "breastfeeding women", "sunlight", "outdoors", "frail", "housebound", "care homes", "minority ethnic groups", "dark skin", "African", "African-Caribbean", "South Asian", "summer", "vitamins A and C", "infants", "young children", "six months", "five years", "babies", "breast milk", "infant formula", "GP", "health visitor"
+
+## Execution
+
+Analyze the list of entities below and provide the JSON resolution map.
+
+
+============================================================
+
+============================================================
+[2026-02-12 22:51:04.422147] RESPONSE
+============================================================
+{
+    "resolutions": [
+        {
+            "duplicate_group": ["fruit and vegetables", "fruit", "vegetables", "fruit and vegetable juices", "dried fruit", "fruits", "green vegetables", "oranges"],
+            "canonical_form": "fruit and vegetables"
+        },
+        {
+            "duplicate_group": ["diet", "diet"],
+            "canonical_form": "diet"
+        },
+        {
+            "duplicate_group": ["starchy carbohydrates", "potatoes", "bread", "rice", "pasta", "wholegrain versions", "wholewheat pasta", "brown rice"],
+            "canonical_form": "starchy carbohydrates"
+        },
+        {
+            "duplicate_group": ["dairy and alternatives", "milks", "skimmed", "1%", "semi-skimmed", "yoghurts", "cheeses", "soya drinks", "calcium-fortified versions", "lower fat milk"],
+            "canonical_form": "dairy and alternatives"
+        },
+        {
+            "duplicate_group": ["proteins", "beans", "pulses", "fish", "eggs", "meat", "oily fish", "salmon", "sardines", "mackerel", "kippers", "red and processed meat", "sausages", "bacon", "cured meats", "reformed meat products", "lean cuts of meat", "leaner mince", "chicken"],
+            "canonical_form": "proteins"
+        },
+        {
+            "duplicate_group": ["fat", "saturated fat", "unsaturated fats", "unsaturated oils", "spreads", "plant sources", "vegetable oil", "rapeseed oil", "olive oil", "butter", "cream"],
+            "canonical_form": "fat"
+        },
+        {
+            "duplicate_group": ["foods high in fat, salt and sugar", "chocolate", "cakes", "biscuits", "full-sugar soft drinks", "ice-cream", "sugary soft drinks"],
+            "canonical_form": "foods high in fat, salt and sugar"
+        },
+        {
+            "duplicate_group": ["fluid", "water", "sugar-free drinks", "tea", "coffee"],
+            "canonical_form": "fluid"
+        },
+        {
+            "duplicate_group": ["sugar", "free sugars", "sugar-free", "no added sugar varieties", "sugar intake", "sugars"],
+            "canonical_form": "sugar"
+        },
+        {
+            "duplicate_group": ["food labels", "colour coded labels", "greens", "ambers", "reds"],
+            "canonical_form": "food labels"
+        },
+        {
+            "duplicate_group": ["energy", "energy", "calories", "daily energy requirements"],
+            "canonical_form": "energy"
+        },
+        {
+            "duplicate_group": ["nutrients", "nutrients", "fibre"],
+            "canonical_form": "nutrients"
+        },
+        {
+            "duplicate_group": ["vitamin D", "vitamin D"],
+            "canonical_form": "vitamin D"
+        },
+        {
+            "duplicate_group": ["women", "woman", "pregnant women", "breastfeeding women"],
+            "canonical_form": "women"
+        },
+        {
+            "duplicate_group": ["infants", "young children", "six months", "five years", "babies", "five years and above"],
+            "canonical_form": "infants and young children"
+        },
+        {
+            "duplicate_group": ["tooth decay", "portions", "mealtimes", "lower fat", "lower sugar", "salt", "grill", "steam", "frying", "healthy weight", "active", "weight", "man", "breakfast", "lunch", "evening meal", "snacks", "drinks", "dietary supplements", "folic acid", "pregnancy", "neural tube defects", "spina bifida", "folate rich foods", "fortified breakfast cereals", "October", "March", "sunlight", "outdoors", "frail", "housebound", "care homes", "minority ethnic groups", "dark skin", "African", "African-Caribbean", "South Asian", "summer", "vitamins A and C", "breast milk", "infant formula", "GP", "health visitor"]
+        }
+    ]
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:51:09.146654] PROMPT
+============================================================
+
+You are an expert Knowledge Graph Engineer specialized in Diet, Nutrition, and Lifestyle.
+Your goal is to extract **meaningful guidelines and facts** from the text.
+
+You must follow a **2-Step Forced Chain of Thought** process.
+
+## Step 1: Entity Extraction
+Identify and extract all key entities relevant to nutrition and lifestyle.
+* **Scope**: Include foods, nutrients, health conditions, demographics, activities, measurements, and physiological effects.
+* **Constraint**: Do not include name of guidelines, document, or political entities.
+
+## Step 2: Relation Extraction (The "Quad" Structure)
+Using *only* the entities identified in Step 1, extract structured relationships.
+* **Head**: The subject entity (Must be in Step 1 list).
+* **Relation**: A concise, descriptive verb phrase capturing the interaction (e.g., "increases risk of", "is rich in", "recommends", "should avoid"). You are free to define the relation based on the text.
+* **Tail**: The object entity (Must be in Step 1 list).
+* **Context**: (String) Any condition, timing, dosage, or constraint (e.g., "daily", "if pregnant"). If none, use "General".
+
+## Robustness Rules
+1.  **Grounding**: Every Head and Tail in the quads MUST be strictly selected from the `extracted_entities` list.
+2.  **Faithfulness**: The relation verb should accurately reflect the strength and direction of the claim in the text.
+
+## Few-Shot Example
+**Input**:
+"To prevent anemia, women should eat spinach because it contains iron. However, coffee can inhibit iron absorption."
+
+**Output**:
+```json
+{
+  "extracted_entities": [
+    "anemia", "women", "spinach", "iron", "coffee", "iron absorption"
+  ],
+  "quads": [
+    {"head": "spinach", "relation": "helps prevent", "tail": "anemia", "context": "General"},
+    {"head": "women", "relation": "should eat", "tail": "spinach", "context": "To prevent anemia"},
+    {"head": "spinach", "relation": "contains", "tail": "iron", "context": "General"},
+    {"head": "coffee", "relation": "inhibits", "tail": "iron absorption", "context": "General"}
+  ]
+}
+
+```
+
+## Output Requirements
+Output valid JSON object covered between ```json and ```.
+
+## Text to Analyze:
+## 4. Further information
+
+4.1. The Eatwell Guide, associated reports and supporting dietary messages
+[are available at: https://www.gov.uk/government/publications/the-eatwell-](https://www.gov.uk/government/publications/the-eatwell-guide)
+guide
+
+4.2. Government dietary recommendations for food energy and nutrients for
+males and females aged 1-18 years and 19+ years are also available via
+this link. This includes recommendations for food energy, macronutrients,
+micronutrients, salt, free sugar and dietary fibre:
+[https://www.gov.uk/government/uploads/system/uploads/attachment_data/f](https://www.gov.uk/government/uploads/system/uploads/attachment_data/file/547050/government__dietary_recommendations.pdf)
+[ile/547050/government__dietary_recommendations.pdf](https://www.gov.uk/government/uploads/system/uploads/attachment_data/file/547050/government__dietary_recommendations.pdf)
+A Quick Guide to the Government’s Healthy Eating Recommendations
+
+## References
+
+
+## Execution
+Analyze the text provided below and output the valid JSON object.
+
+
+============================================================
+
+============================================================
+[2026-02-12 22:51:22.671271] RESPONSE
+============================================================
+{
+    "extracted_entities": ["males", "females", "1-18 years", "19+ years", "food energy", "macronutrients", "micronutrients", "salt", "free sugar", "dietary fibre"],
+    "quads": [
+        {"head": "government dietary recommendations", "relation": "are available for", "tail": "males", "context": "General"},
+        {"head": "government dietary recommendations", "relation": "are available for", "tail": "females", "context": "General"},
+        {"head": "government dietary recommendations", "relation": "cover", "tail": "food energy", "context": "General"},
+        {"head": "government dietary recommendations", "relation": "cover", "tail": "macronutrients", "context": "General"},
+        {"head": "government dietary recommendations", "relation": "cover", "tail": "micronutrients", "context": "General"},
+        {"head": "government dietary recommendations", "relation": "cover", "tail": "salt", "context": "General"},
+        {"head": "government dietary recommendations", "relation": "cover", "tail": "free sugar", "context": "General"},
+        {"head": "government dietary recommendations", "relation": "cover", "tail": "dietary fibre", "context": "General"},
+        {"head": "males", "relation": "aged", "tail": "1-18 years", "context": "General"},
+        {"head": "males", "relation": "aged", "tail": "19+ years", "context": "General"},
+        {"head": "females", "relation": "aged", "tail": "1-18 years", "context": "General"},
+        {"head": "females", "relation": "aged", "tail": "19+ years", "context": "General"}
+    ]
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:51:22.672566] PROMPT
+============================================================
+
+You are a Data Cleaning Specialist.
+Your task is to identify and resolve duplicate entities from a list of nutrition and lifestyle terms.
+
+## Task
+Review the input list of entities. Group terms that refer to the **same concept** (synonyms, abbreviations, plural variations, or case differences).
+For each group, select one **Canonical Alias** that is the clearest representation of the concept.
+
+## Output Schema
+Return a JSON object with a list of "resolutions".
+* `duplicate_group`: A list of the variations found in the input (including the canonical one).
+* `canonical_form`: The single best name to use for the group.
+
+## Example
+**Input Entities**:
+["cardio", "Cardiovascular exercise", "running", "run", "Vit D", "Vitamin D"]
+
+**Output**:
+```json
+{
+  "resolutions": [
+    {
+      "duplicate_group": ["cardio", "Cardiovascular exercise"],
+      "canonical_form": "Cardiovascular exercise"
+    },
+    {
+      "duplicate_group": ["running", "run"],
+      "canonical_form": "running"
+    },
+    {
+      "duplicate_group": ["Vit D", "Vitamin D"],
+      "canonical_form": "Vitamin D"
+    }
+  ]
+}
+
+```
+
+## Extracted Entities:
+"males", "females", "1-18 years", "19+ years", "food energy", "macronutrients", "micronutrients", "salt", "free sugar", "dietary fibre"
+
+## Execution
+
+Analyze the list of entities below and provide the JSON resolution map.
+
+
+============================================================
+
+============================================================
+[2026-02-12 22:51:28.852819] RESPONSE
+============================================================
+{
+    "resolutions": [
+        {
+            "duplicate_group": ["males", "females"],
+            "canonical_form": "gender groups"
+        },
+        {
+            "duplicate_group": ["1-18 years", "19+ years"],
+            "canonical_form": "age groups"
+        },
+        {
+            "duplicate_group": ["food energy", "macronutrients", "micronutrients"],
+            "canonical_form": "nutrition categories"
+        },
+        {
+            "duplicate_group": ["salt", "free sugar", "dietary fibre"],
+            "canonical_form": "dietary components"
+        }
+    ]
+}
+
+============================================================
+
+============================================================
+[2026-02-12 22:51:30.058303] PROMPT
+============================================================
+
+You are an expert Knowledge Graph Engineer specialized in Diet, Nutrition, and Lifestyle.
+Your goal is to extract **meaningful guidelines and facts** from the text.
+
+You must follow a **2-Step Forced Chain of Thought** process.
+
+## Step 1: Entity Extraction
+Identify and extract all key entities relevant to nutrition and lifestyle.
+* **Scope**: Include foods, nutrients, health conditions, demographics, activities, measurements, and physiological effects.
+* **Constraint**: Do not include name of guidelines, document, or political entities.
+
+## Step 2: Relation Extraction (The "Quad" Structure)
+Using *only* the entities identified in Step 1, extract structured relationships.
+* **Head**: The subject entity (Must be in Step 1 list).
+* **Relation**: A concise, descriptive verb phrase capturing the interaction (e.g., "increases risk of", "is rich in", "recommends", "should avoid"). You are free to define the relation based on the text.
+* **Tail**: The object entity (Must be in Step 1 list).
+* **Context**: (String) Any condition, timing, dosage, or constraint (e.g., "daily", "if pregnant"). If none, use "General".
+
+## Robustness Rules
+1.  **Grounding**: Every Head and Tail in the quads MUST be strictly selected from the `extracted_entities` list.
+2.  **Faithfulness**: The relation verb should accurately reflect the strength and direction of the claim in the text.
+
+## Few-Shot Example
+**Input**:
+"To prevent anemia, women should eat spinach because it contains iron. However, coffee can inhibit iron absorption."
+
+**Output**:
+```json
+{
+  "extracted_entities": [
+    "anemia", "women", "spinach", "iron", "coffee", "iron absorption"
+  ],
+  "quads": [
+    {"head": "spinach", "relation": "helps prevent", "tail": "anemia", "context": "General"},
+    {"head": "women", "relation": "should eat", "tail": "spinach", "context": "To prevent anemia"},
+    {"head": "spinach", "relation": "contains", "tail": "iron", "context": "General"},
+    {"head": "coffee", "relation": "inhibits", "tail": "iron absorption", "context": "General"}
+  ]
+}
+
+```
+
+## Output Requirements
+Output valid JSON object covered between ```json and ```.
+
+## Text to Analyze:
+1 The Eatwell Guide and all supporting information are available from:
+[https://www.gov.uk/government/publications/the-eatwell-guide](https://www.gov.uk/government/publications/the-eatwell-guide)
+
+2 World Health Organisation. Diet, nutrition and the prevention of chronic diseases. 2003.
+[Available from: http://whqlibdoc.who.int/trs/WHO_TRS_916.pdf](http://whqlibdoc.who.int/trs/WHO_TRS_916.pdf)
+
+3 World Health Organisation. Diet, nutrition and the prevention of chronic diseases. 1990.
+[Available from: http://www.who.int/nutrition/publications/obesity/WHO_TRS_797/en/index.html](http://www.who.int/nutrition/publications/obesity/WHO_TRS_797/en/index.html)
+
+4 Department of Health. Report on health and social subjects 46 nutritional aspects of
+cardiovascular disease. Report of the cardiovascular review group Committee on Medical
+Aspects of Food Policy. London: HMSO; 1994
+
+5 Committee on Medical Aspects of Food Policy. Dietary Reference Values for Food Energy
+and Nutrients for the United Kingdom. London: HMSO; 1991
+
+6 Scientific Advisory Committee on Nutrition. Vitamin D and Health. London: TSO; 2016.
+[Available from: https://www.gov.uk/government/publications/sacn-vitamin-d-and-health-report](https://www.gov.uk/government/publications/sacn-vitamin-d-and-health-report)
+
+7 Scientific Advisory Committee on Nutrition. Carbohydrates and Health. London: TSO; 2015.
+[Available from: https://www.gov.uk/government/publications/sacn-carbohydrates-and-health-](https://www.gov.uk/government/publications/sacn-carbohydrates-and-health-report)
+[report](https://www.gov.uk/government/publications/sacn-carbohydrates-and-health-report)
+
+8 Scientific Advisory Committee on Nutrition. Dietary Reference Values for Energy. London:
+[TSO; 2011. Available from: https://www.gov.uk/government/publications/sacn-dietary-](https://www.gov.uk/government/publications/sacn-dietary-reference-values-for-energy)
+[reference-values-for-energy](https://www.gov.uk/government/publications/sacn-dietary-reference-values-for-energy)
+
+9 Scientific Advisory Committee on Nutrition. Iron and Health. London: TSO; 2010. Available
+[from: https://www.gov.uk/government/publications/sacn-iron-and-health-report](https://www.gov.uk/government/publications/sacn-iron-and-health-report)
+
+10 Scientific Advisory Committee on Nutrition. Advice on Fish Consumption: Benefits and Risks.
+[London: TSO; 2004. Available from: https://www.gov.uk/government/publications/sacn-advice-](https://www.gov.uk/government/publications/sacn-advice-on-fish-consumption)
+[on-fish-consumption](https://www.gov.uk/government/publications/sacn-advice-on-fish-consumption)
+
+11 Scientific Advisory Committee on Nutrition. Salt and Health. TSO; London: 2003. Available
+[from: https://www.gov.uk/government/publications/sacn-salt-and-health-report](https://www.gov.uk/government/publications/sacn-salt-and-health-report)
+
+
+## Execution
+Analyze the text provided below and output the valid JSON object.
+
+
+============================================================
+
+============================================================
+[2026-02-12 22:51:32.576793] RESPONSE
+============================================================
+{
+    "extracted_entities": [],
+    "quads": []
+}
+
+============================================================

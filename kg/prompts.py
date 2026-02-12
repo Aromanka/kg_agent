@@ -2061,27 +2061,26 @@ Analyze the list of entities below and provide the JSON resolution map.
 """
 
 
-
-DIET_KG_EXTRACT_COT_PROMPT_v1 = """
-You are an expert Knowledge Graph Engineer specialized in Diet, Nutrition, and Lifestyle.
-Your goal is to extract **meaningful guidelines and facts** from the text.
+def DIET_KG_EXTRACT_COT_PROMPT_v1(TEXT):
+  return """
+You are a nutrionalist that extracts key Diet, Nutrition, and Lifestyle related entities from the Source Text.
 
 You must follow a **2-Step Forced Chain of Thought** process.
 
 ## Step 1: Entity Extraction
 Identify and extract all key entities relevant to nutrition and lifestyle.
-* **Scope**: Include foods, nutrients, health conditions, demographics, activities, measurements, and physiological effects.
+* **Scope**: Include foods, nutrients, health conditions, demographics, and physiological effects.
 * **Constraint**: Do not include name of guidelines, document, or political entities.
 
 ## Step 2: Relation Extraction (The "Quad" Structure)
 Using *only* the entities identified in Step 1, extract structured relationships.
 * **Head**: The subject entity (Must be in Step 1 list).
-* **Relation**: A concise, descriptive verb phrase capturing the interaction (e.g., "increases risk of", "is rich in", "recommends", "should avoid"). You are free to define the relation based on the text.
+* **Relation**: A concise, descriptive phrase capturing the interaction (e.g., "increases risk of", "is rich in", "recommends", "should avoid"). 
 * **Tail**: The object entity (Must be in Step 1 list).
-* **Context**: (String) Any condition, timing, dosage, or constraint (e.g., "daily", "if pregnant"). If none, use "General".
+* **Context**: (String) Any condition, timing, dosage, or constraint (e.g., "daily", "if pregnant"). Use "General" by default.
 
 ## Robustness Rules
-1.  **Grounding**: Every Head and Tail in the quads MUST be strictly selected from the `extracted_entities` list.
+1.  **Grounding**: Every Head and Tail in the quads MUST be strictly selected from Step 1 result.
 2.  **Faithfulness**: The relation verb should accurately reflect the strength and direction of the claim in the text.
 
 ## Few-Shot Example
@@ -2104,23 +2103,15 @@ Using *only* the entities identified in Step 1, extract structured relationships
 
 ```
 
-## Output Requirements
-Output valid JSON object covered between ```json and ```.
-
-## Text to Analyze:
-{TEXT}
-
+## Source Text:\n""" + TEXT + """\n\n
 ## Execution
-Analyze the text provided below and output the valid JSON object.
+Start two steps analysis, and output valid JSON object covered between ```json and ```.
 """
 
-DIET_KG_RESOLUTION_PROMPT_v1 = """
-You are a Data Cleaning Specialist.
-Your task is to identify and resolve duplicate entities from a list of nutrition and lifestyle terms.
-
-## Task
-Review the input list of entities. Group terms that refer to the **same concept** (synonyms, abbreviations, plural variations, or case differences).
-For each group, select one **Canonical Alias** that is the clearest representation of the concept.
+def DIET_KG_RESOLUTION_PROMPT_v1(ENTITIES):
+  return """
+Find duplicate entities from a list of diet lifestyle terms and an alias that best represents the duplicates.
+Duplicates are those that are the same in meaning, such as with variation in tense, plural form, stem form, case, abbreviation, shorthand.
 
 ## Output Schema
 Return a JSON object with a list of "resolutions".
@@ -2129,19 +2120,15 @@ Return a JSON object with a list of "resolutions".
 
 ## Example
 **Input Entities**:
-["cardio", "Cardiovascular exercise", "running", "run", "Vit D", "Vitamin D"]
+["meat", "meats", "Diabetes", "Vit D", "Vitamin D"]
 
 **Output**:
 ```json
 {
   "resolutions": [
     {
-      "duplicate_group": ["cardio", "Cardiovascular exercise"],
-      "canonical_form": "Cardiovascular exercise"
-    },
-    {
-      "duplicate_group": ["running", "run"],
-      "canonical_form": "running"
+      "duplicate_group": ["meat", "meats"],
+      "canonical_form": "meat"
     },
     {
       "duplicate_group": ["Vit D", "Vitamin D"],
@@ -2152,10 +2139,6 @@ Return a JSON object with a list of "resolutions".
 
 ```
 
-## Extracted Entities:
-[{ENTITIES}]
-
-## Execution
-
-Analyze the list of entities below and provide the JSON resolution map.
+## Extracted Entities:\n""" + ENTITIES + """\n\n## Execution
+Start two steps analysis, and output valid JSON object covered between ```json and ```.
 """

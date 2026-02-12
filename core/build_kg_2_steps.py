@@ -196,7 +196,8 @@ def _call_llm(prompt, temperature=0.1):
         stream=False,
         response_format={'type': 'json_object'}
     )
-    content = response.choices[0].message.content.strip()
+    # lower to remove duplicates in Letter Cases
+    content = response.choices[0].message.content.strip().lower()
 
     # Log the response
     _log_llm_interaction("RESPONSE", content)
@@ -262,7 +263,7 @@ def _resolve_entities(extracted_entities, resolution_prompt):
     # Format entities as a comma-separated list
     entities_list = ", ".join([f'"{e}"' for e in extracted_entities])
     # prompt = f"{resolution_prompt}\n\n## Extracted Entities\n[{entities_list}]"
-    prompt = "resolution_prompt".format(ENTITIES=entities_list)
+    prompt = resolution_prompt(ENTITIES=entities_list)
 
     try:
         content = _call_llm(prompt, temperature=0.2)
@@ -314,7 +315,7 @@ def extract_quads_with_llm(text_chunk, cot_prompt=None, resolution_prompt=None, 
         return []
 
     # ========== STEP 1: Extract entities and quads using CoT ==========
-    cot_prompt_text = "cot_prompt".format(TEXT=text_chunk)
+    cot_prompt_text = cot_prompt(TEXT=text_chunk)
     try:
         content = _call_llm(cot_prompt_text, temperature=0.1)
         data = parse_json_response(content)
