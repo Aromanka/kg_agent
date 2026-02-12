@@ -527,12 +527,12 @@ class DietAgentMixin:
 
         elif kg_format_ver >= 3:
             # Simplified: uniform pattern for all relations
-            matched_entities = entity_knowledge.get("matched_entities", [])
+            # matched_entities = entity_knowledge.get("matched_entities", [])
             relations = entity_knowledge.get("relations", [])
 
             # Format matched entities
-            parts.append(f"Matched Entities: {', '.join(matched_entities)}")
-            parts.append("")  # Empty line for separation
+            # parts.append(f"Matched Entities: {', '.join(matched_entities)}")
+            # parts.append("")  # Empty line for separation
 
             # Format all relations uniformly: "- {head} {relation} {tail}"
             parts.append("## Knowledge Graph Relations")
@@ -540,10 +540,11 @@ class DietAgentMixin:
                 head = rel.get("head", "")
                 relation = rel.get("relation", "").replace("_", " ")
                 tail = rel.get("tail", "")
-                parts.append(f"- {head} {relation} {tail}")
+                # parts.append(f"- {head} {relation} {tail}")
+                parts.append(f"<{head}, {relation}, {tail}>")
 
         if parts:
-            return "## Entity-Based KG Context\n" + "\n".join(parts) + "\n"
+            return "#### Knowledge Graph Relations\n" + "\n".join(parts) + "\n"
         return ""
 
     def calculate_target_calories(

@@ -12,7 +12,8 @@ from agents.diet.parser_var import DietPlanParser
 from core.llm.utils import parse_json_response
 from agents.diet.config import *
 from kg.prompts import (
-    available_strategies, available_cuisines, GET_DIET_GENERATION_SYSTEM_PROMPT
+    available_strategies, available_cuisines, GET_DIET_GENERATION_SYSTEM_PROMPT,
+    build_diet_prompt
 )
 
 
@@ -287,7 +288,8 @@ class DietAgent(BaseAgent, DietAgentMixin):
             "fiber_rich": "Prioritize high-fiber vegetables and whole grains."
         }
 
-        user_prompt = self._build_diet_prompt(
+        # user_prompt = self._build_diet_prompt(
+        user_prompt = build_diet_prompt(
             user_meta=user_meta,
             environment=environment,
             requirement=requirement,
@@ -363,87 +365,13 @@ class DietAgent(BaseAgent, DietAgentMixin):
             tail = item.get('tail', "name")
             condition = item.get('condition', "condition")
 
-            part = "{} {} {} under condition: {}".format(entity_name, rel, tail, condition)
+            # condition_words = "under condition: {}".format(condition)
+            # condition_words = "regarding {} issues".format(condition)
+            # part = "{} {} {} {}".format(entity_name, rel, tail, condition_words)
+            part = "<{}, {}, {}> regarding {} issues".format(entity_name, rel, tail, condition)
             parts.append(part)
 
         return "## KG Guidelines\n" + "\n".join(parts) + "\n"
-
-    def _build_diet_prompt(
-        self,
-        user_meta: Dict[str, Any],
-        environment: Dict[str, Any],
-        requirement: Dict[str, Any],
-        target_calories: int,
-        meal_type: str = "breakfast",
-        kg_context: str = "",
-        user_preference: str = None
-    ) -> str:
-        """Build the user prompt for a specific meal type generation"""
-        conditions = user_meta.get("medical_conditions", [])
-        restrictions = user_meta.get("dietary_restrictions", [])
-
-        # Calorie targets per meal
-        meal_targets = {
-            "breakfast": int(target_calories * 0.25),
-            "lunch": int(target_calories * 0.35),
-            "dinner": int(target_calories * 0.30),
-            "snacks": int(target_calories * 0.10)
-        }
-        target = meal_targets.get(meal_type, int(target_calories * 0.25))
-
-        # Build prompt with "Instruction - Context - Constraint" structure
-        # User Preference is placed at top as HIGHEST PRIORITY
-
-        prompt = f"""## TARGET TASK
-Generate a meal plan for the following user.
-"""
-
-        # User Preference at the TOP with HIGHEST PRIORITY
-        if user_preference:
-            prompt += f"""
-### USER REQUEST (HIGHEST PRIORITY)
-The user strictly explicitly wants: "{user_preference}"
-Ensure the generated meal focuses PRIMARILY on this request.
-"""
-
-        # Build user profile section
-        profile_parts = [
-            f"Age: {user_meta.get('age', 30)}",
-            f"Gender: {user_meta.get('gender', 'male')}",
-        ]
-        if conditions:
-            profile_parts.append(f"Conditions: {', '.join(conditions)}")
-        if restrictions:
-            profile_parts.append(f"Restrictions: {', '.join(restrictions)}")
-
-        prompt += f"""
-## Profile
-{chr(10).join(profile_parts)}
-
-## Target
-Goal: {requirement.get('goal', 'maintenance')}
-{meal_type.capitalize()}: {target} kcal (max)
-
-## Knowledge Graph Insights (Use these to optimize safety and effectiveness, but do not deviate from the USER REQUEST)
-{kg_context}"""
-
-        prompt += f"""## Output Format
-JSON list of foods. Each item:
-- food_name: name
-- portion_number: number
-- portion_unit: gram/ml/piece/slice/cup/bowl/spoon
-- calories_per_unit: calories per single unit
-
-## Example (~{target} kcal)
-[
-  {{"food_name": "X", "portion_number": 100, "portion_unit": "gram", "calories_per_unit": 3.5}},
-  {{"food_name": "Y", "portion_number": 2, "portion_unit": "piece", "calories_per_unit": 78}}
-]
-
-## Task
-Generate {meal_type} foods totaling ~{target} kcal. List only JSON."""
-
-        return prompt
 
 
 # ================= Convenience Functions =================
