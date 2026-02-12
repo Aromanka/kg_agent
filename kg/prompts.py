@@ -2151,3 +2151,186 @@ Return a JSON object with a list of "resolutions".
 ## Extracted Entities:\n""" + ENTITIES + """\n\n## Execution
 Start duplicate analysis, and output valid JSON object covered between ```json and ```.
 """
+
+
+# ==================== EXERCISE PROMPTS ====================
+
+def EXER_KG_EXTRACT_COT_PROMPT_v1(TEXT):
+  """
+  Exercise knowledge graph extraction prompt with Chain of Thought.
+  Extracts exercise, fitness, and physical activity entities and relationships.
+  """
+  return """
+You are a Kinesiology and Sports Science expert that extracts key Exercise, Fitness, and Physical Activity related entities from the Source Text.
+
+You must follow a **2-Step Forced Chain of Thought** process.
+
+## Step 1: Entity Extraction
+Identify and extract all key entities relevant to exercise and fitness.
+* **Scope**: Include exercises, workout types, muscle groups, fitness goals, equipment, intensity levels, duration, frequency, health conditions affected by exercise, and physiological effects.
+* **Constraint**: Do not include name of guidelines, documents, or political entities.
+
+## Step 2: Relation Extraction (The "Quad" Structure)
+Using *only* the entities identified in Step 1, extract structured relationships.
+* **Head**: The subject entity (Must be in Step 1 list).
+* **Relation**: A concise, descriptive phrase capturing the interaction (e.g., "targets", "increases", "improves", "should avoid", "recommended for").
+* **Tail**: The object entity (Must be in Step 1 list).
+* **Context**: (String) Any condition, timing, duration, frequency, or constraint (e.g., "daily", "if injured", "beginners"). Use "General" by default.
+
+## Robustness Rules
+1.  **Grounding**: Every Head and Tail in the quads MUST be strictly selected from Step 1 result.
+2.  **Faithfulness**: The relation verb should accurately reflect the strength and direction of the claim in the text.
+
+## Few-Shot Example
+**Input**:
+"To build upper body strength, men should do push-ups and weight training. However, people with shoulder injuries should avoid overhead movements. Swimming is excellent for cardiovascular health."
+
+**Output**:
+```json
+{
+  "extracted_entities": [
+    "upper body strength", "men", "push-ups", "weight training", "shoulder injuries", "overhead movements", "swimming", "cardiovascular health"
+  ],
+  "quads": [
+    {"head": "push-ups", "relation": "builds", "tail": "upper body strength", "context": "General"},
+    {"head": "weight training", "relation": "builds", "tail": "upper body strength", "context": "General"},
+    {"head": "men", "relation": "should do", "tail": "push-ups", "context": "To build upper body strength"},
+    {"head": "men", "relation": "should do", "tail": "weight training", "context": "To build upper body strength"},
+    {"head": "people with shoulder injuries", "relation": "should avoid", "tail": "overhead movements", "context": "Due to injury risk"},
+    {"head": "swimming", "relation": "improves", "tail": "cardiovascular health", "context": "General"}
+  ]
+}
+
+```
+
+
+## Source Text:\n""" + TEXT + """\
+
+## Execution
+Start two steps analysis, and output valid JSON object covered between ```json and ```.
+"""
+
+
+def EXER_KG_RESOLUTION_PROMPT_v1(ENTITIES):
+  """
+  Exercise entity resolution prompt.
+  Finds duplicate entities in exercise/fitness terms and identifies canonical forms.
+  """
+  return """
+Find duplicate entities from a list of Exercise and Fitness terms (Extracted Entities) and an alias that best represents the duplicates.
+Duplicates are those that are the same in meaning, such as with variation in tense, plural form, stem form, case, abbreviation, shorthand, or common fitness terminology.
+
+## Output Schema
+Return a JSON object with a list of "resolutions".
+* **duplicate_group**: A list of the variations found in the input (including the canonical one).
+* **canonical_form**: The single best name to use for the group.
+
+## Example
+**Input Entities**:
+["running", "jogging", "Cardio", "HIIT", "High-intensity interval training", "push up", "push-ups"]
+
+**Output**:
+```json
+{
+  "resolutions": [
+    {
+      "duplicate_group": ["running", "jogging"],
+      "canonical_form": "Running"
+    },
+    {
+      "duplicate_group": ["HIIT", "High-intensity interval training"],
+      "canonical_form": "HIIT"
+    },
+    {
+      "duplicate_group": ["push up", "push-ups"],
+      "canonical_form": "Push-ups"
+    }
+  ]
+}
+
+```
+
+
+## Extracted Entities:\n""" + ENTITIES + """\
+
+## Execution
+Start duplicate analysis, and output valid JSON object covered between ```json and ```.
+"""
+
+
+def build_exercise_prompt(
+    user_meta: Dict[str, Any],
+    environment: Dict[str, Any],
+    requirement: Dict[str, Any],
+    target_duration: int = 30,
+    exercise_type: str = "general",
+    kg_context: str = "",
+    user_preference: str = None
+) -> str:
+    """
+    Build the user prompt for exercise plan generation.
+
+    Args:
+        user_meta: User metadata (age, gender, fitness level, medical conditions, etc.)
+        environment: Environmental constraints (equipment, location, time available)
+        requirement: Exercise requirements (goal, intensity preferences, focus areas)
+        target_duration: Target duration in minutes for the exercise session
+        exercise_type: Type of exercise (cardio, strength, flexibility, mixed)
+        kg_context: Knowledge graph context for safety and optimization
+        user_preference: User's explicit preference/request (highest priority)
+
+    Returns:
+        Formatted prompt string for exercise generation
+    """
+    conditions = user_meta.get("medical_conditions", [])
+    limitations = user_meta.get("physical_limitations", [])
+
+    # Duration targets per session type
+    session_targets = {
+        "cardio": int(target_duration),
+        "strength": int(target_duration),
+        "flexibility": int(target_duration),
+        "mixed": int(target_duration),
+        "general": int(target_duration)
+    }
+    target = session_targets.get(exercise_type, int(target_duration))
+
+    prompt = f"""## TARGET TASK
+Generate an exercise plan for the following user.
+"""
+
+    # User Preference at the TOP with HIGHEST PRIORITY
+    if user_preference:
+        prompt += f"""
+### USER REQUEST (HIGHEST PRIORITY):
+The user strictly explicitly wants: "{user_preference}"
+Ensure the generated exercise plan focuses PRIMARILY on this request.
+"""
+
+    # Build user profile section
+    profile_parts = json.dumps(user_meta, ensure_ascii=False, indent=2)
+    if conditions:
+        profile_parts += f"\nMedical Conditions: {', '.join(conditions)}"
+    if limitations:
+        profile_parts += f"\nPhysical Limitations: {', '.join(limitations)}"
+
+    prompt += f"""
+## Profile:
+{profile_parts}
+
+## Environment:
+{environment}
+
+## Use the following knowledge to generate a plan that user preferred:
+{kg_context}"""
+
+    prompt += f"""
+## Output Format
+JSON object with exercise plan including:
+- exercises: list of exercises with name, type, duration_minutes, intensity, target_muscles, instructions, safety_notes
+- total_duration_minutes: total session duration
+- overall_intensity: low/moderate/high
+
+"""
+
+    return prompt

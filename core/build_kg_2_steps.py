@@ -10,7 +10,9 @@ from config_loader import get_config
 from core.llm.utils import parse_json_response
 from kg.prompts import (
     DIET_KG_EXTRACT_COT_PROMPT_v1,
-    DIET_KG_RESOLUTION_PROMPT_v1
+    DIET_KG_RESOLUTION_PROMPT_v1,
+    EXER_KG_EXTRACT_COT_PROMPT_v1,
+    EXER_KG_RESOLUTION_PROMPT_v1
 )
 # Optional import for local model support
 try:
@@ -45,7 +47,9 @@ KG_CONFIGS = {
     "exercise": {
         "input_dir": "data/exer",
         "name": "Exercise",
-        "use_two_step": False
+        "use_two_step": True,
+        "cot_prompt": EXER_KG_EXTRACT_COT_PROMPT_v1,
+        "resolution_prompt": EXER_KG_RESOLUTION_PROMPT_v1
     }
 }
 
