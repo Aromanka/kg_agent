@@ -1286,18 +1286,18 @@ Output MUST be a valid JSON list of objects. Each object is a food item with the
 
 ## Example Output:
 [
-  {
+  {{
     "food_name": "Herb-Roasted Chicken Thigh",
     "portion_number": 130,
     "portion_unit": "gram",
     "total_calories": 220
-  },
-  {
+  }},
+  {{
     "food_name": "Steamed Broccoli",
     "portion_number": 1.5,
     "portion_unit": "cup",
     "total_calories": 55
-  },
+  }},
   ...
 ]
 """,
