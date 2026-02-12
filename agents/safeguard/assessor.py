@@ -796,6 +796,7 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
                             for neighbor in neighbors:
                                 entity_name = neighbor.get("neighbor", "")
                                 rel_type = neighbor.get("rel_type", "")
+                                condition = neighbor.get("condition", "")
 
                                 if not entity_name:
                                     continue
@@ -807,7 +808,8 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
                                 results.append({
                                     "entity": anchor_name,
                                     "relation": rel_type,
-                                    "related_to": entity_name
+                                    "related_to": entity_name,
+                                    "condition": condition
                                 })
 
                 # 2. Also add conditions and restrictions
@@ -822,6 +824,7 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
                         for neighbor in neighbors:
                             entity_name = neighbor.get("neighbor", "")
                             rel_type = neighbor.get("rel_type", "")
+                            condition = neighbor.get("condition", "")
 
                             if not entity_name:
                                 continue
@@ -832,7 +835,8 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
                             results.append({
                                 "entity": anchor_name,
                                 "relation": rel_type,
-                                "related_to": entity_name
+                                "related_to": entity_name,
+                                "condition": condition
                             })
 
             except Exception as e:
