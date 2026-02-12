@@ -13,7 +13,7 @@ from core.llm.utils import parse_json_response
 from core.neo4j import get_kg_query
 from agents.safeguard.config import *
 from kg.prompts import (
-    prioritized_risk_kg_rels, DIETARY_QUERY_ENTITIES,
+    DIETARY_QUERY_ENTITIES,
     get_keywords
 )
 
@@ -788,8 +788,8 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
                                     continue
 
                                 # Filter by prioritized risk relations
-                                if rel_type not in prioritized_risk_kg_rels:
-                                    continue
+                                # if rel_type not in prioritized_risk_kg_rels:
+                                #     continue
 
                                 results.append({
                                     "entity": anchor_name,
@@ -813,8 +813,8 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
                             if not entity_name:
                                 continue
 
-                            if rel_type not in prioritized_risk_kg_rels:
-                                continue
+                            # if rel_type not in prioritized_risk_kg_rels:
+                            #     continue
 
                             results.append({
                                 "entity": anchor_name,
@@ -848,8 +848,8 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
                         rel_type = result.get("rel_type", "")
 
                         # Filter by prioritized risk relations
-                        if rel_type not in prioritized_risk_kg_rels:
-                            continue
+                        # if rel_type not in prioritized_risk_kg_rels:
+                        #     continue
 
                         if not tail:
                             continue
