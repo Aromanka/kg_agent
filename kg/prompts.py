@@ -4,6 +4,7 @@ Revised to include Demographic Targeting, Composition, and Strict JSON Formattin
 """
 import random
 import re
+import json
 
 # diet_kg_rels = [
 #     "Indicated_For",
@@ -1828,26 +1829,30 @@ Generate a meal plan for the following user.
     # User Preference at the TOP with HIGHEST PRIORITY
     if user_preference:
         prompt += f"""
-### USER REQUEST (HIGHEST PRIORITY)
+### USER REQUEST (HIGHEST PRIORITY):
 The user strictly explicitly wants: "{user_preference}"
 Ensure the generated meal focuses PRIMARILY on this request.
 """
 
     # Build user profile section
-    profile_parts = [
-        f"Age: {user_meta.get('age', 30)}",
-        f"Gender: {user_meta.get('gender', 'male')}",
-    ]
+    # profile_parts = [
+    #     f"Age: {user_meta.get('age', 30)}",
+    #     f"Gender: {user_meta.get('gender', 'male')}",
+    # ]
+    profile_parts = json.dumps(user_meta, ensure_ascii=False, indent=2)
     if conditions:
         profile_parts.append(f"Conditions: {', '.join(conditions)}")
     if restrictions:
         profile_parts.append(f"Restrictions: {', '.join(restrictions)}")
 
     prompt += f"""
-## Profile
+## Profile:
 {chr(10).join(profile_parts)}
 
-## Target
+## Environment:
+{environment}
+
+## Target:
 Goal: {requirement.get('goal', 'maintenance')}
 {meal_type.capitalize()}: {target} kcal (max)
 
@@ -1905,23 +1910,27 @@ Generate a meal plan for the following user.
     # User Preference at the TOP with HIGHEST PRIORITY
     if user_preference:
         prompt += f"""
-### USER REQUEST (HIGHEST PRIORITY)
+### USER REQUEST (HIGHEST PRIORITY):
 The user strictly explicitly wants: "{user_preference}"
 """
 
     # Build user profile section
-    profile_parts = [
-        f"Age: {user_meta.get('age', 30)}",
-        f"Gender: {user_meta.get('gender', 'male')}",
-    ]
+    # profile_parts = [
+    #     f"Age: {user_meta.get('age', 30)}",
+    #     f"Gender: {user_meta.get('gender', 'male')}",
+    # ]
+    profile_parts = json.dumps(user_meta, ensure_ascii=False, indent=2)
     if conditions:
         profile_parts.append(f"Conditions: {', '.join(conditions)}")
     if restrictions:
         profile_parts.append(f"Restrictions: {', '.join(restrictions)}")
 
     prompt += f"""
-## Profile
+## Profile:
 {chr(10).join(profile_parts)}
+
+## Environment:
+{environment}
 
 ## Use the following knowledge to generate a plan that user prefered:
 {kg_context}"""

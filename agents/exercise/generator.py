@@ -341,7 +341,7 @@ class ExerciseAgent(BaseAgent, ExerciseAgentMixin):
             part = "<{}, {}, {}> regarding {}".format(entity_name, rel, tail, condition)
             parts.append(part)
 
-        return "#### Request based KG Guidelines\n" + "\n".join(parts) + "\n"
+        return "#### Request based KG Guidelines:\n" + "\n".join(parts) + "\n"
 
     def _format_exercise_entity_kg_context(
         self, entity_knowledge: Dict, kg_format_ver: int = 2
@@ -519,19 +519,20 @@ Generate an exercise plan for the following user.
         # User Preference at the TOP with HIGHEST PRIORITY
         if user_preference:
             prompt += f"""
-### USER REQUEST (HIGHEST PRIORITY)
+### USER REQUEST (HIGHEST PRIORITY):
 The user strictly explicitly wants: "{user_preference}"
 Ensure the generated plan focuses PRIMARILY on this request.
 """
 
-        prompt += f"""
-## User Profile
+# **Age**: {user_meta.get('age', 30)}
+# **Gender**: {user_meta.get('gender', 'male')}
+# **Weight**: {weight}kg
+# **Fitness Level**: {fitness_level}
+# **Medical Conditions**: {', '.join(conditions) if conditions else 'None'}
 
-**Age**: {user_meta.get('age', 30)}
-**Gender**: {user_meta.get('gender', 'male')}
-**Weight**: {weight}kg
-**Fitness Level**: {fitness_level}
-**Medical Conditions**: {', '.join(conditions) if conditions else 'None'}
+        prompt += f"""
+## User Profile:
+{user_meta}
 
 ## Requirements
 **Target Intensity**: {target_intensity}

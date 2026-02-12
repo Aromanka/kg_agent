@@ -545,7 +545,7 @@ class DietAgentMixin:
                 parts.append(f"<{head}, {relation}, {tail}>")
 
         if parts:
-            return "#### Request based KG Guidelines\n" + "\n".join(parts) + "\n"
+            return "#### Request based KG Guidelines:\n" + "\n".join(parts) + "\n"
         return ""
 
     def calculate_target_calories(

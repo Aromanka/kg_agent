@@ -685,19 +685,19 @@ class SafeguardAgent(BaseAgent):
             # Assess Prompt
             prompt = f"""Analyze the following {plan_type} plan for safety issues.
 
-## Profile
+## Profile:
 {user_metadata}
 
-## Environment
+## Environment:
 {environment}
 
-## Knowledge Graph Guidelines
+## Knowledge Graph Guidelines:
 {kg_context if kg_context else "No KG data available"}
 
-## Plan
+## Plan:
 {json.dumps(plan, ensure_ascii=False, indent=2)}
 
-## Task
+## Task:
 Identify any safety concerns:
 1. Hidden contraindications
 2. Unrealistic progression
@@ -706,7 +706,7 @@ Identify any safety concerns:
 5. Environmental mismatches
 6. Conflicts with user's medical conditions
 
-## Output Format (STRICT JSON)
+## Output Format (STRICT JSON):
 Return a single valid JSON object containing two lists: "risk_factors" and "checks".
 Follow the schema definitions below STRICTLY.
 
@@ -879,7 +879,8 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
         if not results:
             return "No relevant KG data found."
 
-        context_lines = ["## Relevant Knowledge Graph Relationships"]
+        # context_lines = ["## Relevant Knowledge Graph Relationships"]
+        context_lines = []
         # Deduplicate results
         seen_relations = set()
         unique_results = []
@@ -890,7 +891,8 @@ Ensure "severity" values matches the allowed Enum values EXACTLY.
                 unique_results.append(r)
 
         for r in unique_results[:20]:  # Limit to 20 most relevant results
-            context_lines.append(f"- {r['entity']} --[{r['relation']}]--> {r['related_to']}")
+            # context_lines.append(f"- {r['entity']} --[{r['relation']}]--> {r['related_to']}")
+            context_lines.append("<{}, {}, {}> regarding {}".format(r['entity'], r['relation'], r['related_to']))
 
         return "\n".join(context_lines)
 
