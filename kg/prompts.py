@@ -5,52 +5,52 @@ Revised to include Demographic Targeting, Composition, and Strict JSON Formattin
 import random
 import re
 
-diet_kg_rels = [
-    "Indicated_For",
-    "Contraindicated_For",
-    "Has_Mechanism",
-    "Contains_Component",
-    "Synergy_With",
-    "Antagonism_With",
-    "Dosing_Guideline",
-    "Has_Benefit",
-    "Has_Risk",
-    "Disease_Management",
-    "Preparation_Method",
-]
+# diet_kg_rels = [
+#     "Indicated_For",
+#     "Contraindicated_For",
+#     "Has_Mechanism",
+#     "Contains_Component",
+#     "Synergy_With",
+#     "Antagonism_With",
+#     "Dosing_Guideline",
+#     "Has_Benefit",
+#     "Has_Risk",
+#     "Disease_Management",
+#     "Preparation_Method",
+# ]
 
 
-exer_kg_rels = [
-    "Indicated_For",
-    "Contraindicated_For",
-    "Disease_Management",
-    "Targets_Entity",
-    "Has_Benefit",
-    "Has_Risk",
-    "Dosing_Guideline",
-    "Has_Mechanism",
-    "Synergy_With",
-    "Antagonism_With",
-    "Technique_Method",
-]
+# exer_kg_rels = [
+#     "Indicated_For",
+#     "Contraindicated_For",
+#     "Disease_Management",
+#     "Targets_Entity",
+#     "Has_Benefit",
+#     "Has_Risk",
+#     "Dosing_Guideline",
+#     "Has_Mechanism",
+#     "Synergy_With",
+#     "Antagonism_With",
+#     "Technique_Method",
+# ]
 
 
-prioritized_risk_kg_rels = [
-    "Contraindicated_For",
-    "Synergy_With",
-    "Antagonism_With",
-    "Has_Risk",
-    "Disease_Management",
-]
+# prioritized_risk_kg_rels = [
+#     "Contraindicated_For",
+#     "Synergy_With",
+#     "Antagonism_With",
+#     "Has_Risk",
+#     "Disease_Management",
+# ]
 
 
-prioritized_exercise_risk_kg_rels = [
-    "Contraindicated_For",
-    "Has_Risk",
-    "Antagonism_With",
-    "Disease_Management",
-    "Targets_Entity",
-]
+# prioritized_exercise_risk_kg_rels = [
+#     "Contraindicated_For",
+#     "Has_Risk",
+#     "Antagonism_With",
+#     "Disease_Management",
+#     "Targets_Entity",
+# ]
 
 
 DIET_KG_EXTRACT_SCHEMA_PROMPT = """
@@ -1936,3 +1936,223 @@ JSON list of foods. Each item:
 """
 
     return prompt
+
+
+DIET_KG_EXTRACT_COT_PROMPT_v0 = """
+You are an advanced Knowledge Graph Engineer specialized in Nutritional Epidemiology and Biomedical Information Extraction.
+Your goal is to extract structured knowledge from diet and nutrition text with **clinical precision**.
+
+You must follow a strict **2-Step Forced Chain of Thought** process to ensure accuracy.
+
+## Step 1: Entity Extraction
+First, identify and extract all distinct entities from the text. Categorize them into:
+* **Foods/Beverages** (e.g., Whole Milk, Red Meat, Legumes)
+* **Nutrients/Compounds** (e.g., Vitamin C, Iron, Sodium)
+* **Demographics/Populations** (e.g., Toddlers >1 year, Adults, Pregnant Women)
+* **Health States/Diseases** (e.g., Hypertension, Heart Disease)
+* **Measurements/Values** (e.g., 70g/day)
+* **Contexts** (e.g., Post-exercise, Antibiotic course)
+
+## Step 2: Relation Extraction (The "Quad" Structure)
+Using *only* the entities identified in Step 1, form knowledge quads.
+Each item must contain 4 fields:
+1.  **Head**: The subject entity (Must be in Step 1 list).
+2.  **Relation**: The predicate (from the allowed list below).
+3.  **Tail**: The object entity (Must be in Step 1 list).
+4.  **Context**: (String) Any condition, timing, or constraint. If none, use "General".
+
+## Allowed Relations
+| Relation | Usage |
+| :--- | :--- |
+| **Indicated_For** | Recommended for a specific population (Head=Demographic, Tail=Food/Nutrient). |
+| **Contraindicated_For** | Contraindicated, restricted, or to be avoided (Head=Demographic, Tail=Food/Nutrient). |
+| **Has_Mechanism** | Physiological effect (e.g., "Increases insulin sensitivity"). |
+| **Contains_Component** | Nutritional composition (Head=Food, Tail=Nutrient/Compound). |
+| **Synergy_With** | Positive interaction - X helps Y (Head=Entity A, Tail=Entity B). |
+| **Antagonism_With** | Negative interaction - X blocks Y (Head=Entity A, Tail=Entity B). |
+| **Dosing_Guideline** | Specific amount/frequency/duration (Head=Food/Nutrient, Tail=Value+Unit). |
+| **Has_Benefit** | Specific positive health outcome (Head=Food/Nutrient, Tail=Benefit/Outcome). |
+| **Has_Risk** | Risk or negative health outcome (Head=Food/Nutrient, Tail=Risk/Disease). |
+| **Disease_Management** | Diet used to manage, treat, or prevent (Head=Food/Nutrient, Tail=Disease/Symptom). |
+| **Preparation_Method** | Recommended cooking or preparation (Head=Food, Tail=Method/Action). |
+
+## Robustness Rules
+1.  **Grounding**: Every Head and Tail in the quads MUST be an entity listed in `extracted_entities`.
+2.  **No Hallucination**: Extract ONLY what is explicitly written.
+3.  **Context is King**: Always capture specific conditions (e.g., "Post-exercise only") in the Context field.
+
+## Few-Shot Example
+**Input**:
+"Adults should limit red meat intake to 70g/day to lower heart disease risk. However, athletes may require higher protein intake."
+
+**Output**:
+```json
+{
+  "extracted_entities": [
+    "Adults", "Red Meat", "70g/day", "Heart Disease Risk", "Athletes", "Protein Intake"
+  ],
+  "quads": [
+    {"head": "Adults", "relation": "Contraindicated_For", "tail": "Red Meat", "context": "Limit intake"},
+    {"head": "Red Meat", "relation": "Dosing_Guideline", "tail": "70g/day", "context": "Daily maximum for adults"},
+    {"head": "Red Meat", "relation": "Has_Risk", "tail": "Heart Disease Risk", "context": "If limit exceeded"},
+    {"head": "Athletes", "relation": "Indicated_For", "tail": "Protein Intake", "context": "May require higher intake"}
+  ]
+}
+
+```
+
+## Output Requirements
+
+1. Output **ONLY** the valid JSON object.
+2. Return `{"extracted_entities": [], "quads": []}` if no relevant info is found.
+
+## Execution
+
+Analyze the text provided below and output the valid JSON object.
+"""
+
+
+DIET_KG_RESOLUTION_PROMPT_v0 = """
+You are a Data Cleaning Specialist in Nutritional Science.
+Your task is to identify and resolve duplicate entities within a list of extracted diet/nutrition terms.
+
+## Task
+Find duplicate entities for the items in the provided list and identify a **Canonical Alias** that best represents the group.
+Duplicates are entities that share the same semantic meaning, considering:
+1.  **Synonyms**: (e.g., "Ascorbic Acid" == "Vitamin C")
+2.  **Abbreviations**: (e.g., "HBP" == "High Blood Pressure")
+3.  **Variations**: (e.g., "toddler" == "toddlers", "running" == "run")
+4.  **Specificity**: Map vague terms to clinical terms if clear (e.g., "Heart attack" -> "Myocardial Infarction").
+
+## Input Data
+You will receive a list of entities extracted from a text.
+
+## Output Schema
+Return a JSON object containing a list of "resolutions". Each resolution must have:
+* `duplicate_group`: A list of the variations found in the input.
+* `canonical_form`: The single best standard clinical term to use.
+
+If there are no duplicates, return `{"resolutions": []}`.
+
+## Example
+**Input Entities**:
+["Vit C", "Vitamin C", "Oranges", "HBP", "High Blood Pressure", "Hypertension", "Apple"]
+
+**Output**:
+```json
+{
+  "resolutions": [
+    {
+      "duplicate_group": ["Vit C", "Vitamin C"],
+      "canonical_form": "Vitamin C"
+    },
+    {
+      "duplicate_group": ["HBP", "High Blood Pressure", "Hypertension"],
+      "canonical_form": "Hypertension"
+    }
+  ]
+}
+
+```
+
+## Execution
+
+Analyze the list of entities below and provide the JSON resolution map.
+"""
+
+
+
+DIET_KG_EXTRACT_COT_PROMPT_v1 = """
+You are an expert Knowledge Graph Engineer specialized in Diet, Nutrition, and Lifestyle.
+Your goal is to extract **meaningful guidelines and facts** from the text.
+
+You must follow a **2-Step Forced Chain of Thought** process.
+
+## Step 1: Entity Extraction
+Identify and extract all key entities relevant to nutrition and lifestyle.
+* **Scope**: Include foods, nutrients, health conditions, demographics, activities, measurements, and physiological effects.
+* **Constraint**: Do not categorize them. Just list the distinct terms found in the text.
+
+## Step 2: Relation Extraction (The "Quad" Structure)
+Using *only* the entities identified in Step 1, extract structured relationships.
+* **Head**: The subject entity (Must be in Step 1 list).
+* **Relation**: A concise, descriptive verb phrase capturing the interaction (e.g., "increases risk of", "is rich in", "recommends", "should avoid"). You are free to define the relation based on the text.
+* **Tail**: The object entity (Must be in Step 1 list).
+* **Context**: (String) Any condition, timing, dosage, or constraint (e.g., "daily", "if pregnant"). If none, use "General".
+
+## Robustness Rules
+1.  **Grounding**: Every Head and Tail in the quads MUST be strictly selected from the `extracted_entities` list.
+2.  **Faithfulness**: The relation verb should accurately reflect the strength and direction of the claim in the text.
+
+## Few-Shot Example
+**Input**:
+"To prevent anemia, women should eat spinach because it contains iron. However, coffee can inhibit iron absorption."
+
+**Output**:
+```json
+{
+  "extracted_entities": [
+    "anemia", "women", "spinach", "iron", "coffee", "iron absorption"
+  ],
+  "quads": [
+    {"head": "spinach", "relation": "helps prevent", "tail": "anemia", "context": "General"},
+    {"head": "women", "relation": "should eat", "tail": "spinach", "context": "To prevent anemia"},
+    {"head": "spinach", "relation": "contains", "tail": "iron", "context": "General"},
+    {"head": "coffee", "relation": "inhibits", "tail": "iron absorption", "context": "General"}
+  ]
+}
+
+```
+
+## Output Requirements
+
+1. Output **ONLY** the valid JSON object.
+2. Return `{"extracted_entities": [], "quads": []}` if no relevant info is found.
+
+## Execution
+
+Analyze the text provided below and output the valid JSON object.
+"""
+
+DIET_KG_RESOLUTION_PROMPT_v1 = """
+You are a Data Cleaning Specialist.
+Your task is to identify and resolve duplicate entities from a list of nutrition and lifestyle terms.
+
+## Task
+Review the input list of entities. Group terms that refer to the **same concept** (synonyms, abbreviations, plural variations, or case differences).
+For each group, select one **Canonical Alias** that is the clearest representation of the concept.
+
+## Output Schema
+Return a JSON object with a list of "resolutions".
+* `duplicate_group`: A list of the variations found in the input (including the canonical one).
+* `canonical_form`: The single best name to use for the group.
+
+## Example
+**Input Entities**:
+["cardio", "Cardiovascular exercise", "running", "run", "Vit D", "Vitamin D"]
+
+**Output**:
+```json
+{
+  "resolutions": [
+    {
+      "duplicate_group": ["cardio", "Cardiovascular exercise"],
+      "canonical_form": "Cardiovascular exercise"
+    },
+    {
+      "duplicate_group": ["running", "run"],
+      "canonical_form": "running"
+    },
+    {
+      "duplicate_group": ["Vit D", "Vitamin D"],
+      "canonical_form": "Vitamin D"
+    }
+  ]
+}
+
+```
+
+## Execution
+
+Analyze the list of entities below and provide the JSON resolution map.
+"""
