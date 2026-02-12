@@ -962,7 +962,6 @@ class ExerciseAgentMixin:
             parts.append("")  # Empty line for separation
 
             # Format all relations uniformly: "- {head} {relation} {tail}"
-            parts.append("## Knowledge Graph Relations")
             for rel in relations:
                 head = rel.get("head", "")
                 relation = rel.get("relation", "").replace("_", " ")

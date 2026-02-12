@@ -1926,11 +1926,11 @@ The user strictly explicitly wants: "{user_preference}"
 ## Use the following knowledge to generate a plan that user prefered:
 {kg_context}"""
 
-    prompt += f"""## Output Format
+    prompt += f"""\n## Output Format
 JSON list of foods. Each item:
 - food_name: name
 - portion_number: number
-- portion_unit: gram/ml/piece/slice/cup/bowl/spoon
+- portion_unit: {UNIT_LIST_STR}
 - calories_per_unit: calories per single unit
 
 """

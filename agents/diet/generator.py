@@ -371,7 +371,7 @@ class DietAgent(BaseAgent, DietAgentMixin):
             part = "<{}, {}, {}> regarding {} issues".format(entity_name, rel, tail, condition)
             parts.append(part)
 
-        return "## KG Guidelines\n" + "\n".join(parts) + "\n"
+        return "#### KG Guidelines\n" + "\n".join(parts) + "\n"
 
 
 # ================= Convenience Functions =================
