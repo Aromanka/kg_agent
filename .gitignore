@@ -9,7 +9,9 @@ tests/llm.log
 .claude/
 .vscode/
 sample/
+kg/templates/
 
+*.html
 *.json
 core/server.py
 !config.json
